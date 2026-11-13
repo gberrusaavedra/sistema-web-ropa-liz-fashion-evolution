@@ -36,7 +36,7 @@ let state = {
 
 const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
 const SIZES = ['Todas', 'S', 'M', 'L', 'XL'];
-const PROMO_TAGS = ['Todos', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
+const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
 // =====================================================================
 // 2. AUTENTICACIÓN Y ROLES (ADMINISTRADOR VS CLIENTE)
@@ -201,12 +201,18 @@ async function fetchProductsFromDB() {
     updateGlobalStockCounter();
 }
 
+function toggleOfferFields() {
+    const isNormal = document.getElementById('formTag').value === 'Normal';
+    document.getElementById('regularPriceGroup').classList.toggle('hidden', isNormal);
+    document.getElementById('labelSalePrice').textContent = isNormal ? 'Precio Normal (S/) *' : 'Precio Remate (S/) *';
+}
+
 function openProductFormModal(product = null) {
     document.getElementById('formProductId').value = product ? product.id : '';
     document.getElementById('productFormTitle').textContent = product ? 'Editar Prenda' : 'Subir Nueva Prenda';
     document.getElementById('formName').value = product ? product.name : '';
     document.getElementById('formCategory').value = product ? product.category : 'Polos/Camisetas';
-    document.getElementById('formTag').value = product ? product.tag : 'Remate Final';
+    document.getElementById('formTag').value = product ? product.tag : 'Normal';
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
     document.getElementById('stockS').value = product ? (product.stockBySize.S || 0) : 2;
@@ -217,6 +223,8 @@ function openProductFormModal(product = null) {
     document.getElementById('formDescription').value = product ? product.description : '';
     document.getElementById('formImageUrl').value = product ? product.image : '';
     document.getElementById('formImageFile').value = '';
+
+    toggleOfferFields();
 
     const modal = document.getElementById('productFormModal');
     modal.classList.remove('hidden');
@@ -261,12 +269,18 @@ async function handleSaveProduct(e) {
         XL: parseInt(document.getElementById('stockXL').value) || 0
     };
 
+    const tagVal = document.getElementById('formTag').value;
+    const salePriceVal = parseFloat(document.getElementById('formSalePrice').value);
+    const regularPriceVal = tagVal === 'Normal'
+        ? salePriceVal
+        : (parseFloat(document.getElementById('formRegularPrice').value) || salePriceVal);
+
     const payload = {
         titulo: document.getElementById('formName').value.trim(),
         categoria: document.getElementById('formCategory').value,
-        etiqueta: document.getElementById('formTag').value,
-        precio_remate: parseFloat(document.getElementById('formSalePrice').value),
-        precio_original: parseFloat(document.getElementById('formRegularPrice').value),
+        etiqueta: tagVal,
+        precio_remate: salePriceVal,
+        precio_original: regularPriceVal,
         stock_by_size,
         material: document.getElementById('formMaterial').value.trim(),
         descripcion: document.getElementById('formDescription').value.trim(),
@@ -298,7 +312,6 @@ async function handleSaveProduct(e) {
         showToast('Error de conexión con el servidor', 'error');
     }
 }
-
 async function deleteProductById(id) {
     if (!confirm('¿Estás seguro de eliminar esta prenda permanentemente?')) return;
     const { token } = getSession();
@@ -457,9 +470,11 @@ function renderProductGrid(productsList) {
                 <div class="relative aspect-[4/5] bg-slate-100 overflow-hidden cursor-pointer" onclick="openQuickView(${product.id})">
                     <img src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
                     <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-                        <span class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md">-${discountPct}% OFF</span>
-                        <span class="${tagBadgeClass} text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm uppercase">${product.tag}</span>
-                    </div>
+                     ${discountPct > 0 ? `<span class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md">-${discountPct}% OFF</span>` : ''}
+                     ${product.tag !== 'Normal'
+                         ? `<span class="${tagBadgeClass} text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm uppercase">${product.tag}</span>`
+                         : `<span class="bg-slate-900/85 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase">Nueva Colección</span>`}
+                 </div>
                     ${isLowStock ? `<div class="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>¡ÚLTIMAS ${totalStock} UNIDADES!</div>` : ''}
                 </div>
 
@@ -470,10 +485,9 @@ function renderProductGrid(productsList) {
                     </div>
 
                     <div class="flex items-baseline gap-2">
-                        <span class="text-xl sm:text-2xl font-black text-rose-600">${formatPrice(product.salePrice)}</span>
-                        <span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>
-                    </div>
-
+                     <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(product.salePrice)}</span>
+                     ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
+                 </div>
                     <div class="space-y-1">
                         <div class="flex justify-between text-[11px] font-semibold">
                             <span class="${isLowStock ? 'text-rose-600 font-bold' : 'text-slate-500'}">${isLowStock ? `¡Quedan solo ${totalStock}!` : `Stock: ${totalStock} und.`}</span>
