@@ -274,31 +274,58 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <div class="w-8 h-8 bg-rose-600 rounded-lg flex items-center justify-center text-white font-black text-lg">
-                        <span class="font-black text-lg text-white">LIZFASHION<span class="text-rose-500">EVOLUTION</span></span>
-                    </div>
-                    <p class="text-xs leading-relaxed">
-                        SOMOS FRABRICANTES Y DISTRIBUIDORES DE ROPA AL POR MAYOR Y MENOR. STOCK DE LIQUIDACIÓN DE TEMPORADA 2026. ¡APROVECHA LOS PRECIOS DE REMATE ANTES DE QUE SE AGOTEM!
-                    </p>
-                </div>
-                <div class="flex flex-wrap gap-4 md:justify-center text-xs font-medium">
-                    <span class="flex items-center gap-1.5 text-slate-300"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Pago Contraentrega</span>
-                    <span class="flex items-center gap-1.5 text-slate-300"><i data-lucide="truck" class="w-4 h-4 text-rose-400"></i> Envíos Express 24h</span>
-                    <span class="flex items-center gap-1.5 text-slate-300"><i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i> Cambios Garantizados</span>
-                </div>
-                <div class="md:text-right text-xs">
-                    <p class="text-slate-300 font-semibold">¿Dudas sobre alguna talla?</p>
-                    <p class="mt-1">Atención directa por WhatsApp: <span class="text-white font-bold">+51 931598799</span></p>
-                </div>
-            </div>
+   <!-- FOOTER -->
+<footer class="bg-slate-900 text-slate-300 py-12 mt-16 border-t border-slate-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+      
+      <!-- Columna Izquierda: Logo + Descripción + Insignias -->
+      <div class="space-y-4 max-w-xl">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-brand-red rounded-xl flex items-center justify-center text-white font-bold shrink-0 shadow-lg">
+            <i data-lucide="percent" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="text-white font-extrabold text-xl tracking-tight">
+              LIZ FASHION <span class="text-brand-red">EVOLUTION</span>
+            </span>
+            <span class="block text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
+              OUTLET &amp; STOCK PERÚ
+            </span>
+          </div>
         </div>
-    </footer>
+
+        <p class="text-sm text-slate-400 leading-relaxed">
+          SOMOS FABRICANTES Y DISTRIBUIDORES DE ROPA AL POR MAYOR Y MENOR. STOCK DE LIQUIDACIÓN DE TEMPORADA 2026. ¡APROVECHA LOS PRECIOS DE REMATE ANTES DE QUE SE AGOTEN!
+        </p>
+
+        <div class="flex flex-wrap gap-4 pt-1 text-xs font-medium text-slate-300">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Pago Contraentrega
+          </span>
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="truck" class="w-4 h-4 text-brand-red"></i> Envíos Express 24h
+          </span>
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i> Cambios Garantizados
+          </span>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Contacto WhatsApp -->
+      <div class="md:text-right space-y-2 shrink-0">
+        <p class="text-sm font-semibold text-white">¿Dudas sobre alguna talla?</p>
+        <p class="text-sm text-slate-400">
+          Atención directa por WhatsApp: 
+          <a href="https://wa.me/51931598799" target="_blank" class="text-white font-bold hover:text-brand-red transition">
+            +51 931598799
+          </a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</footer>
 
     <!-- MODAL 1: VISTA RÁPIDA DE PRODUCTO -->
     <div id="quickViewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm transition-opacity">
