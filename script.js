@@ -51,17 +51,34 @@ function updateAuthUI() {
     const { user, isAdmin } = getSession();
     const btnAuth = document.getElementById('btnHeaderAuth');
     const userLabel = document.getElementById('headerUserLabel');
+    const userRole = document.getElementById('headerUserRole');
+    const userAvatar = document.getElementById('headerUserAvatar');
     const adminBar = document.getElementById('adminControlBar');
 
     if (user) {
-        userLabel.textContent = isAdmin ? `Admin: ${user.nombre.split(' ')[0]}` : user.nombre.split(' ')[0];
+        const firstName = user.nombre.split(' ')[0];
+        userLabel.textContent = firstName;
+        userRole.textContent = isAdmin ? 'Administrador' : 'Cliente';
+        userRole.className = isAdmin 
+            ? 'text-[9px] font-extrabold uppercase tracking-wider text-amber-600' 
+            : 'text-[9px] font-bold uppercase tracking-wider text-emerald-600';
+        userAvatar.textContent = firstName.charAt(0).toUpperCase();
+        userAvatar.className = isAdmin
+            ? 'w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shrink-0'
+            : 'w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs shrink-0';
+        
         btnAuth.onclick = logoutUser;
-        btnAuth.title = "Cerrar sesión";
+        btnAuth.title = "Haz clic para cerrar sesión";
         adminBar.classList.toggle('hidden', !isAdmin);
     } else {
-        userLabel.textContent = "Cuenta";
+        userLabel.textContent = "Mi Cuenta";
+        userRole.textContent = "Ingresar";
+        userRole.className = 'text-[9px] font-bold uppercase tracking-wider text-slate-400';
+        userAvatar.innerHTML = `<i data-lucide="user" class="w-3.5 h-3.5"></i>`;
+        userAvatar.className = 'w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-[11px] shrink-0';
+        
         btnAuth.onclick = openAuthModal;
-        btnAuth.title = "Iniciar sesión";
+        btnAuth.title = "Iniciar sesión como Administrador o Cliente";
         adminBar.classList.add('hidden');
     }
     lucide.createIcons();

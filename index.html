@@ -90,16 +90,23 @@
                         </button>
                     </div>
 
-                    <!-- Account / Admin Button -->
-                    <button 
-                        id="btnHeaderAuth" 
-                        onclick="openAuthModal()" 
-                        class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer border border-slate-200"
-                        title="Iniciar sesión como Administrador o Cliente"
-                    >
-                        <i data-lucide="user" class="w-4 h-4 text-rose-600"></i>
-                        <span id="headerUserLabel" class="hidden sm:inline">Cuenta</span>
-                    </button>
+                   <!-- Account / Admin Button -->
+                    <div class="flex items-center gap-1.5">
+                        <button 
+                            id="btnHeaderAuth" 
+                            onclick="openAuthModal()" 
+                            class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 text-slate-800 px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer border border-slate-200 shadow-2xs"
+                            title="Iniciar sesión o gestionar cuenta"
+                        >
+                            <span id="headerUserAvatar" class="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-[11px] shrink-0">
+                                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                            </span>
+                            <div class="hidden sm:flex flex-col text-left leading-tight">
+                                <span id="headerUserRole" class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Acceso</span>
+                                <span id="headerUserLabel" class="text-xs font-extrabold text-slate-900">Mi Cuenta</span>
+                            </div>
+                        </button>
+                    </div>
 
                     <!-- Cart Drawer Trigger -->
                     <button 
