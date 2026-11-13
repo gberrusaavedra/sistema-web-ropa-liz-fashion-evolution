@@ -34,8 +34,7 @@ let state = {
     isRegisterMode: false
 };
 
-const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Calzado/Accesorios'];
-const PROMO_TAGS = ['Todos', 'Remate Final', 'Últimas Tallas', 'Oferta Flash', '2x1'];
+const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
 const SIZES = ['Todas', 'S', 'M', 'L', 'XL'];
 
 // =====================================================================
