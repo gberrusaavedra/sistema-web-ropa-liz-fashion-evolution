@@ -13,7 +13,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-const SECRET_KEY = process.env.JWT_SECRET || 'rematestyle_secret_2026';
+const SECRET_KEY = process.env.JWT_SECRET || 'Teddy12@12';
 
 // Crear tablas automáticamente si aún no existen en Neon
 async function initDB() {
