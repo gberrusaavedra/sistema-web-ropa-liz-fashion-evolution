@@ -50,6 +50,7 @@ function getSession() {
 function updateAuthUI() {
     const { user, isAdmin } = getSession();
     const btnAuth = document.getElementById('btnHeaderAuth');
+    const btnLogout = document.getElementById('btnHeaderLogout');
     const userLabel = document.getElementById('headerUserLabel');
     const userRole = document.getElementById('headerUserRole');
     const userAvatar = document.getElementById('headerUserAvatar');
@@ -67,8 +68,10 @@ function updateAuthUI() {
             ? 'w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shrink-0'
             : 'w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs shrink-0';
         
-        btnAuth.onclick = logoutUser;
-        btnAuth.title = "Haz clic para cerrar sesión";
+        btnAuth.onclick = null;
+        btnAuth.classList.remove('cursor-pointer', 'hover:bg-slate-200/80');
+        btnLogout.classList.remove('hidden');
+        btnLogout.classList.add('flex');
         adminBar.classList.toggle('hidden', !isAdmin);
     } else {
         userLabel.textContent = "Mi Cuenta";
@@ -78,7 +81,9 @@ function updateAuthUI() {
         userAvatar.className = 'w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-[11px] shrink-0';
         
         btnAuth.onclick = openAuthModal;
-        btnAuth.title = "Iniciar sesión como Administrador o Cliente";
+        btnAuth.classList.add('cursor-pointer', 'hover:bg-slate-200/80');
+        btnLogout.classList.add('hidden');
+        btnLogout.classList.remove('flex');
         adminBar.classList.add('hidden');
     }
     lucide.createIcons();

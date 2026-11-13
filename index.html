@@ -90,22 +90,33 @@
                         </button>
                     </div>
 
-                   <!-- Account / Admin Button -->
-                    <div class="flex items-center gap-1.5">
-                        <button 
-                            id="btnHeaderAuth" 
-                            onclick="openAuthModal()" 
-                            class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 text-slate-800 px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer border border-slate-200 shadow-2xs"
-                            title="Iniciar sesión o gestionar cuenta"
-                        >
-                            <span id="headerUserAvatar" class="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-[11px] shrink-0">
-                                <i data-lucide="user" class="w-3.5 h-3.5"></i>
-                            </span>
-                            <div class="hidden sm:flex flex-col text-left leading-tight">
-                                <span id="headerUserRole" class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Acceso</span>
-                                <span id="headerUserLabel" class="text-xs font-extrabold text-slate-900">Mi Cuenta</span>
-                            </div>
-                        </button>
+                  <!-- Account / Admin Button -->
+<div class="flex items-center gap-1.5">
+    <button 
+        id="btnHeaderAuth" 
+        onclick="openAuthModal()" 
+        class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 text-slate-800 px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer border border-slate-200 shadow-2xs"
+        title="Iniciar sesión o gestionar cuenta"
+    >
+        <span id="headerUserAvatar" class="w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-[11px] shrink-0">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+        </span>
+        <div class="hidden sm:flex flex-col text-left leading-tight">
+            <span id="headerUserRole" class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Ingresar</span>
+            <span id="headerUserLabel" class="text-xs font-extrabold text-slate-900">Mi Cuenta</span>
+        </div>
+    </button>
+
+    <button 
+        id="btnHeaderLogout" 
+        onclick="logoutUser()" 
+        class="hidden items-center gap-1 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white px-2.5 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer border border-rose-200"
+        title="Cerrar sesión actual"
+    >
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        <span class="hidden md:inline">Salir</span>
+    </button>
+</div>
                     </div>
 
                     <!-- Cart Drawer Trigger -->
