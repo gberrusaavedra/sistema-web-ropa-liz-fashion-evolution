@@ -1168,6 +1168,7 @@ async function updateFabOrderStatus(id, estado) {
     });
     showToast('Estado del pedido actualizado', 'success');
 }
+
 // =========================================================
 // CORRECCIÓN DEL BUSCADOR (DESKTOP Y MÓVIL)
 // =========================================================
@@ -1184,9 +1185,9 @@ document.addEventListener('DOMContentLoaded', () => {
             clearBtn.classList.toggle('hidden', valor.trim().length === 0);
         }
 
-        // Actualiza el estado global si existe y ejecuta el filtrado
-        if (typeof searchQuery !== 'undefined') searchQuery = valor;
-        if (typeof currentSearch !== 'undefined') currentSearch = valor;
+        if (typeof state !== 'undefined') {
+            state.searchQuery = valor;
+        }
         if (typeof applyFilters === 'function') {
             applyFilters();
         }
