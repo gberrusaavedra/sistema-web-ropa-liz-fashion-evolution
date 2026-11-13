@@ -1168,3 +1168,40 @@ async function updateFabOrderStatus(id, estado) {
     });
     showToast('Estado del pedido actualizado', 'success');
 }
+// =========================================================
+// CORRECCIÓN DEL BUSCADOR (DESKTOP Y MÓVIL)
+// =========================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const desktopInput = document.getElementById('searchInputDesktop');
+    const mobileInput = document.getElementById('searchInputMobile');
+    const clearBtn = document.getElementById('clearSearchDesktop');
+
+    function sincronizarYBuscar(valor) {
+        if (desktopInput && desktopInput.value !== valor) desktopInput.value = valor;
+        if (mobileInput && mobileInput.value !== valor) mobileInput.value = valor;
+
+        if (clearBtn) {
+            clearBtn.classList.toggle('hidden', valor.trim().length === 0);
+        }
+
+        // Actualiza el estado global si existe y ejecuta el filtrado
+        if (typeof searchQuery !== 'undefined') searchQuery = valor;
+        if (typeof currentSearch !== 'undefined') currentSearch = valor;
+        if (typeof applyFilters === 'function') {
+            applyFilters();
+        }
+    }
+
+    if (desktopInput) {
+        desktopInput.addEventListener('input', (e) => sincronizarYBuscar(e.target.value));
+    }
+    if (mobileInput) {
+        mobileInput.addEventListener('input', (e) => sincronizarYBuscar(e.target.value));
+    }
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            sincronizarYBuscar('');
+            if (desktopInput) desktopInput.focus();
+        });
+    }
+});
