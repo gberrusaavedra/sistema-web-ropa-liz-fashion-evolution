@@ -874,7 +874,7 @@ function renderFabModelos() {
     const isAdmin = user && user.rol === 'admin';
 
     if (!fabModelos.length) {
-        grid.innerHTML = '<div class="col-span-full text-center py-8 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-500">Aún no hay modelos publicados para fabricación en este lote.</div>';
+        grid.innerHTML = '<div class="col-span-full text-center py-8 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-400">No hay modelos disponibles para fabricación en este momento.</div>';
         return;
     }
 
@@ -883,43 +883,66 @@ function renderFabModelos() {
         const colores = Array.isArray(m.colores) ? m.colores : JSON.parse(m.colores || '[]');
         const tallas = Array.isArray(m.tallas) ? m.tallas : JSON.parse(m.tallas || '[]');
         const deadline = Number(m.fecha_limite);
-        const expired = now > deadline;
-        const fechaTexto = new Date(deadline).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const vencido = !isNaN(deadline) && deadline <= now;
+        const fechaFormateada = !isNaN(deadline)
+            ? new Date(deadline).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '';
 
         return `
         <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs flex flex-col">
-            <div class="relative h-44 bg-slate-100">
-                <img src="${m.imagen_url}" alt="${m.titulo}" class="w-full h-full object-cover">
-                <span class="absolute top-2.5 left-2.5 bg-slate-900/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">${m.categoria}</span>
-                ${isAdmin ? `<button type="button" onclick="deleteFabModel(${m.id})" class="absolute top-2.5 right-2.5 bg-rose-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg cursor-pointer">Eliminar</button>` : ''}
+            <div class="relative w-full h-64 sm:h-72 bg-slate-100 flex items-center justify-center p-2">
+                <img src="${m.imagen_url}" alt="${m.titulo}" class="max-h-full max-w-full w-auto h-auto object-contain rounded-lg">
+                <span class="absolute top-3 left-3 bg-slate-900/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg">
+                    ${m.categoria || 'Modelo'}
+                </span>
+                ${isAdmin ? `
+                    <div class="absolute top-3 right-3 flex items-center gap-1.5">
+                        <button type="button" onclick="editarFechaFabModel(${m.id}, ${deadline || now})" class="bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-extrabold px-2.5 py-1 rounded-lg shadow cursor-pointer">
+                            Editar Fecha
+                        </button>
+                        <button type="button" onclick="deleteFabModel(${m.id})" class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow cursor-pointer">
+                            Eliminar
+                        </button>
+                    </div>
+                ` : ''}
             </div>
-            <div class="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between text-xs">
+
+            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                 <div>
                     <div class="flex items-start justify-between gap-2">
-                        <h5 class="font-black text-slate-900 text-sm leading-snug">${m.titulo}</h5>
+                        <h5 class="font-black text-slate-900 text-sm">${m.titulo}</h5>
                         <span class="font-black text-rose-600 text-sm shrink-0">S/ ${Number(m.precio).toFixed(2)}</span>
                     </div>
                     ${m.descripcion ? `<p class="text-[11px] text-slate-500 mt-1">${m.descripcion}</p>` : ''}
-                    <div class="mt-1.5 text-[11px] font-bold ${expired ? 'text-rose-600' : 'text-amber-600'}">
-                        ${expired ? '⛔ Lote cerrado' : `⏳ Cierra: ${fechaTexto}`}
-                    </div>
+                    <p class="text-[11px] mt-1.5 font-semibold ${vencido ? 'text-rose-600' : 'text-emerald-700'}">
+                        ${vencido ? '⛔ Lote cerrado' : `⏳ Cierra: ${fechaFormateada}`}
+                    </p>
                 </div>
 
-                ${expired ? `
-                    <div class="bg-rose-50 text-rose-700 font-bold text-center py-2 rounded-xl text-[11px]">Fecha límite vencida</div>
+                ${vencido ? `
+                    <div class="space-y-2">
+                        <div class="w-full py-2.5 px-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-center text-xs font-extrabold">
+                            Fecha límite vencida
+                        </div>
+                        ${isAdmin ? `
+                            <button type="button" onclick="editarFechaFabModel(${m.id}, ${deadline || now})" class="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-amber-500 hover:text-slate-950 text-white text-xs font-bold transition-colors cursor-pointer">
+                                Reabrir con Nueva Fecha Límite
+                            </button>
+                        ` : ''}
+                    </div>
                 ` : `
-                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <div class="space-y-2 text-xs">
                         <div class="grid grid-cols-3 gap-1.5">
                             <select id="fabColor_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
                                 ${colores.map(c => `<option value="${c}">${c}</option>`).join('')}
                             </select>
                             <select id="fabTalla_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
-                                ${tallas.map(t => `<option value="${t}">Talla ${t}</option>`).join('')}
+                                ${tallas.map(t => `<option value="${t}">${t}</option>`).join('')}
                             </select>
-                            <input type="number" id="fabQty_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
+                            <input type="number" id="fabCant_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
                         </div>
-                        <button type="button" onclick="addToFabCart(${m.id})" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
-                            + Agregar al Pedido
+                        <button type="button" onclick="addFabItemToOrder(${m.id})" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
+                            + Agregar a mi Pedido
                         </button>
                     </div>
                 `}
@@ -928,6 +951,37 @@ function renderFabModelos() {
     }).join('');
 }
 
+async function editarFechaFabModel(id, timestampActual) {
+    const dt = new Date(timestampActual ? Number(timestampActual) : Date.now() + 86400000);
+    const pad = n => String(n).padStart(2, '0');
+    const sugerida = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+
+    const nuevaFecha = prompt('Ingresa la nueva fecha y hora límite (Formato: AAAA-MM-DDTHH:MM):', sugerida);
+    if (!nuevaFecha) return;
+
+    const parsed = new Date(nuevaFecha);
+    if (isNaN(parsed.getTime())) {
+        showToast('Formato de fecha inválido. Usa AAAA-MM-DDTHH:MM', 'error');
+        return;
+    }
+
+    const { token } = getSession();
+    try {
+        const res = await fetch(`${API_URL}/fabricacion/modelos/${id}/fecha`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ fecha_limite: parsed.getTime() })
+        });
+        if (!res.ok) throw new Error('Error al actualizar');
+        showToast('Fecha límite actualizada y lote reabierto', 'success');
+        loadFabModelos();
+    } catch (err) {
+        showToast('No se pudo actualizar la fecha límite', 'error');
+    }
+}
 function addToFabCart(modelId) {
     const model = fabModelos.find(m => m.id === modelId);
     if (!model) return;

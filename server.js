@@ -231,7 +231,22 @@ app.delete('/api/fabricacion/modelos/:id', soloAdmin, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
+app.put('/api/fabricacion/modelos/:id/fecha', soloAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fecha_limite } = req.body;
+        if (!fecha_limite) {
+            return res.status(400).json({ error: 'Debe indicar la nueva fecha límite' });
+        }
+        const result = await pool.query(
+            'UPDATE modelos_fabricacion SET fecha_limite = $1 WHERE id = $2 RETURNING *',
+            [Number(fecha_limite), id]
+        );
+        res.json({ mensaje: 'Fecha límite actualizada', modelo: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // === PEDIDOS DE FABRICACIÓN INGRESADOS POR CLIENTES ===
 app.get('/api/fabricacion/pedidos', soloAdmin, async (req, res) => {
     try {
