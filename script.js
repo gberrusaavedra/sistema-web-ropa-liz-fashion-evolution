@@ -939,8 +939,7 @@ function renderFabModelos() {
                             <select id="fabTalla_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
                                 ${tallas.map(t => `<option value="${t}">${t}</option>`).join('')}
                             </select>
-                            <input type="number" id="fabCant_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
-                        </div>
+                          <input type="number" id="fabQty_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
                         <button type="button" onclick="addFabItemToOrder(${m.id})" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
                             + Agregar a mi Pedido
                         </button>
