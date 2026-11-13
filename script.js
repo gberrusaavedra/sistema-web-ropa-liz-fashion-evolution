@@ -707,18 +707,66 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-function startCountdownTimer() {
-    let sec = 139530;
-    setInterval(() => {
-        if (sec <= 0) sec = 86400;
-        document.getElementById('cd-days').textContent = String(Math.floor(sec / 86400)).padStart(2, '0');
-        document.getElementById('cd-hours').textContent = String(Math.floor((sec % 86400) / 3600)).padStart(2, '0');
-        document.getElementById('cd-minutes').textContent = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
-        document.getElementById('cd-seconds').textContent = String(sec % 60).padStart(2, '0');
-        sec--;
-    }, 1000);
+let countdownInterval = null;
+
+function getOfferEndTimestamp() {
+    const saved = localStorage.getItem('liz_offer_end_time');
+    if (saved) return parseInt(saved, 10);
+    const defaultEnd = new Date();
+    defaultEnd.setDate(defaultEnd.getDate() + 1);
+    defaultEnd.setHours(23, 59, 59, 0);
+    return defaultEnd.getTime();
 }
 
+function openTimerModal() {
+    const endTs = getOfferEndTimestamp();
+    const dt = new Date(endTs - new Date().getTimezoneOffset() * 60000);
+    document.getElementById('offerEndInput').value = dt.toISOString().slice(0, 16);
+    const modal = document.getElementById('timerModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    lucide.createIcons();
+}
+
+function closeTimerModal() {
+    const modal = document.getElementById('timerModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function saveOfferEndTime(e) {
+    e.preventDefault();
+    const val = document.getElementById('offerEndInput').value;
+    if (!val) return;
+    const targetTime = new Date(val).getTime();
+    localStorage.setItem('liz_offer_end_time', targetTime.toString());
+    closeTimerModal();
+    startCountdownTimer();
+    showToast('Horario de oferta actualizado correctamente', 'success');
+}
+
+function startCountdownTimer() {
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    const updateClock = () => {
+        const now = Date.now();
+        const end = getOfferEndTimestamp();
+        const diffSec = Math.max(0, Math.floor((end - now) / 1000));
+
+        const days = Math.floor(diffSec / 86400);
+        const hours = Math.floor((diffSec % 86400) / 3600);
+        const minutes = Math.floor((diffSec % 3600) / 60);
+        const seconds = diffSec % 60;
+
+        document.getElementById('cd-days').textContent = String(days).padStart(2, '0');
+        document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
+        document.getElementById('cd-minutes').textContent = String(minutes).padStart(2, '0');
+        document.getElementById('cd-seconds').textContent = String(seconds).padStart(2, '0');
+    };
+
+    updateClock();
+    countdownInterval = setInterval(updateClock, 1000);
+}
 function updateGlobalStockCounter() {
     const total = PRODUCTS.reduce((sum, p) => sum + getTotalStock(p), 0);
     document.getElementById('totalStockCounter').textContent = total;
