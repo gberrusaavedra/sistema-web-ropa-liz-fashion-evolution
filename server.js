@@ -36,11 +36,15 @@ async function initDB() {
             precio_remate NUMERIC(10, 2) NOT NULL,
             precio_original NUMERIC(10, 2) NOT NULL,
             stock_by_size JSONB NOT NULL,
+            porcentaje_vendido INTEGER DEFAULT 35,
             material TEXT,
             descripcion TEXT,
             imagen_url TEXT NOT NULL,
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        ALTER TABLE productos
+        ADD COLUMN IF NOT EXISTS porcentaje_vendido INTEGER DEFAULT 35;
 
         CREATE TABLE IF NOT EXISTS configuracion_tienda (
             clave VARCHAR(50) PRIMARY KEY,
@@ -109,12 +113,12 @@ app.get('/api/productos', async (req, res) => {
 });
 
 app.post('/api/productos', soloAdmin, async (req, res) => {
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, material, descripcion, imagen_url } = req.body;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url } = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, material, descripcion, imagen_url)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), material, descripcion, imagen_url]
+            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), porcentaje_vendido ?? 35, material, descripcion, imagen_url]
         );
         res.json(result.rows[0]);
     } catch (err) {
@@ -123,12 +127,12 @@ app.post('/api/productos', soloAdmin, async (req, res) => {
 });
 
 app.put('/api/productos/:id', soloAdmin, async (req, res) => {
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, material, descripcion, imagen_url } = req.body;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url } = req.body;
     try {
         const result = await pool.query(
             `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5,
-             stock_by_size=$6, material=$7, descripcion=$8, imagen_url=$9 WHERE id=$10 RETURNING *`,
-            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), material, descripcion, imagen_url, req.params.id]
+             stock_by_size=$6, porcentaje_vendido=$7, material=$8, descripcion=$9, imagen_url=$10 WHERE id=$11 RETURNING *`,
+            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), porcentaje_vendido ?? 35, material, descripcion, imagen_url, req.params.id]
         );
         res.json(result.rows[0]);
     } catch (err) {
