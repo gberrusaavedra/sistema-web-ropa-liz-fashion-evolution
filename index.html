@@ -818,11 +818,17 @@
 
         <!-- VISTA 3: ADMIN VE PEDIDOS RECIBIDOS -->
         <div id="viewFabAdminPedidos" class="hidden p-6 space-y-4">
-            <h4 class="font-black text-slate-900 text-base">Pedidos de Fabricación Ingresados</h4>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                <div>
+                    <h4 class="font-black text-slate-900 text-base">Pedidos de Fabricación Ingresados</h4>
+                    <p class="text-xs text-slate-500">Listado completo de clientes, prendas, tallas, colores y descarga en PDF</p>
+                </div>
+                <button type="button" onclick="downloadAllFabOrdersPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-xl text-xs inline-flex items-center gap-1.5 shadow-sm cursor-pointer">
+                    <i data-lucide="file-down" class="w-4 h-4"></i> Descargar Todos en PDF
+                </button>
+            </div>
             <div id="fabAdminOrdersList" class="space-y-3 text-xs"></div>
         </div>
-    </div>
-</div>
     <!-- Lógica unificada -->
     <script src="script.js"></script>
 </body>

@@ -1211,3 +1211,195 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+let cachedFabOrders = [];
+
+async function loadFabAdminOrders() {
+    const container = document.getElementById('fabAdminOrdersList');
+    const { token } = getSession();
+    container.innerHTML = '<p class="text-slate-400">Cargando pedidos de fabricación...</p>';
+    try {
+        const res = await fetch(`${API_URL}/fabricacion/pedidos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const orders = await res.json();
+        cachedFabOrders = Array.isArray(orders) ? orders : [];
+
+        if (!cachedFabOrders.length) {
+            container.innerHTML = '<p class="text-slate-400">Aún no hay pedidos de fabricación registrados.</p>';
+            return;
+        }
+
+        container.innerHTML = cachedFabOrders.map(o => {
+            const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+            const fechaRegistro = o.created_at
+                ? new Date(o.created_at).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '';
+
+            return `
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-2.5">
+                    <div class="space-y-0.5">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-black text-rose-600 text-sm">${o.codigo_pedido}</span>
+                            <span class="font-black text-slate-900 text-sm uppercase">${o.cliente_nombre}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600">
+                            📱 WhatsApp: <strong>${o.cliente_telefono}</strong>
+                            ${fechaRegistro ? ` • 🕒 ${fechaRegistro}` : ''}
+                        </p>
+                        ${o.notas ? `<p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg inline-block mt-1">📝 ${o.notas}</p>` : ''}
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-black text-slate-900 text-sm">S/ ${Number(o.total).toFixed(2)}</span>
+                        <select onchange="updateFabOrderStatus(${o.id}, this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 font-bold text-[11px]">
+                            <option value="Pendiente" ${o.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                            <option value="En Fabricación" ${o.estado === 'En Fabricación' ? 'selected' : ''}>En Fabricación</option>
+                            <option value="Entregado" ${o.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
+                        </select>
+                        <button type="button" onclick="downloadSingleFabOrderPDF(${o.id})" class="bg-slate-900 hover:bg-rose-600 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] inline-flex items-center gap-1 cursor-pointer">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    ${items.map(it => `
+                        <div class="flex items-center gap-2.5 bg-white p-2.5 rounded-xl border border-slate-200">
+                            <img src="${it.imagen_url}" class="w-12 h-12 rounded-lg object-cover shrink-0">
+                            <div class="min-w-0">
+                                <p class="font-bold text-slate-900 truncate">${it.titulo} <span class="text-rose-600">x${it.cantidad}</span></p>
+                                <p class="text-[11px] text-slate-500">Color: <strong>${it.color}</strong> • Talla: <strong>${it.talla}</strong></p>
+                                <p class="text-[11px] font-bold text-slate-700">Subtotal: S/ ${(Number(it.precio) * Number(it.cantidad)).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }).join('');
+        lucide.createIcons();
+    } catch (err) {
+        container.innerHTML = '<p class="text-rose-600">Error al cargar pedidos recibidos.</p>';
+    }
+}
+
+async function updateFabOrderStatus(id, estado) {
+    const { token } = getSession();
+    await fetch(`${API_URL}/fabricacion/pedidos/${id}/estado`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ estado })
+    });
+    showToast('Estado del pedido actualizado', 'success');
+}
+
+function downloadSingleFabOrderPDF(orderId) {
+    const order = cachedFabOrders.find(o => o.id === orderId);
+    if (!order) return;
+    openFabOrdersPrintWindow([order], `Pedido_${order.codigo_pedido}_${order.cliente_nombre}`);
+}
+
+function downloadAllFabOrdersPDF() {
+    if (!cachedFabOrders.length) {
+        showToast('No hay pedidos registrados para descargar', 'error');
+        return;
+    }
+    openFabOrdersPrintWindow(cachedFabOrders, 'Reporte_Pedidos_Fabricacion_Liz_Fashion');
+}
+
+function openFabOrdersPrintWindow(ordersList, docTitle) {
+    const totalGeneral = ordersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const fechaEmision = new Date().toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    const bloquesHTML = ordersList.map((o, idx) => {
+        const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+        const filasProductos = items.map((it, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td><img src="${it.imagen_url}" style="width:42px;height:42px;object-fit:cover;border-radius:6px;"></td>
+                <td><strong>${it.titulo}</strong><br><small style="color:#64748b;">${it.categoria || ''}</small></td>
+                <td>${it.color}</td>
+                <td><strong>${it.talla}</strong></td>
+                <td style="text-align:center;"><strong>${it.cantidad}</strong></td>
+                <td style="text-align:right;">S/ ${(Number(it.precio) * Number(it.cantidad)).toFixed(2)}</td>
+            </tr>
+        `).join('');
+
+        return `
+        <div class="order-box">
+            <div class="order-header">
+                <div>
+                    <span class="badge">${o.codigo_pedido}</span>
+                    <strong style="font-size:15px;margin-left:8px;">${o.cliente_nombre.toUpperCase()}</strong>
+                    <div style="font-size:12px;color:#475569;margin-top:4px;">
+                        WhatsApp: <strong>${o.cliente_telefono}</strong> &nbsp;|&nbsp; Estado: <strong>${o.estado || 'Pendiente'}</strong>
+                        ${o.notas ? `<br>Observaciones: <em>${o.notas}</em>` : ''}
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:11px;color:#64748b;">Total Pedido</div>
+                    <div style="font-size:16px;font-weight:900;color:#e11d48;">S/ ${Number(o.total).toFixed(2)}</div>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:28px;">#</th>
+                        <th style="width:52px;">Foto</th>
+                        <th>Modelo / Prenda</th>
+                        <th>Color</th>
+                        <th>Talla</th>
+                        <th style="text-align:center;">Cant.</th>
+                        <th style="text-align:right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>${filasProductos}</tbody>
+            </table>
+        </div>`;
+    }).join('');
+
+    const win = window.open('', '_blank');
+    win.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>${docTitle}</title>
+            <style>
+                body { font-family: Arial, sans-serif; color: #0f172a; padding: 24px; margin: 0; }
+                .top { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 18px; }
+                .brand { font-size: 20px; font-weight: 900; }
+                .brand span { color: #e11d48; }
+                .order-box { border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin-bottom: 16px; page-break-inside: avoid; }
+                .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+                .badge { background: #0f172a; color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                th, td { border-top: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; }
+                th { background: #f8fafc; font-size: 11px; text-transform: uppercase; color: #475569; }
+                .footer-total { text-align: right; font-size: 16px; font-weight: 900; margin-top: 14px; padding-top: 10px; border-top: 2px solid #0f172a; }
+                @media print { body { padding: 10px; } }
+            </style>
+        </head>
+        <body>
+            <div class="top">
+                <div>
+                    <div class="brand">LIZ FASHION <span>EVOLUTION</span></div>
+                    <div style="font-size:12px;color:#475569;">Orden de Producción y Pedidos de Fabricación</div>
+                </div>
+                <div style="text-align:right;font-size:11px;color:#475569;">
+                    Emitido: ${fechaEmision}<br>
+                    Pedidos incluidos: <strong>${ordersList.length}</strong>
+                </div>
+            </div>
+            ${bloquesHTML}
+            <div class="footer-total">TOTAL GENERAL: S/ ${totalGeneral.toFixed(2)}</div>
+            <script>
+                window.onload = function() {
+                    setTimeout(function() { window.print(); }, 400);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    win.document.close();
+}
