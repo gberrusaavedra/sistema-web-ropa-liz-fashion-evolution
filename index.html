@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REMATE STYLE | Outlet de Ropa y Liquidación de Stock</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Hoja de estilos personalizada -->
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            red: '#E11D48',
+                            redDark: '#BE123C',
+                            dark: '#0F172A',
+                            amber: '#F59E0B',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-rose-600 selection:text-white">
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-brand-dark text-white text-xs sm:text-sm py-2 px-4 text-center font-medium tracking-wide">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-2">
+            <span class="inline-flex items-center gap-1 bg-rose-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase">
+                <i data-lucide="flame" class="w-3 h-3"></i> Liquidación Total
+            </span>
+            <span>¡Envío GRATIS por compras mayores a S/ 149! Stock limitado hasta agotar existencias.</span>
+        </div>
+    </div>
+
+    <!-- Sticky Header -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 sm:h-20 gap-3 sm:gap-6">
+                
+                <!-- Logo -->
+                <a href="#" class="flex items-center gap-2 shrink-0 group">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-rose-600/20 group-hover:scale-105 transition-transform">
+                        %
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-black text-lg sm:text-xl tracking-tight text-slate-900 leading-none">
+                            REMATE<span class="text-rose-600">STYLE</span>
+                        </span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Outlet & Stock</span>
+                    </div>
+                </a>
+
+                <!-- Search Bar (Desktop & Tablet) -->
+                <div class="hidden md:flex flex-1 max-w-xl relative">
+                    <div class="relative w-full">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input 
+                            type="text" 
+                            id="searchInputDesktop" 
+                            placeholder="Buscar polos, jeans, casacas, vestidos en remate..." 
+                            class="w-full pl-10 pr-10 py-2.5 bg-slate-100 border border-transparent focus:border-rose-500 focus:bg-white rounded-full text-sm transition-all outline-none"
+                        >
+                        <button id="clearSearchDesktop" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Actions: Currency, Account & Cart -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Currency Selector -->
+                    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                        <button onclick="setCurrency('PEN')" id="btnCurrencyPEN" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer">
+                            S/ PEN
+                        </button>
+                        <button onclick="setCurrency('USD')" id="btnCurrencyUSD" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer">
+                            $ USD
+                        </button>
+                    </div>
+
+                    <!-- Account / Admin Button -->
+                    <button 
+                        id="btnHeaderAuth" 
+                        onclick="openAuthModal()" 
+                        class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer border border-slate-200"
+                        title="Iniciar sesión como Administrador o Cliente"
+                    >
+                        <i data-lucide="user" class="w-4 h-4 text-rose-600"></i>
+                        <span id="headerUserLabel" class="hidden sm:inline">Cuenta</span>
+                    </button>
+
+                    <!-- Cart Drawer Trigger -->
+                    <button 
+                        onclick="toggleCartDrawer(true)" 
+                        class="relative flex items-center gap-2 bg-slate-900 hover:bg-rose-600 text-white px-3.5 sm:px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-sm cursor-pointer"
+                        aria-label="Abrir carrito de compras"
+                    >
+                        <i data-lucide="shopping-bag" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        <span class="hidden sm:inline">Mi Pedido</span>
+                        <span id="headerCartBadge" class="bg-rose-500 text-white text-xs font-extrabold px-2 py-0.5 rounded-full min-w-[22px] text-center">
+                            0
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Search Bar -->
+            <div class="pb-3 md:hidden">
+                <div class="relative w-full">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                    <input 
+                        type="text" 
+                        id="searchInputMobile" 
+                        placeholder="Buscar prendas en oferta..." 
+                        class="w-full pl-10 pr-4 py-2 bg-slate-100 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl text-sm outline-none"
+                    >
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Control Banner (Visible SOLO para el Administrador) -->
+    <div id="adminControlBar" class="hidden bg-amber-500 text-slate-950 border-b border-amber-600/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs sm:text-sm font-extrabold">
+                <span class="bg-slate-950 text-amber-400 px-2.5 py-0.5 rounded-md uppercase text-[11px]">Modo Administrador</span>
+                <span>Puedes subir nuevas prendas, editar precios/tallas o eliminar productos del catálogo.</span>
+            </div>
+            <button 
+                onclick="openProductFormModal()" 
+                class="bg-slate-950 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            >
+                <i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i> Subir Nueva Prenda
+            </button>
+        </div>
+    </div>
+
+    <!-- Hero Banner con Countdown -->
+    <section class="relative bg-slate-900 text-white overflow-hidden">
+        <div class="hero-pattern absolute inset-0 opacity-20"></div>
+        <div class="absolute -right-24 -top-24 w-96 h-96 bg-rose-600/30 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-24 -bottom-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-14 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left Copy -->
+                <div class="lg:col-span-7 space-y-4 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 bg-rose-600/20 border border-rose-500/40 text-rose-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                        Cierre de Almacén • Temporada 2026
+                    </div>
+                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
+                        GRAN REMATE DE STOCK <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-rose-500 to-amber-400">HASTA -70% OFF</span>
+                    </h1>
+                    <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto lg:mx-0">
+                        Prendas seleccionadas de fin de temporada, últimas tallas y saldos de exportación a precios de fábrica. ¡Cuando se agota una talla, no vuelve!
+                    </p>
+                    <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                        <a href="#catalogo" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all inline-flex items-center gap-2 text-sm sm:text-base">
+                            Ver Remates Ahora <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                        </a>
+                        <button onclick="quickFilterTag('Remate Final')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/15 text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm sm:text-base cursor-pointer">
+                            Solo -70% Remate Final
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Countdown Card -->
+                <div class="lg:col-span-5">
+                    <div class="bg-slate-800/80 backdrop-blur-md border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-md mx-auto">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+                            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                                <i data-lucide="zap" class="w-4 h-4 fill-amber-400"></i> Oferta Flash Termina En:
+                            </span>
+                            <span class="text-[11px] bg-rose-600 text-white px-2 py-0.5 rounded font-bold">EN VIVO</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center" id="countdownContainer">
+                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
+                                <div id="cd-days" class="text-2xl sm:text-3xl font-black text-white">01</div>
+                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Días</div>
+                            </div>
+                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
+                                <div id="cd-hours" class="text-2xl sm:text-3xl font-black text-rose-500">14</div>
+                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Horas</div>
+                            </div>
+                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
+                                <div id="cd-minutes" class="text-2xl sm:text-3xl font-black text-white">45</div>
+                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Min</div>
+                            </div>
+                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
+                                <div id="cd-seconds" class="text-2xl sm:text-3xl font-black text-amber-400">30</div>
+                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Seg</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-300">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="package-check" class="w-4 h-4 text-emerald-400"></i>
+                                <strong id="totalStockCounter" class="text-white">0</strong> prendas disponibles hoy
+                            </span>
+                            <span class="text-rose-400 font-semibold">¡Se agotan rápido!</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Catalog Section -->
+    <main id="catalogo" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Interactive Filter Bar -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm mb-8 space-y-4">
+            <!-- Row 1: Category Tabs -->
+            <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4 overflow-x-auto no-scrollbar">
+                <div class="flex items-center gap-2" id="categoryFilters"></div>
+            </div>
+
+            <!-- Row 2: Promo Tags, Size Filter & Sorting -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <div class="md:col-span-6 flex flex-wrap items-center gap-1.5" id="promoFilters"></div>
+                <div class="md:col-span-6 flex flex-wrap sm:flex-nowrap items-center justify-start md:justify-end gap-3">
+                    <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl" id="sizeFilters"></div>
+                    <div class="relative min-w-[175px]">
+                        <select id="sortSelect" onchange="applyFilters()" class="w-full appearance-none bg-slate-100 hover:bg-slate-200/70 text-slate-800 text-xs font-bold py-2.5 pl-3 pr-8 rounded-xl border border-slate-200 outline-none cursor-pointer transition-colors">
+                            <option value="featured">Destacados / Urgentes</option>
+                            <option value="discount-desc">Mayor Descuento (%)</option>
+                            <option value="price-asc">Precio: Menor a Mayor</option>
+                            <option value="price-desc">Precio: Mayor a Menor</option>
+                            <option value="stock-asc">Últimas Unidades (Stock)</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Filters Summary & Reset -->
+            <div id="activeFilterSummary" class="hidden pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span class="text-slate-500">Mostrando <strong id="resultsCount" class="text-slate-900">0</strong> prendas en oferta</span>
+                <button onclick="resetAllFilters()" class="text-rose-600 hover:text-rose-700 font-bold inline-flex items-center gap-1 cursor-pointer">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Limpiar filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 px-4 bg-white rounded-2xl border border-slate-200">
+            <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="search-x" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">No encontramos prendas con esos filtros</h3>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mb-5">Intenta seleccionando otra talla, categoría o limpia los filtros para ver todo nuestro stock en liquidación.</p>
+            <button onclick="resetAllFilters()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors cursor-pointer">
+                Ver Todo el Catálogo
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 border-t border-slate-800 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-8 h-8 bg-rose-600 rounded-lg flex items-center justify-center text-white font-black text-lg">%</div>
+                        <span class="font-black text-lg text-white">REMATE<span class="text-rose-500">STYLE</span></span>
+                    </div>
+                    <p class="text-xs leading-relaxed">
+                        Outlet digital especializado en liquidación de temporadas, saldos de exportación y remates de almacén con descuentos reales hasta del 70%.
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-4 md:justify-center text-xs font-medium">
+                    <span class="flex items-center gap-1.5 text-slate-300"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Pago Contraentrega</span>
+                    <span class="flex items-center gap-1.5 text-slate-300"><i data-lucide="truck" class="w-4 h-4 text-rose-400"></i> Envíos Express 24h</span>
+                    <span class="flex items-center gap-1.5 text-slate-300"><i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i> Cambios Garantizados</span>
+                </div>
+                <div class="md:text-right text-xs">
+                    <p class="text-slate-300 font-semibold">¿Dudas sobre alguna talla?</p>
+                    <p class="mt-1">Atención directa por WhatsApp: <span class="text-white font-bold">+51 999 888 777</span></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: VISTA RÁPIDA DE PRODUCTO -->
+    <div id="quickViewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 relative modal-animate" onclick="event.stopPropagation()">
+            <button onclick="closeQuickView()" class="absolute top-4 right-4 z-10 w-9 h-9 bg-white/90 hover:bg-slate-100 text-slate-700 rounded-full flex items-center justify-center shadow-md border border-slate-200 transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div id="quickViewContent" class="grid grid-cols-1 md:grid-cols-2"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: INICIO DE SESIÓN / REGISTRO CLIENTE -->
+    <div id="authModal" onclick="closeAuthModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative modal-animate" onclick="event.stopPropagation()">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-9 h-9 bg-rose-600 rounded-xl flex items-center justify-center text-white font-black">%</div>
+                <div>
+                    <h3 id="authModalTitle" class="text-lg font-black text-slate-900">Iniciar Sesión</h3>
+                    <p id="authModalSubtitle" class="text-xs text-slate-500">Ingresa como Administrador o Cliente</p>
+                </div>
+            </div>
+
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-3.5 text-sm">
+                <div id="authNameGroup" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Completo</label>
+                    <input type="text" id="authName" placeholder="Ej. María López" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico</label>
+                    <input type="email" id="authEmail" required placeholder="correo@ejemplo.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Contraseña</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <div id="authSecretGroup" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Palabra Secreta (Recuperación)</label>
+                    <input type="text" id="authSecret" placeholder="Ej. piura2026" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <button type="submit" id="authSubmitBtn" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors cursor-pointer">
+                    Entrar Ahora
+                </button>
+            </form>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 text-center text-xs">
+                <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-rose-600 hover:underline font-bold cursor-pointer">
+                    ¿Eres cliente nuevo? Crea tu cuenta aquí
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CREAR / EDITAR PRENDA (EXCLUSIVO ADMINISTRADOR) -->
+    <div id="productFormModal" onclick="closeProductFormModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative modal-animate my-auto" onclick="event.stopPropagation()">
+            <button onclick="closeProductFormModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <h3 id="productFormTitle" class="text-lg font-black text-slate-900 mb-1">Subir Nueva Prenda</h3>
+            <p class="text-xs text-slate-500 mb-4">Completa los datos y el stock por talla para publicarlo en vivo.</p>
+
+            <form onsubmit="handleSaveProduct(event)" class="space-y-3 text-xs sm:text-sm">
+                <input type="hidden" id="formProductId">
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de la Prenda *</label>
+                    <input type="text" id="formName" required placeholder="Ej. Casaca Bomber Impermeable" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Categoría</label>
+                        <select id="formCategory" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                            <option value="Polos/Camisetas">Polos/Camisetas</option>
+                            <option value="Pantalones/Jeans">Pantalones/Jeans</option>
+                            <option value="Casacas/Abrigos">Casacas/Abrigos</option>
+                            <option value="Vestidos">Vestidos</option>
+                            <option value="Calzado/Accesorios">Calzado/Accesorios</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Etiqueta Promocional</label>
+                        <select id="formTag" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                            <option value="Remate Final">Remate Final</option>
+                            <option value="Oferta Flash">Oferta Flash</option>
+                            <option value="Últimas Tallas">Últimas Tallas</option>
+                            <option value="2x1">2x1</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Precio Remate (S/) *</label>
+                        <input type="number" step="0.10" id="formSalePrice" required placeholder="49.90" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Precio Antes (S/) *</label>
+                        <input type="number" step="0.10" id="formRegularPrice" required placeholder="149.90" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                    </div>
+                </div>
+
+                <!-- Stock por Talla -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <label class="block text-xs font-bold text-slate-700 mb-2">Stock Disponible por Talla:</label>
+                    <div class="grid grid-cols-4 gap-2 text-center">
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-500">Talla S</span>
+                            <input type="number" min="0" id="stockS" value="2" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-500">Talla M</span>
+                            <input type="number" min="0" id="stockM" value="3" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-500">Talla L</span>
+                            <input type="number" min="0" id="stockL" value="2" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
+                        </div>
+                        <div>
+                            <span class="text-[11px] font-bold text-slate-500">Talla XL</span>
+                            <input type="number" min="0" id="stockXL" value="1" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Material / Tela</label>
+                    <input type="text" id="formMaterial" placeholder="Ej. 100% Algodón Pima 240gr" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Descripción corta</label>
+                    <textarea id="formDescription" rows="2" placeholder="Detalles del corte, acabado o promoción..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Imagen (Subir foto o pegar URL) *</label>
+                    <input type="file" id="formImageFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 mb-1.5">
+                    <input type="text" id="formImageUrl" placeholder="O pega enlace https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-3 rounded-xl shadow-md transition-colors cursor-pointer">
+                    Guardar y Publicar Prenda
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DRAWER: CARRITO DE COMPRAS Y WHATSAPP -->
+    <div id="cartDrawerBackdrop" onclick="toggleCartDrawer(false)" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
+    
+    <aside id="cartDrawer" class="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h2 class="font-extrabold text-slate-900 text-base leading-tight">Tu Bolsa de Remate</h2>
+                    <p class="text-xs text-slate-500" id="drawerItemCountText">0 prendas seleccionadas</p>
+                </div>
+            </div>
+            <button onclick="toggleCartDrawer(false)" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div id="cartSavingsBanner" class="hidden bg-emerald-50 border-b border-emerald-200 px-5 py-2.5 flex items-center justify-between text-xs text-emerald-800">
+            <span class="flex items-center gap-1.5 font-semibold">
+                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i> ¡Ahorro total en este pedido!
+            </span>
+            <span id="cartTotalSavings" class="font-black text-sm text-emerald-700">S/ 0.00</span>
+        </div>
+
+        <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+
+        <div id="cartDrawerFooter" class="border-t border-slate-200 p-5 bg-slate-50 space-y-4">
+            <div class="space-y-1.5 text-sm">
+                <div class="flex justify-between text-slate-500">
+                    <span>Precio regular sin descuento:</span>
+                    <span id="cartRegularSubtotal" class="line-through">S/ 0.00</span>
+                </div>
+                <div class="flex justify-between text-emerald-600 font-semibold">
+                    <span>Descuento aplicado:</span>
+                    <span id="cartDiscountAmount">- S/ 0.00</span>
+                </div>
+                <div class="flex justify-between text-lg font-black text-slate-900 pt-2 border-t border-slate-200">
+                    <span>Total a Pagar:</span>
+                    <span id="cartFinalTotal" class="text-rose-600">S/ 0.00</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2.5">
+                <button onclick="sendOrderToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i>
+                    Pedir por WhatsApp Ahora
+                </button>
+                <button onclick="simulateCheckout()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i> Simular Reserva Rápida
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
+
+    <!-- CONFIRMATION MODAL -->
+    <div id="orderSuccessModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border border-slate-200 space-y-4 modal-animate">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <i data-lucide="check-circle-2" class="w-10 h-10"></i>
+            </div>
+            <h3 class="text-xl font-black text-slate-900">¡Stock Reservado con Éxito!</h3>
+            <p class="text-sm text-slate-600">
+                Hemos separado tus prendas de liquidación por <strong>30 minutos</strong>. Código de reserva: <span id="reservationCode" class="font-mono font-bold bg-slate-100 px-2 py-0.5 rounded text-rose-600">#RMT-8492</span>.
+            </p>
+            <div class="pt-2">
+                <button onclick="closeSuccessModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer">
+                    Seguir Viendo Ofertas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica unificada -->
+    <script src="script.js"></script>
+</body>
+</html>
