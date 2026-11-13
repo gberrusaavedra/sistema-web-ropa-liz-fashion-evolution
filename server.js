@@ -41,6 +41,11 @@ async function initDB() {
             imagen_url TEXT NOT NULL,
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS configuracion_tienda (
+            clave VARCHAR(50) PRIMARY KEY,
+            valor TEXT NOT NULL
+        );
     `);
 
     // Crear cuenta Admin por defecto si no existe
@@ -135,6 +140,41 @@ app.delete('/api/productos/:id', soloAdmin, async (req, res) => {
     try {
         await pool.query('DELETE FROM productos WHERE id = $1', [req.params.id]);
         res.json({ mensaje: 'Eliminado' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Obtener fecha de fin de oferta flash (público para todos los visitantes)
+app.get('/api/oferta-tiempo', async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT valor FROM configuracion_tienda WHERE clave = 'offer_end_time'"
+        );
+        if (result.rows.length > 0) {
+            res.json({ offer_end_time: Number(result.rows[0].valor) });
+        } else {
+            res.json({ offer_end_time: null });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Guardar o actualizar fecha de fin de oferta flash (solo Admin)
+app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
+    const { offer_end_time } = req.body;
+    if (!offer_end_time) {
+        return res.status(400).json({ error: 'Fecha y hora inválidas' });
+    }
+    try {
+        await pool.query(
+            `INSERT INTO configuracion_tienda (clave, valor)
+             VALUES ('offer_end_time', $1)
+             ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
+            [String(offer_end_time)]
+        );
+        res.json({ mensaje: 'Horario guardado en Neon', offer_end_time: Number(offer_end_time) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
