@@ -15,7 +15,6 @@ const pool = new Pool({
 
 const SECRET_KEY = process.env.JWT_SECRET || 'Teddy12@12';
 
-// Crear tablas automáticamente si aún no existen en Neon
 async function initDB() {
     await pool.query(`
         CREATE TABLE IF NOT EXISTS usuarios (
@@ -50,9 +49,33 @@ async function initDB() {
             clave VARCHAR(50) PRIMARY KEY,
             valor TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS modelos_fabricacion (
+            id SERIAL PRIMARY KEY,
+            titulo VARCHAR(150) NOT NULL,
+            categoria VARCHAR(80) NOT NULL,
+            precio NUMERIC(10, 2) NOT NULL,
+            colores JSONB NOT NULL,
+            tallas JSONB NOT NULL,
+            imagen_url TEXT NOT NULL,
+            fecha_limite BIGINT NOT NULL,
+            descripcion TEXT,
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS pedidos_fabricacion (
+            id SERIAL PRIMARY KEY,
+            codigo_pedido VARCHAR(30) NOT NULL,
+            cliente_nombre VARCHAR(120) NOT NULL,
+            cliente_telefono VARCHAR(30) NOT NULL,
+            notas TEXT,
+            items JSONB NOT NULL,
+            total NUMERIC(10, 2) NOT NULL,
+            estado VARCHAR(30) DEFAULT 'Pendiente',
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     `);
 
-    // Crear cuenta Admin por defecto si no existe
     await pool.query(`
         INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol)
         VALUES ('Liz Admin', 'admin@rematestyle.com', 'admin1234', 'piura2026', 'admin')
@@ -103,6 +126,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// === CATÁLOGO REMATE ===
 app.get('/api/productos', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM productos ORDER BY id DESC');
@@ -149,28 +173,19 @@ app.delete('/api/productos/:id', soloAdmin, async (req, res) => {
     }
 });
 
-// Obtener fecha de fin de oferta flash (público para todos los visitantes)
+// === RELOJ OFERTA FLASH ===
 app.get('/api/oferta-tiempo', async (req, res) => {
     try {
-        const result = await pool.query(
-            "SELECT valor FROM configuracion_tienda WHERE clave = 'offer_end_time'"
-        );
-        if (result.rows.length > 0) {
-            res.json({ offer_end_time: Number(result.rows[0].valor) });
-        } else {
-            res.json({ offer_end_time: null });
-        }
+        const result = await pool.query("SELECT valor FROM configuracion_tienda WHERE clave = 'offer_end_time'");
+        res.json({ offer_end_time: result.rows.length > 0 ? Number(result.rows[0].valor) : null });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Guardar o actualizar fecha de fin de oferta flash (solo Admin)
 app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
     const { offer_end_time } = req.body;
-    if (!offer_end_time) {
-        return res.status(400).json({ error: 'Fecha y hora inválidas' });
-    }
+    if (!offer_end_time) return res.status(400).json({ error: 'Fecha inválida' });
     try {
         await pool.query(
             `INSERT INTO configuracion_tienda (clave, valor)
@@ -179,6 +194,80 @@ app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
             [String(offer_end_time)]
         );
         res.json({ mensaje: 'Horario guardado en Neon', offer_end_time: Number(offer_end_time) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === MODELOS PARA FABRICACIÓN (ADMIN PUBLICA / CLIENTE PIDE) ===
+app.get('/api/fabricacion/modelos', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM modelos_fabricacion ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/fabricacion/modelos', soloAdmin, async (req, res) => {
+    const { titulo, categoria, precio, colores, tallas, imagen_url, fecha_limite, descripcion } = req.body;
+    try {
+        const result = await pool.query(
+            `INSERT INTO modelos_fabricacion (titulo, categoria, precio, colores, tallas, imagen_url, fecha_limite, descripcion)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+            [titulo, categoria, precio, JSON.stringify(colores), JSON.stringify(tallas), imagen_url, fecha_limite, descripcion || '']
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/fabricacion/modelos/:id', soloAdmin, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM modelos_fabricacion WHERE id = $1', [req.params.id]);
+        res.json({ mensaje: 'Modelo eliminado' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === PEDIDOS DE FABRICACIÓN INGRESADOS POR CLIENTES ===
+app.get('/api/fabricacion/pedidos', soloAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM pedidos_fabricacion ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/fabricacion/pedidos', async (req, res) => {
+    const { cliente_nombre, cliente_telefono, notas, items, total } = req.body;
+    if (!cliente_nombre || !cliente_telefono || !items || items.length === 0) {
+        return res.status(400).json({ error: 'Completa tus datos y agrega al menos una prenda al pedido.' });
+    }
+    const codigo = 'FAB-' + Math.floor(100000 + Math.random() * 900000);
+    try {
+        const result = await pool.query(
+            `INSERT INTO pedidos_fabricacion (codigo_pedido, cliente_nombre, cliente_telefono, notas, items, total)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [codigo, cliente_nombre, cliente_telefono, notas || '', JSON.stringify(items), total]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/fabricacion/pedidos/:id/estado', soloAdmin, async (req, res) => {
+    const { estado } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE pedidos_fabricacion SET estado = $1 WHERE id = $2 RETURNING *',
+            [estado, req.params.id]
+        );
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
