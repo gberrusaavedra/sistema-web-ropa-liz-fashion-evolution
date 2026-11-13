@@ -3,7 +3,7 @@
 // =====================================================================
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api"; // <-- PEGA AQUÍ TU URL DE RENDER
 const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
-const WHATSAPP_PHONE = "51999888777";
+const WHATSAPP_PHONE = "931598799";
 
 // Catálogo dinámico cargado desde Neon (con respaldo inicial por si Render está despertando)
 let PRODUCTS = [
