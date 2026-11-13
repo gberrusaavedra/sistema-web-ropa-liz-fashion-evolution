@@ -931,7 +931,7 @@ function renderFabModelos() {
                         ` : ''}
                     </div>
                 ` : `
-                    <div class="space-y-2 text-xs">
+                   <div class="space-y-2 text-xs">
                         <div class="grid grid-cols-3 gap-1.5">
                             <select id="fabColor_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
                                 ${colores.map(c => `<option value="${c}">${c}</option>`).join('')}
@@ -939,8 +939,9 @@ function renderFabModelos() {
                             <select id="fabTalla_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
                                 ${tallas.map(t => `<option value="${t}">${t}</option>`).join('')}
                             </select>
-                          <input type="number" id="fabQty_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
-                        <button type="button" onclick="addFabItemToOrder(${m.id})" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
+                            <input type="number" id="fabQty_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
+                        </div>
+                        <button type="button" onclick="addToFabCart(${m.id})" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
                             + Agregar a mi Pedido
                         </button>
                     </div>
