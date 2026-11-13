@@ -414,16 +414,18 @@ function resetAllFilters() {
 
 function applyFilters() {
     state.sortBy = document.getElementById('sortSelect').value;
+    const desktopVal = document.getElementById('searchInputDesktop')?.value || '';
+    const mobileVal = document.getElementById('searchInputMobile')?.value || '';
+    state.searchQuery = (desktopVal || mobileVal || state.searchQuery || '');
     const query = state.searchQuery.trim().toLowerCase();
 
     let filtered = PRODUCTS.filter(p => {
         if (state.category !== 'Todos' && p.category !== state.category) return false;
         if (state.promoTag !== 'Todos' && p.tag !== state.promoTag) return false;
         if (state.size !== 'Todas' && (!p.stockBySize[state.size] || p.stockBySize[state.size] <= 0)) return false;
-        if (query && !p.name.toLowerCase().includes(query) && !p.category.toLowerCase().includes(query)) return false;
+        if (query && !p.name.toLowerCase().includes(query) && !p.category.toLowerCase().includes(query) && !(p.material || '').toLowerCase().includes(query)) return false;
         return true;
     });
-
     filtered.sort((a, b) => {
         if (state.sortBy === 'price-asc') return a.salePrice - b.salePrice;
         if (state.sortBy === 'price-desc') return b.salePrice - a.salePrice;

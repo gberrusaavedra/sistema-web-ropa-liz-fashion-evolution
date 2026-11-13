@@ -66,12 +66,13 @@
                 <div class="hidden md:flex flex-1 max-w-xl relative">
                     <div class="relative w-full">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                        <input 
-                            type="text" 
-                            id="searchInputDesktop" 
-                            placeholder="Buscar polos, jeans, casacas, vestidos en remate..." 
-                            class="w-full pl-10 pr-10 py-2.5 bg-slate-100 border border-transparent focus:border-rose-500 focus:bg-white rounded-full text-sm transition-all outline-none"
-                        >
+                       <input 
+    type="text" 
+    id="searchInputDesktop" 
+    oninput="applyFilters()"
+    placeholder="Buscar polos, jeans, casacas, vestidos en remate..." 
+    class="w-full pl-10 pr-10 py-2.5 bg-slate-100 border border-transparent focus:border-rose-500 focus:bg-white rounded-full text-sm transition-all outline-none"
+>
                         <button id="clearSearchDesktop" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
@@ -138,12 +139,13 @@
             <div class="pb-3 md:hidden">
                 <div class="relative w-full">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                    <input 
-                        type="text" 
-                        id="searchInputMobile" 
-                        placeholder="Buscar prendas en oferta..." 
-                        class="w-full pl-10 pr-4 py-2 bg-slate-100 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl text-sm outline-none"
-                    >
+                   <input 
+    type="text" 
+    id="searchInputMobile" 
+    oninput="applyFilters()"
+    placeholder="Buscar prendas en oferta..." 
+    class="w-full pl-10 pr-4 py-2 bg-slate-100 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl text-sm outline-none"
+>
                 </div>
             </div>
         </div>
