@@ -650,7 +650,7 @@ function toggleCartDrawer(open) {
 
 function sendOrderToWhatsApp() {
     if (state.cart.length === 0) return;
-    let msg = `🔥 *PEDIDO REMATE STYLE* 🔥\n\n`;
+    let msg = `🔥 *PEDIDO LIZ FASHION EVOLUTION* 🔥\n\n`;
     let total = 0;
     state.cart.forEach((item, i) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
