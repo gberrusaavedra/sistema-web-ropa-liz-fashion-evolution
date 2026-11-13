@@ -439,6 +439,9 @@ function applyFilters() {
     document.getElementById('resultsCount').textContent = filtered.length;
 
     renderProductGrid(filtered);
+    if (query.length >= 2 && window.scrollY < 320) {
+        document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function renderProductGrid(productsList) {
