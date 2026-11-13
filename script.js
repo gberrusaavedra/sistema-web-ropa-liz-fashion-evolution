@@ -36,6 +36,7 @@ let state = {
 
 const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
 const SIZES = ['Todas', 'S', 'M', 'L', 'XL'];
+const PROMO_TAGS = ['Todos', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
 // =====================================================================
 // 2. AUTENTICACIÓN Y ROLES (ADMINISTRADOR VS CLIENTE)
