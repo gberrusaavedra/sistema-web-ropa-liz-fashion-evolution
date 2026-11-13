@@ -798,3 +798,373 @@ window.addEventListener('DOMContentLoaded', () => {
     startCountdownTimer();
     fetchProductsFromDB();
 });
+// =========================================================
+// MÓDULO: PEDIDOS DE FABRICACIÓN (ADMIN Y CLIENTE)
+// =========================================================
+let fabModelos = [];
+let fabCart = [];
+
+async function openFabricacionModal() {
+    const modal = document.getElementById('fabricacionModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const { user } = getSession();
+    const isAdmin = user && user.rol === 'admin';
+    document.getElementById('tabFabAdminModelo').classList.toggle('hidden', !isAdmin);
+    document.getElementById('tabFabAdminPedidos').classList.toggle('hidden', !isAdmin);
+
+    switchFabTab('cliente');
+    await loadFabModelos();
+    if (isAdmin) await loadFabAdminOrders();
+    lucide.createIcons();
+}
+
+function closeFabricacionModal() {
+    const modal = document.getElementById('fabricacionModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function switchFabTab(tab) {
+    const views = {
+        'cliente': 'viewFabCliente',
+        'admin-modelo': 'viewFabAdminModelo',
+        'admin-pedidos': 'viewFabAdminPedidos'
+    };
+    const tabs = {
+        'cliente': 'tabFabCliente',
+        'admin-modelo': 'tabFabAdminModelo',
+        'admin-pedidos': 'tabFabAdminPedidos'
+    };
+
+    Object.keys(views).forEach(k => {
+        document.getElementById(views[k]).classList.toggle('hidden', k !== tab);
+        const btn = document.getElementById(tabs[k]);
+        if (k === tab) {
+            btn.classList.add('bg-white', 'text-slate-900', 'border', 'border-b-0', 'border-slate-200');
+            btn.classList.remove('text-slate-600');
+        } else {
+            btn.classList.remove('bg-white', 'text-slate-900', 'border', 'border-b-0', 'border-slate-200');
+            btn.classList.add('text-slate-600');
+        }
+    });
+}
+
+async function loadFabModelos() {
+    const grid = document.getElementById('fabModelosGrid');
+    grid.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Cargando modelos disponibles para fabricación...</p>';
+    try {
+        const res = await fetch(`${API_URL}/fabricacion/modelos`);
+        fabModelos = await res.json();
+        renderFabModelos();
+    } catch (err) {
+        grid.innerHTML = '<p class="text-xs text-rose-600 col-span-full">Error al cargar modelos de fabricación.</p>';
+    }
+}
+
+function renderFabModelos() {
+    const grid = document.getElementById('fabModelosGrid');
+    const { user } = getSession();
+    const isAdmin = user && user.rol === 'admin';
+
+    if (!fabModelos.length) {
+        grid.innerHTML = '<div class="col-span-full text-center py-8 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-500">Aún no hay modelos publicados para fabricación en este lote.</div>';
+        return;
+    }
+
+    const now = Date.now();
+    grid.innerHTML = fabModelos.map(m => {
+        const colores = Array.isArray(m.colores) ? m.colores : JSON.parse(m.colores || '[]');
+        const tallas = Array.isArray(m.tallas) ? m.tallas : JSON.parse(m.tallas || '[]');
+        const deadline = Number(m.fecha_limite);
+        const expired = now > deadline;
+        const fechaTexto = new Date(deadline).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        return `
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs flex flex-col">
+            <div class="relative h-44 bg-slate-100">
+                <img src="${m.imagen_url}" alt="${m.titulo}" class="w-full h-full object-cover">
+                <span class="absolute top-2.5 left-2.5 bg-slate-900/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">${m.categoria}</span>
+                ${isAdmin ? `<button type="button" onclick="deleteFabModel(${m.id})" class="absolute top-2.5 right-2.5 bg-rose-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg cursor-pointer">Eliminar</button>` : ''}
+            </div>
+            <div class="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between text-xs">
+                <div>
+                    <div class="flex items-start justify-between gap-2">
+                        <h5 class="font-black text-slate-900 text-sm leading-snug">${m.titulo}</h5>
+                        <span class="font-black text-rose-600 text-sm shrink-0">S/ ${Number(m.precio).toFixed(2)}</span>
+                    </div>
+                    ${m.descripcion ? `<p class="text-[11px] text-slate-500 mt-1">${m.descripcion}</p>` : ''}
+                    <div class="mt-1.5 text-[11px] font-bold ${expired ? 'text-rose-600' : 'text-amber-600'}">
+                        ${expired ? '⛔ Lote cerrado' : `⏳ Cierra: ${fechaTexto}`}
+                    </div>
+                </div>
+
+                ${expired ? `
+                    <div class="bg-rose-50 text-rose-700 font-bold text-center py-2 rounded-xl text-[11px]">Fecha límite vencida</div>
+                ` : `
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <select id="fabColor_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
+                                ${colores.map(c => `<option value="${c}">${c}</option>`).join('')}
+                            </select>
+                            <select id="fabTalla_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
+                                ${tallas.map(t => `<option value="${t}">Talla ${t}</option>`).join('')}
+                            </select>
+                            <input type="number" id="fabQty_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
+                        </div>
+                        <button type="button" onclick="addToFabCart(${m.id})" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
+                            + Agregar al Pedido
+                        </button>
+                    </div>
+                `}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function addToFabCart(modelId) {
+    const model = fabModelos.find(m => m.id === modelId);
+    if (!model) return;
+    const color = document.getElementById(`fabColor_${modelId}`).value;
+    const talla = document.getElementById(`fabTalla_${modelId}`).value;
+    const cantidad = Math.max(1, parseInt(document.getElementById(`fabQty_${modelId}`).value) || 1);
+
+    const existing = fabCart.find(i => i.id === modelId && i.color === color && i.talla === talla);
+    if (existing) {
+        existing.cantidad += cantidad;
+    } else {
+        fabCart.push({
+            id: model.id,
+            titulo: model.titulo,
+            categoria: model.categoria,
+            precio: Number(model.precio),
+            color,
+            talla,
+            cantidad,
+            imagen_url: model.imagen_url
+        });
+    }
+    renderFabCart();
+    showToast('Prenda agregada a tu pedido de fabricación', 'success');
+}
+
+function removeFromFabCart(idx) {
+    fabCart.splice(idx, 1);
+    renderFabCart();
+}
+
+function renderFabCart() {
+    const list = document.getElementById('fabCartList');
+    const countEl = document.getElementById('fabCartCount');
+    const totalEl = document.getElementById('fabCartTotal');
+
+    const totalUnidades = fabCart.reduce((s, i) => s + i.cantidad, 0);
+    const totalMonto = fabCart.reduce((s, i) => s + (i.precio * i.cantidad), 0);
+
+    countEl.textContent = totalUnidades;
+    totalEl.textContent = `S/ ${totalMonto.toFixed(2)}`;
+
+    if (!fabCart.length) {
+        list.innerHTML = '<p class="text-slate-400 italic">Aún no agregas prendas a tu pedido de fabricación.</p>';
+        return;
+    }
+
+    list.innerHTML = fabCart.map((item, idx) => `
+        <div class="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
+            <div class="flex items-center gap-2.5">
+                <img src="${item.imagen_url}" class="w-10 h-10 rounded-lg object-cover shrink-0">
+                <div>
+                    <p class="font-bold text-slate-900">${item.titulo} (${item.cantidad} und.)</p>
+                    <p class="text-[11px] text-slate-500">Color: <strong>${item.color}</strong> • Talla: <strong>${item.talla}</strong> • S/ ${(item.precio * item.cantidad).toFixed(2)}</p>
+                </div>
+            </div>
+            <button type="button" onclick="removeFromFabCart(${idx})" class="text-rose-600 hover:underline font-bold text-[11px] cursor-pointer">Quitar</button>
+        </div>
+    `).join('');
+}
+
+async function handleSaveFabModel(e) {
+    e.preventDefault();
+    const { token } = getSession();
+    const titulo = document.getElementById('fabModTitulo').value.trim();
+    const categoria = document.getElementById('fabModCategoria').value.trim();
+    const precio = parseFloat(document.getElementById('fabModPrecio').value);
+    const fechaVal = document.getElementById('fabModFechaLimite').value;
+    const colores = document.getElementById('fabModColores').value.split(',').map(s => s.trim()).filter(Boolean);
+    const tallas = document.getElementById('fabModTallas').value.split(',').map(s => s.trim()).filter(Boolean);
+    const descripcion = document.getElementById('fabModDesc').value.trim();
+    const fileInput = document.getElementById('fabModImgFile');
+    let imagen_url = document.getElementById('fabModImgUrl').value.trim();
+
+    if (fileInput.files && fileInput.files[0]) {
+        imagen_url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = ev => resolve(ev.target.result);
+            reader.readAsDataURL(fileInput.files[0]);
+        });
+    }
+
+    if (!imagen_url) {
+        showToast('Sube una imagen o pega una URL válida', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/fabricacion/modelos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                titulo,
+                categoria,
+                precio,
+                colores,
+                tallas,
+                imagen_url,
+                fecha_limite: new Date(fechaVal).getTime(),
+                descripcion
+            })
+        });
+        if (res.ok) {
+            e.target.reset();
+            showToast('Modelo publicado para fabricación', 'success');
+            await loadFabModelos();
+            switchFabTab('cliente');
+        } else {
+            const err = await res.json();
+            showToast(err.error || 'Error al guardar modelo', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión con el servidor', 'error');
+    }
+}
+
+async function deleteFabModel(id) {
+    if (!confirm('¿Eliminar este modelo de fabricación?')) return;
+    const { token } = getSession();
+    try {
+        const res = await fetch(`${API_URL}/fabricacion/modelos/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            showToast('Modelo eliminado', 'success');
+            await loadFabModelos();
+        }
+    } catch (err) {
+        showToast('No se pudo eliminar', 'error');
+    }
+}
+
+async function submitFabricacionOrder(e) {
+    e.preventDefault();
+    if (!fabCart.length) {
+        showToast('Agrega al menos una prenda a tu pedido', 'error');
+        return;
+    }
+
+    const cliente_nombre = document.getElementById('fabClientName').value.trim();
+    const cliente_telefono = document.getElementById('fabClientPhone').value.trim();
+    const notas = document.getElementById('fabClientNotes').value.trim();
+    const total = fabCart.reduce((s, i) => s + (i.precio * i.cantidad), 0);
+
+    try {
+        const res = await fetch(`${API_URL}/fabricacion/pedidos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cliente_nombre, cliente_telefono, notas, items: fabCart, total })
+        });
+        const savedOrder = await res.json();
+        if (!res.ok) {
+            showToast(savedOrder.error || 'Error al registrar pedido', 'error');
+            return;
+        }
+
+        // Construir mensaje de WhatsApp con fotos e información completa del pedido
+        let msg = `🧵 *NUEVO PEDIDO DE FABRICACIÓN - LIZ FASHION EVOLUTION*\n`;
+        msg += `📋 *Código:* ${savedOrder.codigo_pedido}\n`;
+        msg += `👤 *Cliente:* ${cliente_nombre}\n`;
+        msg += `📱 *WhatsApp:* ${cliente_telefono}\n`;
+        if (notas) msg += `📝 *Notas:* ${notas}\n`;
+        msg += `\n*DETALLE DEL PEDIDO TOTAL:*\n`;
+
+        fabCart.forEach((item, idx) => {
+            msg += `\n${idx + 1}. *${item.titulo}* (${item.categoria})\n`;
+            msg += `   • Color: ${item.color} | Talla: ${item.talla} | Cant: ${item.cantidad}\n`;
+            msg += `   • Subtotal: S/ ${(item.precio * item.cantidad).toFixed(2)}\n`;
+            if (item.imagen_url && item.imagen_url.startsWith('http')) {
+                msg += `   • Foto modelo: ${item.imagen_url}\n`;
+            }
+        });
+
+        msg += `\n💰 *TOTAL PEDIDO FABRICACIÓN: S/ ${total.toFixed(2)}*`;
+
+        const waUrl = `https://wa.me/51931598799?text=${encodeURIComponent(msg)}`;
+        window.open(waUrl, '_blank');
+
+        fabCart = [];
+        renderFabCart();
+        e.target.reset();
+        showToast(`Pedido ${savedOrder.codigo_pedido} guardado y enviado a WhatsApp`, 'success');
+    } catch (err) {
+        showToast('Error de conexión con el servidor', 'error');
+    }
+}
+
+async function loadFabAdminOrders() {
+    const container = document.getElementById('fabAdminOrdersList');
+    const { token } = getSession();
+    try {
+        const res = await fetch(`${API_URL}/fabricacion/pedidos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const orders = await res.json();
+        if (!orders.length) {
+            container.innerHTML = '<p class="text-slate-400">Aún no hay pedidos de fabricación registrados.</p>';
+            return;
+        }
+        container.innerHTML = orders.map(o => {
+            const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+            return `
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <span class="font-black text-rose-600">${o.codigo_pedido}</span> •
+                        <strong class="text-slate-900">${o.cliente_nombre}</strong> (${o.cliente_telefono})
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-slate-900">S/ ${Number(o.total).toFixed(2)}</span>
+                        <select onchange="updateFabOrderStatus(${o.id}, this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 font-bold text-[11px]">
+                            <option value="Pendiente" ${o.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                            <option value="En Fabricación" ${o.estado === 'En Fabricación' ? 'selected' : ''}>En Fabricación</option>
+                            <option value="Entregado" ${o.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    ${items.map(it => `
+                        <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                            <img src="${it.imagen_url}" class="w-12 h-12 rounded-lg object-cover shrink-0">
+                            <div>
+                                <p class="font-bold text-slate-900">${it.titulo} x${it.cantidad}</p>
+                                <p class="text-[11px] text-slate-500">Color: ${it.color} • Talla: ${it.talla}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = '<p class="text-rose-600">Error al cargar pedidos recibidos.</p>';
+    }
+}
+
+async function updateFabOrderStatus(id, estado) {
+    const { token } = getSession();
+    await fetch(`${API_URL}/fabricacion/pedidos/${id}/estado`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ estado })
+    });
+    showToast('Estado del pedido actualizado', 'success');
+}

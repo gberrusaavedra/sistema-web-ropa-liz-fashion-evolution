@@ -195,9 +195,9 @@
                         <button onclick="quickFilterTag('Remate Final')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/15 text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm sm:text-base cursor-pointer">
                             Solo -70% Remate Final
                         </button>
-                        <button onclick="toggleCartDrawer(true)" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl shadow-lg shadow-amber-500/35 transition-all hover:scale-105 inline-flex items-center gap-2 text-sm sm:text-base cursor-pointer ring-2 ring-amber-300/60">
-                            <i data-lucide="shopping-bag" class="w-5 h-5"></i> Ingresar tu Pedido
-                        </button>
+                       <button onclick="openFabricacionModal()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl shadow-lg shadow-amber-500/35 transition-all hover:scale-105 inline-flex items-center gap-2 text-sm sm:text-base cursor-pointer ring-2 ring-amber-300/60">
+    <i data-lucide="clipboard-list" class="w-5 h-5"></i> Ingresar tu Pedido
+</button>
                     </div>
                 </div>
 
@@ -659,6 +659,146 @@
             <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/>
         </svg>
     </a>
+</div>
+<!-- MODAL: PEDIDOS DE FABRICACIÓN (ADMIN PUBLICA MODELOS / CLIENTE INGRESA PEDIDO) -->
+<div id="fabricacionModal" onclick="closeFabricacionModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 relative my-auto">
+        <!-- Header del Modal -->
+        <div class="sticky top-0 z-10 bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black">
+                    <i data-lucide="scissors" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base sm:text-lg font-black leading-tight">Pedidos de Fabricación por Lote</h3>
+                    <p class="text-xs text-slate-300">Selecciona modelos, tallas y colores antes de la fecha límite</p>
+                </div>
+            </div>
+            <button onclick="closeFabricacionModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Pestañas -->
+        <div class="bg-slate-100 px-6 pt-3 flex flex-wrap gap-2 border-b border-slate-200">
+            <button type="button" onclick="switchFabTab('cliente')" id="tabFabCliente" class="px-4 py-2.5 rounded-t-xl text-xs font-extrabold bg-white text-slate-900 border border-b-0 border-slate-200 cursor-pointer">
+                1. Hacer Pedido de Fabricación
+            </button>
+            <button type="button" onclick="switchFabTab('admin-modelo')" id="tabFabAdminModelo" class="hidden px-4 py-2.5 rounded-t-xl text-xs font-extrabold text-slate-600 hover:text-slate-900 cursor-pointer">
+                + Publicar Modelo (Admin)
+            </button>
+            <button type="button" onclick="switchFabTab('admin-pedidos')" id="tabFabAdminPedidos" class="hidden px-4 py-2.5 rounded-t-xl text-xs font-extrabold text-slate-600 hover:text-slate-900 cursor-pointer">
+                Pedidos Recibidos (Admin)
+            </button>
+        </div>
+
+        <!-- VISTA 1: CLIENTE ARMA SU PEDIDO -->
+        <div id="viewFabCliente" class="p-6 space-y-6">
+            <div id="fabModelosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+
+            <!-- Resumen del Pedido Total -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-black text-slate-900 text-sm flex items-center gap-2">
+                        <i data-lucide="list-checks" class="w-4 h-4 text-rose-600"></i> Tu Lista de Fabricación (<span id="fabCartCount">0</span> prendas)
+                    </h4>
+                    <span id="fabCartTotal" class="font-black text-base text-rose-600">S/ 0.00</span>
+                </div>
+
+                <div id="fabCartList" class="space-y-2 text-xs text-slate-600">
+                    <p class="text-slate-400 italic">Aún no agregas prendas a tu pedido de fabricación.</p>
+                </div>
+
+                <form onsubmit="submitFabricacionOrder(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200 text-xs">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Tu Nombre / Tienda *</label>
+                        <input type="text" id="fabClientName" required placeholder="Ej. Boutique María" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Tu WhatsApp *</label>
+                        <input type="tel" id="fabClientPhone" required placeholder="Ej. 987654321" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block font-bold text-slate-700 mb-1">Observaciones para taller (opcional)</label>
+                        <input type="text" id="fabClientNotes" placeholder="Ej. Etiqueta personalizada, envío a provincia..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm cursor-pointer">
+                            <i data-lucide="send" class="w-4 h-4"></i> Registrar Pedido y Enviar Fotos por WhatsApp
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- VISTA 2: ADMIN PUBLICA MODELO -->
+        <div id="viewFabAdminModelo" class="hidden p-6">
+            <form onsubmit="handleSaveFabModel(event)" class="space-y-3 text-xs sm:text-sm max-w-xl mx-auto">
+                <h4 class="font-black text-slate-900 text-base">Nuevo Modelo para Fabricación</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Modelo *</label>
+                        <input type="text" id="fabModTitulo" required placeholder="Ej. Conjunto Deportivo Oversize" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Categoría *</label>
+                        <input type="text" id="fabModCategoria" required list="fabCatSuggestions" placeholder="Ej. Vestidos, Conjuntos, Polos..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                        <datalist id="fabCatSuggestions">
+                            <option value="Polos/Damas">
+                            <option value="Vestidos">
+                            <option value="Conjuntos">
+                            <option value="Casacas/Chalecos">
+                            <option value="Pantalones/Jeans">
+                            <option value="Faldas">
+                        </datalist>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Precio por Unidad (S/) *</label>
+                        <input type="number" step="0.10" id="fabModPrecio" required placeholder="38.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Fecha y Hora Límite de Pedido *</label>
+                        <input type="datetime-local" id="fabModFechaLimite" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Colores Disponibles (separados por coma) *</label>
+                        <input type="text" id="fabModColores" required value="Negro, Blanco, Palo Rosa, Beige" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tallas Disponibles (separadas por coma) *</label>
+                        <input type="text" id="fabModTallas" required value="S, M, L, XL" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Imagen del Producto (Subir foto o URL) *</label>
+                    <input type="file" id="fabModImgFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:font-bold file:bg-rose-50 file:text-rose-600 mb-1.5">
+                    <input type="text" id="fabModImgUrl" placeholder="O pega enlace https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Detalle de tela / confección</label>
+                    <input type="text" id="fabModDesc" placeholder="Ej. Algodón French Terry 280gr, entrega en 5 días" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-3 rounded-xl cursor-pointer">
+                    Publicar Modelo para Fabricación
+                </button>
+            </form>
+        </div>
+
+        <!-- VISTA 3: ADMIN VE PEDIDOS RECIBIDOS -->
+        <div id="viewFabAdminPedidos" class="hidden p-6 space-y-4">
+            <h4 class="font-black text-slate-900 text-base">Pedidos de Fabricación Ingresados</h4>
+            <div id="fabAdminOrdersList" class="space-y-3 text-xs"></div>
+        </div>
+    </div>
 </div>
     <!-- Lógica unificada -->
     <script src="script.js"></script>
