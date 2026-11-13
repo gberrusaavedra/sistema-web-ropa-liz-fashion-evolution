@@ -664,7 +664,7 @@ function sendOrderToWhatsApp() {
 function inquireSingleProductWhatsApp(productId) {
     const p = PRODUCTS.find(prod => prod.id === productId);
     const sz = state.selectedSizesPerCard[productId] || 'M';
-    const msg = `Hola *REMATE STYLE*, me interesa: *${p.name}* (Talla ${sz}) a ${formatPrice(p.salePrice)}. ¿Sigue disponible?`;
+    const msg = `Hola *LIZ FASHION EVOLUTION*, me interesa: *${p.name}* (Talla ${sz}) a ${formatPrice(p.salePrice)}. ¿Sigue disponible?`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
