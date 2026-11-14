@@ -802,115 +802,27 @@ function slideImage(productId, direction) {
     slider.style.transform = `translateX(-${sliderIndexes[productId] * 100}%)`;
 }
 
-// =====================================================================
-// CONTROL Y EDICIÓN DEL RELOJ DE OFERTA FLASH DESDE EL PANEL ADMIN
-// =====================================================================
-async function fetchOfferTime() {
-    try {
-        const res = await fetch(`${API_URL}/oferta-tiempo`);
-        const data = await res.json();
-        if (data && data.offer_end_time) {
-            startCountdown(Number(data.offer_end_time));
-        } else {
-            startCountdown(new Date().getTime() + 24 * 60 * 60 * 1000);
-        }
-    } catch (err) {
-        console.error('Error al obtener tiempo de oferta:', err);
-    }
-}
+// ==========================================
+// MÓDULO DE GESTIÓN DE PEDIDOS Y REPORTES PDF
+// ==========================================
 
-function startCountdown(endTime) {
-    const timer = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = endTime - now;
-
-        if (distance < 0) {
-            clearInterval(timer);
-            const container = document.getElementById('countdownContainer');
-            if (container) {
-                container.innerHTML = "<span class='text-rose-500 font-bold col-span-4 py-2'>¡OFERTA FLASH FINALIZADA!</span>";
-            }
-            return;
-        }
-
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        if (document.getElementById('cd-days')) document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
-        if (document.getElementById('cd-hours')) document.getElementById('cd-hours').innerText = String(hours).padStart(2, '0');
-        if (document.getElementById('cd-minutes')) document.getElementById('cd-minutes').innerText = String(minutes).padStart(2, '0');
-        if (document.getElementById('cd-seconds')) document.getElementById('cd-seconds').innerText = String(seconds).padStart(2, '0');
-    }, 1000);
-}
-
-function openTimerModal() {
-    const modal = document.getElementById('timerModal');
+function openOrderManagerModal() {
+    const modal = document.getElementById('orderManagerModal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        renderManualOrders();
     }
 }
 
-function closeTimerModal() {
-    const modal = document.getElementById('timerModal');
+function closeOrderManagerModal() {
+    const modal = document.getElementById('orderManagerModal');
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
 }
 
-async function saveOfferEndTime(e) {
-    e.preventDefault();
-    const inputVal = document.getElementById('offerEndInput').value;
-    if (!inputVal) return;
-
-    const offer_end_time = new Date(inputVal).getTime();
-    const { token } = getSession();
-
-    try {
-        const res = await fetch(`${API_URL}/oferta-tiempo`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ offer_end_time })
-        });
-
-        if (!res.ok) throw new Error('No se pudo guardar la fecha');
-        
-        showToast('¡Horario de oferta actualizado!', 'success');
-        closeTimerModal();
-        setTimeout(() => location.reload(), 1000);
-    } catch (err) {
-        showToast('Error al actualizar: ' + err.message, 'error');
-    }
-}
-
-// INICIALIZACIÓN
-window.addEventListener('DOMContentLoaded', () => {
-    updateAuthUI();
-    renderFilterControls();
-    renderCart();
-    fetchProductsFromDB();
-    fetchOfferTime();
-});
-// Abrir / Cerrar Modal de Pedidos Manuales
-function openOrderManagerModal() {
-    document.getElementById('orderManagerModal').classList.remove('hidden');
-    document.getElementById('orderManagerModal').classList.add('flex');
-    renderManualOrders();
-}
-
-function closeOrderManagerModal() {
-    document.getElementById('orderManagerModal').classList.add('hidden');
-    document.getElementById('orderManagerModal').classList.remove('flex');
-}
-
-
-// Guardar Pedido Manual con soporte para archivos locales
 function handleSaveManualOrder() {
     const clientInput = document.getElementById('manClientName');
     const productInput = document.getElementById('manProductName');
@@ -938,7 +850,6 @@ function handleSaveManualOrder() {
             date: new Date().toLocaleDateString()
         };
 
-        // Obtener pedidos actuales de localStorage
         let orders = [];
         try {
             orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
@@ -949,14 +860,12 @@ function handleSaveManualOrder() {
         orders.unshift(newOrder);
         localStorage.setItem('liz_manual_orders', JSON.stringify(orders));
 
-        // Limpiar formulario
         clientInput.value = '';
         productInput.value = '';
         if (colorInput) colorInput.value = '';
         if (priceInput) priceInput.value = '';
         if (fileInput) fileInput.value = '';
 
-        // Actualizar la lista en pantalla
         renderManualOrders();
         
         if (typeof showToast === 'function') {
@@ -977,7 +886,6 @@ function handleSaveManualOrder() {
     }
 }
 
-// Renderizar listado de pedidos en el modal de forma segura
 function renderManualOrders() {
     const container = document.getElementById('manualOrdersList');
     if (!container) return;
@@ -1021,14 +929,231 @@ function renderManualOrders() {
     }
 }
 
-// Asegurar que al abrir el modal se carguen los pedidos guardados
-const originalOpenOrderManagerModal = window.openOrderManagerModal;
-window.openOrderManagerModal = function() {
-    if (typeof originalOpenOrderManagerModal === 'function') {
-        originalOpenOrderManagerModal();
-    } else {
-        document.getElementById('orderManagerModal').classList.remove('hidden');
-        document.getElementById('orderManagerModal').classList.add('flex');
+function sendManualOrderWhatsApp(orderId) {
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    let o = orders.find(item => item.id === orderId);
+    if (!o) return;
+
+    const message = `🛍️ *PEDIDO SEPARADO - LIZ FASHION EVOLUTION*\n\n` +
+                    `📌 *Código:* ${o.id}\n` +
+                    `👤 *Cliente:* ${o.client}\n` +
+                    `👗 *Prenda:* ${o.product}\n` +
+                    `📏 *Talla:* ${o.size}\n` +
+                    `🎨 *Color:* ${o.color}\n` +
+                    `💰 *Precio:* S/ ${o.price}\n\n` +
+                    `¡Hola! Deseo confirmar la separación de esta prenda.`;
+
+    window.open(`https://wa.me/51931598799?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+function downloadOrderPDF(orderId) {
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    let o = orders.find(item => item.id === orderId);
+    if (!o) {
+        alert('No se encontró el pedido');
+        return;
     }
-    renderManualOrders();
-};
+
+    if (!window.jspdf) {
+        alert('La librería PDF se está cargando, intenta de nuevo en un segundo.');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LIZ FASHION EVOLUTION', 14, 18);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Orden de Producción y Pedidos de Fabricación', 14, 26);
+
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(9);
+    doc.text(`Emitido: ${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`, 196, 20, { align: 'right' });
+    doc.text(`Código: ${o.id}`, 196, 26, { align: 'right' });
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`CLIENTE: ${o.client.toUpperCase()}`, 14, 46);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Estado: Pendiente`, 14, 53);
+    doc.text(`Total Pedido:`, 160, 46);
+    doc.setTextColor(225, 29, 72);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`S/ ${o.price}`, 196, 46, { align: 'right' });
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 60, 196, 60);
+
+    doc.setFillColor(241, 245, 249);
+    doc.rect(14, 64, 182, 8, 'F');
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('#', 18, 69);
+    doc.text('FOTO', 35, 69);
+    doc.text('MODELO / PRENDA', 65, 69);
+    doc.text('COLOR', 130, 69);
+    doc.text('TALLA', 155, 69);
+    doc.text('SUBTOTAL', 180, 69);
+
+    let y = 76;
+    if (o.image && o.image.startsWith('data:image')) {
+        try {
+            doc.addImage(o.image, 'JPEG', 33, y, 12, 12);
+        } catch (err) {
+            console.log('No se pudo incrustar la imagen');
+        }
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('1', 18, y + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.text(o.product, 65, y + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Ropa / Liquidación', 65, y + 9);
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(10);
+    doc.text(o.color, 130, y + 6);
+    doc.text(o.size, 155, y + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`S/ ${o.price}`, 196, y + 6, { align: 'right' });
+
+    doc.setDrawColor(230, 230, 230);
+    doc.line(14, y + 16, 196, y + 16);
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL GENERAL:', 140, y + 28);
+    doc.setTextColor(225, 29, 72);
+    doc.text(`S/ ${o.price}`, 196, y + 28, { align: 'right' });
+
+    doc.save(`Comprobante_${o.id}.pdf`);
+}
+
+function downloadAllOrdersPDF(mode) {
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    if (orders.length === 0) {
+        alert('No hay pedidos registrados para exportar.');
+        return;
+    }
+
+    if (!window.jspdf) {
+        alert('La librería PDF se está cargando, intenta de nuevo en un segundo.');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LIZ FASHION EVOLUTION', 14, 18);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(mode === 'general' ? 'Reporte General de Pedidos y Fabricación' : 'Reporte de Pedidos por Tallas y Categorías', 14, 26);
+
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(9);
+    doc.text(`Emitido: ${new Date().toLocaleDateString()}`, 196, 20, { align: 'right' });
+    doc.text(`Pedidos incluidos: ${orders.length}`, 196, 26, { align: 'right' });
+
+    let y = 48;
+    let totalGeneral = 0;
+
+    if (mode === 'general') {
+        orders.forEach((o) => {
+            totalGeneral += parseFloat(o.price || 0);
+
+            if (y > 240) { 
+                doc.addPage(); 
+                y = 20; 
+            }
+
+            doc.setDrawColor(200, 200, 200);
+            doc.roundedRect(14, y, 182, 38, 2, 2);
+
+            doc.setFillColor(245, 247, 250);
+            doc.roundedRect(14, y, 182, 10, 2, 2, 'F');
+
+            doc.setTextColor(100, 100, 100);
+            doc.setFontSize(8);
+            doc.text(`FAB-${o.id.replace('PED-', '')}`, 18, y + 6);
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(o.client.toUpperCase(), 45, y + 6);
+
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Total Pedido:', 160, y + 4);
+            doc.setTextColor(225, 29, 72);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text(`S/ ${o.price}`, 192, y + 8, { align: 'right' });
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`1.    ${o.product}    |    Color: ${o.color}    |    Talla: ${o.size}`, 18, y + 25);
+
+            y += 45;
+        });
+    } else {
+        let grouped = {};
+        orders.forEach(o => {
+            let key = `Talla: ${o.size}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(o);
+            totalGeneral += parseFloat(o.price || 0);
+        });
+
+        for (let group in grouped) {
+            if (y > 260) { doc.addPage(); y = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(225, 29, 72);
+            doc.setFontSize(11);
+            doc.text(`--- ${group.toUpperCase()} ---`, 14, y);
+            y += 8;
+
+            doc.setTextColor(15, 23, 42);
+            grouped[group].forEach(o => {
+                if (y > 270) { doc.addPage(); y = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(`• [${o.id}] ${o.product} (S/ ${o.price})`, 18, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`  Cliente: ${o.client} | Color: ${o.color}`, 18, y + 6);
+                y += 14;
+            });
+            y += 6;
+        }
+    }
+
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setDrawColor(15, 23, 42);
+    doc.line(14, y, 196, y);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(`TOTAL GENERAL: S/ ${totalGeneral.toFixed(2)}`, 196, y + 10, { align: 'right' });
+
+    doc.save(mode === 'general' ? 'Reporte_General_Pedidos.pdf' : 'Reporte_Pedidos_Por_Categorias.pdf');
+}
