@@ -66,13 +66,12 @@
                 <div class="hidden md:flex flex-1 max-w-xl relative">
                     <div class="relative w-full">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                       <input 
-    type="text" 
-    id="searchInputDesktop" 
-    oninput="applyFilters()"
-    placeholder="Buscar polos, jeans, casacas, vestidos en remate..." 
-    class="w-full pl-10 pr-10 py-2.5 bg-slate-100 border border-transparent focus:border-rose-500 focus:bg-white rounded-full text-sm transition-all outline-none"
->
+                        <input 
+                            type="text" 
+                            id="searchInputDesktop" 
+                            placeholder="Buscar polos, jeans, casacas, vestidos en remate..." 
+                            class="w-full pl-10 pr-10 py-2.5 bg-slate-100 border border-transparent focus:border-rose-500 focus:bg-white rounded-full text-sm transition-all outline-none"
+                        >
                         <button id="clearSearchDesktop" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
@@ -139,13 +138,12 @@
             <div class="pb-3 md:hidden">
                 <div class="relative w-full">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                   <input 
-    type="text" 
-    id="searchInputMobile" 
-    oninput="applyFilters()"
-    placeholder="Buscar prendas en oferta..." 
-    class="w-full pl-10 pr-4 py-2 bg-slate-100 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl text-sm outline-none"
->
+                    <input 
+                        type="text" 
+                        id="searchInputMobile" 
+                        placeholder="Buscar prendas en oferta..." 
+                        class="w-full pl-10 pr-4 py-2 bg-slate-100 border border-slate-200 focus:border-rose-500 focus:bg-white rounded-xl text-sm outline-none"
+                    >
                 </div>
             </div>
         </div>
@@ -176,77 +174,29 @@
         <div class="absolute -left-24 -bottom-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-14 relative z-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            <!-- Columna Izquierda: Textos y Botones -->
-            <div class="lg:col-span-7 space-y-4 text-center lg:text-left">
-                <div class="inline-flex items-center gap-2 bg-rose-600/20 border border-rose-500/40 text-rose-300 px-3.5 py-1.5 rounded-full text-xs font-bold">
-                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span><span>Cierre de Almacén • Temporada 2026</span>
-                </div>
-                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
-                    GRAN REMATE DE STOCK <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-amber-400">HASTA -70% OFF</span>
-                </h1>
-                <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto lg:mx-0">
-                    Prendas seleccionadas de fin de temporada, últimas tallas y saldos de exportación a precios de fábrica. ¡Cuando se agota una talla, no vuelve!
-                </p>
-                <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
-                    <a href="#catalogo" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg transition-all flex items-center gap-2">
-                        Ver Remates Ahora <i data-lucide="arrow-down" class="w-4 h-4"></i>
-                    </a>
-                    <button onclick="quickFilterTag('Remate Final')" class="bg-white/10 hover:bg-white/25 text-white font-bold px-5 py-3.5 rounded-xl border border-white/20 transition-all cursor-pointer">
-                        Solo -70% Remate Final
-                    </button>
-                    <button onclick="openFabricacionModal()" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold px-6 py-3.5 rounded-xl shadow-lg transition-all cursor-pointer inline-flex items-center justify-center gap-2">
-                        <i data-lucide="clipboard-list" class="w-5 h-5"></i> Ingresar tu Pedido
-                    </button>
-                </div>
-            </div>
-
-            <!-- Columna Derecha: Cuadro de Oferta Flash -->
-            <div class="lg:col-span-5">
-                <div class="bg-slate-800/80 backdrop-blur-md border border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-2xl relative overflow-hidden">
-                    <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                        <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                            <i data-lucide="zap" class="w-4 h-4 fill-amber-400"></i> Oferta Flash Termina En:
-                        </span>
-                        <span class="text-[11px] bg-rose-600 text-white px-2 py-0.5 rounded font-bold uppercase animate-pulse">En Vivo</span>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Left Copy -->
+                <div class="lg:col-span-7 space-y-4 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 bg-rose-600/20 border border-rose-500/40 text-rose-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                        Cierre de Almacén • Temporada 2026
                     </div>
-
-                    <div id="countdownContainer" class="grid grid-cols-4 gap-2 sm:gap-3 text-center">
-                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3 shadow-inner">
-                            <div id="cd-days" class="text-2xl sm:text-3xl font-black text-white">01</div>
-                            <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-0.5">Días</div>
-                        </div>
-                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3 shadow-inner">
-                            <div id="cd-hours" class="text-2xl sm:text-3xl font-black text-rose-500">14</div>
-                            <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-0.5">Horas</div>
-                        </div>
-                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3 shadow-inner">
-                            <div id="cd-minutes" class="text-2xl sm:text-3xl font-black text-white">45</div>
-                            <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-0.5">Min</div>
-                        </div>
-                        <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3 shadow-inner">
-                            <div id="cd-seconds" class="text-2xl sm:text-3xl font-black text-amber-400">30</div>
-                            <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-0.5">Seg</div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 pt-3 border-t border-slate-700/80 flex items-center justify-between text-xs">
-                        <span class="text-slate-300 font-semibold flex items-center gap-1.5">
-                            <i data-lucide="package" class="w-4 h-4 text-emerald-400"></i> <strong id="totalStockCounter" class="text-white">48</strong> prendas disponibles hoy
-                        </span>
-                        <span class="text-rose-400 font-bold">¡Se agotan rápido!</span>
+                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
+                        GRAN REMATE DE STOCK <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-rose-500 to-amber-400">HASTA -70% OFF</span>
+                    </h1>
+                    <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto lg:mx-0">
+                        Prendas seleccionadas de fin de temporada, últimas tallas y saldos de exportación a precios de fábrica. ¡Cuando se agota una talla, no vuelve!
+                    </p>
+                    <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                        <a href="#catalogo" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all inline-flex items-center gap-2 text-sm sm:text-base">
+                            Ver Remates Ahora <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                        </a>
+                        <button onclick="quickFilterTag('Remate Final')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/15 text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm sm:text-base cursor-pointer">
+                            Solo -70% Remate Final
+                        </button>
                     </div>
                 </div>
-            </div>
-
-        </div>
-    </div>
-        </button>
-    </div>
-</div>
-    </button>
-</div>
 
                 <!-- Right Countdown Card -->
                 <div class="lg:col-span-5">
@@ -387,12 +337,6 @@
           Atención directa por WhatsApp: 
           <a href="https://wa.me/51931598799" target="_blank" class="text-white font-bold hover:text-brand-red transition">
             +51 931598799
-          </a>
-        </p>
-        <p class="text-xs text-slate-400 pt-2 border-t border-slate-800">
-          Soporte Técnico Web: 
-          <a href="https://wa.me/51916220856?text=Hola%2C%20necesito%20soporte%20t%C3%A9cnico%20con%20la%20tienda%20Liz%20Fashion%20Evolution" target="_blank" rel="noopener noreferrer" class="text-emerald-400 font-bold hover:text-emerald-300 transition">
-            +51 916220856
           </a>
         </p>
       </div>
@@ -548,17 +492,24 @@
                             <span class="text-xs font-bold text-slate-500">%</span>
                         </div>
                     </div>
-                
-                <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Material / Tela</label>
-                        <input type="text" id="formMaterial" placeholder="Ej. 100% Algodón Pima 240gr" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
+                </div>
 
-                    <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Imágenes de la Prenda (Sube varias fotos o pega URLs separadas por coma) *</label>
-                    <input type="file" id="formImageFile" accept="image/*" multiple class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 mb-1.5">
-                    <input type="text" id="formImageUrl" placeholder="O pega enlaces separados por coma (https://..., https://...)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
-                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Material / Tela</label>
+                    <input type="text" id="formMaterial" placeholder="Ej. 100% Algodón Pima 240gr" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Descripción corta</label>
+                    <textarea id="formDescription" rows="2" placeholder="Detalles del corte, acabado o promoción..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Imagen (Subir foto o pegar URL) *</label>
+                    <input type="file" id="formImageFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 mb-1.5">
+                    <input type="text" id="formImageUrl" placeholder="O pega enlace https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
+                </div>
+
                 <button type="submit" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-3 rounded-xl shadow-md transition-colors cursor-pointer">
                     Guardar y Publicar Prenda
                 </button>
@@ -671,202 +622,41 @@
         </div>
     </div>
 <!-- BOTONES FLOTANTES DE REDES SOCIALES (TIKTOK Y FACEBOOK) -->
-<div class="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3">
+<div class="fixed bottom-5 left-5 z-40 flex flex-col gap-3">
     <!-- TikTok Flotante -->
     <a 
-        href="https://www.tiktok.com/@liz_fashion_evolution" 
-        target="_blank" 
+        href="https://www.tiktok.com/liz_fashion_evolution" 
+        target="_blank" S
         rel="noopener noreferrer"
         aria-label="Síguenos en TikTok"
         title="Síguenos en TikTok"
         class="group flex items-center gap-2.5 bg-slate-950 hover:bg-black text-white p-3 rounded-full shadow-xl shadow-slate-950/30 border border-slate-800 transition-all duration-300 hover:scale-105"
     >
-        <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">
-            TikTok Oficial
-        </span>
         <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
             <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
         </svg>
+        <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pr-1">
+            TikTok Oficial
+        </span>
     </a>
 
     <!-- Facebook Flotante -->
     <a 
-        href="https://www.facebook.com/search/top?q=Liz%20Fashion%20Evolution%20-%20PER%C3%9A" 
+        href="https://www.facebook.com/Liz Fashion Evolution - PERÚ" 
         target="_blank" 
         rel="noopener noreferrer"
         aria-label="Síguenos en Facebook"
         title="Síguenos en Facebook"
         class="group flex items-center gap-2.5 bg-[#1877F2] hover:bg-[#166FE5] text-white p-3 rounded-full shadow-xl shadow-blue-600/30 transition-all duration-300 hover:scale-105"
     >
-        <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">
-            Facebook Oficial
-        </span>
         <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
             <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/>
         </svg>
-    </a>
-    <!-- Soporte Técnico WhatsApp Flotante -->
-    <a 
-        href="https://wa.me/51916220856?text=Hola%2C%20necesito%20soporte%20t%C3%A9cnico%20con%20la%20tienda%20Liz%20Fashion%20Evolution" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        aria-label="Soporte Técnico WhatsApp"
-        title="Soporte Técnico (+51 916220856)"
-        class="group flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-full shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:scale-105"
-    >
-        <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">
-            Soporte Técnico
+        <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pr-1">
+            Facebook Oficial
         </span>
-        <i data-lucide="headset" class="w-5 h-5 shrink-0"></i>
     </a>
-
 </div>
-<!-- MODAL: PEDIDOS DE FABRICACIÓN (ADMIN PUBLICA MODELOS / CLIENTE INGRESA PEDIDO) -->
-<div id="fabricacionModal" onclick="closeFabricacionModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-    <div onclick="event.stopPropagation()" class="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 relative my-auto">
-        <!-- Header del Modal -->
-        <div class="sticky top-0 z-10 bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black">
-                    <i data-lucide="scissors" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="text-base sm:text-lg font-black leading-tight">Pedidos de Fabricación por Lote</h3>
-                    <p class="text-xs text-slate-300">Selecciona modelos, tallas y colores antes de la fecha límite</p>
-                </div>
-            </div>
-            <button onclick="closeFabricacionModal()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-
-        <!-- Pestañas -->
-        <div class="bg-slate-100 px-6 pt-3 flex flex-wrap gap-2 border-b border-slate-200">
-            <button type="button" onclick="switchFabTab('cliente')" id="tabFabCliente" class="px-4 py-2.5 rounded-t-xl text-xs font-extrabold bg-white text-slate-900 border border-b-0 border-slate-200 cursor-pointer">
-                1. Hacer Pedido de Fabricación
-            </button>
-            <button type="button" onclick="switchFabTab('admin-modelo')" id="tabFabAdminModelo" class="hidden px-4 py-2.5 rounded-t-xl text-xs font-extrabold text-slate-600 hover:text-slate-900 cursor-pointer">
-                + Publicar Modelo (Admin)
-            </button>
-            <button type="button" onclick="switchFabTab('admin-pedidos')" id="tabFabAdminPedidos" class="hidden px-4 py-2.5 rounded-t-xl text-xs font-extrabold text-slate-600 hover:text-slate-900 cursor-pointer">
-                Pedidos Recibidos (Admin)
-            </button>
-        </div>
-
-        <!-- VISTA 1: CLIENTE ARMA SU PEDIDO -->
-        <div id="viewFabCliente" class="p-6 space-y-6">
-            <div id="fabModelosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-
-            <!-- Resumen del Pedido Total -->
-            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h4 class="font-black text-slate-900 text-sm flex items-center gap-2">
-                        <i data-lucide="list-checks" class="w-4 h-4 text-rose-600"></i> Tu Lista de Fabricación (<span id="fabCartCount">0</span> prendas)
-                    </h4>
-                    <span id="fabCartTotal" class="font-black text-base text-rose-600">S/ 0.00</span>
-                </div>
-
-                <div id="fabCartList" class="space-y-2 text-xs text-slate-600">
-                    <p class="text-slate-400 italic">Aún no agregas prendas a tu pedido de fabricación.</p>
-                </div>
-
-                <form onsubmit="submitFabricacionOrder(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-200 text-xs">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Tu Nombre / Tienda *</label>
-                        <input type="text" id="fabClientName" required placeholder="Ej. Boutique María" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-rose-500">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Tu WhatsApp *</label>
-                        <input type="tel" id="fabClientPhone" required placeholder="Ej. 987654321" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-rose-500">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block font-bold text-slate-700 mb-1">Observaciones para taller (opcional)</label>
-                        <input type="text" id="fabClientNotes" placeholder="Ej. Etiqueta personalizada, envío a provincia..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-rose-500">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 text-sm cursor-pointer">
-                            <i data-lucide="send" class="w-4 h-4"></i> Registrar Pedido y Enviar Fotos por WhatsApp
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- VISTA 2: ADMIN PUBLICA MODELO -->
-        <div id="viewFabAdminModelo" class="hidden p-6">
-            <form onsubmit="handleSaveFabModel(event)" class="space-y-3 text-xs sm:text-sm max-w-xl mx-auto">
-                <h4 class="font-black text-slate-900 text-base">Nuevo Modelo para Fabricación</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Modelo *</label>
-                        <input type="text" id="fabModTitulo" required placeholder="Ej. Conjunto Deportivo Oversize" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Categoría *</label>
-                        <input type="text" id="fabModCategoria" required list="fabCatSuggestions" placeholder="Ej. Vestidos, Conjuntos, Polos..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                        <datalist id="fabCatSuggestions">
-                            <option value="Polos/Damas">
-                            <option value="Vestidos">
-                            <option value="Conjuntos">
-                            <option value="Casacas/Chalecos">
-                            <option value="Pantalones/Jeans">
-                            <option value="Faldas">
-                        </datalist>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Precio por Unidad (S/) *</label>
-                        <input type="number" step="0.10" id="fabModPrecio" required placeholder="38.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Fecha y Hora Límite de Pedido *</label>
-                        <input type="datetime-local" id="fabModFechaLimite" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Colores Disponibles (separados por coma) *</label>
-                        <input type="text" id="fabModColores" required value="Negro, Blanco, Palo Rosa, Beige" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Tallas Disponibles (separadas por coma) *</label>
-                        <input type="text" id="fabModTallas" required value="S, M, L, XL" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Imagen del Producto (Subir foto o URL) *</label>
-                    <input type="file" id="fabModImgFile" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:font-bold file:bg-rose-50 file:text-rose-600 mb-1.5">
-                    <input type="text" id="fabModImgUrl" placeholder="O pega enlace https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Detalle de tela / confección</label>
-                    <input type="text" id="fabModDesc" placeholder="Ej. Algodón French Terry 280gr, entrega en 5 días" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-                </div>
-
-                <button type="submit" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-3 rounded-xl cursor-pointer">
-                    Publicar Modelo para Fabricación
-                </button>
-            </form>
-        </div>
-
-        <!-- VISTA 3: ADMIN VE PEDIDOS RECIBIDOS -->
-        <div id="viewFabAdminPedidos" class="hidden p-6 space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
-                <div>
-                    <h4 class="font-black text-slate-900 text-base">Pedidos de Fabricación Ingresados</h4>
-                    <p class="text-xs text-slate-500">Listado completo de clientes, prendas, tallas, colores y descarga en PDF</p>
-                </div>
-                <button type="button" onclick="downloadAllFabOrdersPDF()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-xl text-xs inline-flex items-center gap-1.5 shadow-sm cursor-pointer">
-                    <i data-lucide="file-down" class="w-4 h-4"></i> Descargar Todos en PDF
-                </button>
-            </div>
-            <div id="fabAdminOrdersList" class="space-y-3 text-xs"></div>
-        </div>
     <!-- Lógica unificada -->
     <script src="script.js"></script>
 </body>
