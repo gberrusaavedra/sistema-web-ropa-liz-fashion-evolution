@@ -256,24 +256,34 @@ async function handleSaveProduct(e) {
     e.preventDefault();
     const { token } = getSession();
     const id = document.getElementById('formProductId').value;
-    const fileInput = document.getElementById('formImageFile');
-    let imagen_url = document.getElementById('formImageUrl').value.trim();
+    
+    const imageFileInput = document.getElementById('formImageFile');
+    const imageUrlInput = document.getElementById('formImageUrl').value.trim();
 
-    if (fileInput.files.length > 0) {
-        imagen_url = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(fileInput.files[0]);
-        });
+    let imagesArray = [];
+
+    if (imageUrlInput) {
+        imagesArray = imageUrlInput.split(',').map(url => url.trim()).filter(Boolean);
     }
 
-    if (!imagen_url) {
-        showToast('Sube una imagen o pega un enlace válido.', 'warning');
-        return;
+    if (imageFileInput.files && imageFileInput.files.length > 0) {
+        const files = Array.from(imageFileInput.files);
+        const base64Promises = files.map(file => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.readAsDataURL(file);
+            });
+        });
+        imagesArray = await Promise.all(base64Promises);
+    }
+
+    if (imagesArray.length === 0) {
+        imagesArray = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
     }
 
     const stock_by_size = {
-        S: parseInt(document.getElementById('stockS').value) || 0,
+        S: parseInt(document.getElementById('stocksS').value) || 0,
         M: parseInt(document.getElementById('stockM').value) || 0,
         L: parseInt(document.getElementById('stockL').value) || 0,
         XL: parseInt(document.getElementById('stockXL').value) || 0
@@ -295,7 +305,8 @@ async function handleSaveProduct(e) {
         material: document.getElementById('formMaterial').value.trim(),
         colores: document.getElementById('formColors').value.split(',').map(c => c.trim()).filter(Boolean),
         descripcion: document.getElementById('formDescription').value.trim(),
-        imagen_url
+        imagen_url: imagesArray[0],
+        imagenes: imagesArray
     };
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
