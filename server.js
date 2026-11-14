@@ -163,7 +163,41 @@ app.put('/api/productos/:id', soloAdmin, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
+    const { offer_end_time } = req.body;
+    if (!offer_end_time) return res.status(400).json({ error: 'Fecha inválida' });
+    try {
+        await pool.query(
+            `INSERT INTO configuracion_tienda (clave, valor)
+             VALUES ('offer_end_time', $1)
+             ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
+            [String(offer_end_time)]
+        );
+        res.json({ mensaje: 'Horario guardado en Neon', offer_end_time: Number(offer_end_time) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
+// === ELIMINAR PRODUCTO (Ruta DELETE) ===
+app.delete('/api/productos/:id', soloAdmin, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM productos WHERE id = $1', [req.params.id]);
+        res.json({ mensaje: 'Prenda eliminada correctamente' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// === RELOJ OFERTA FLASH ===
+app.get('/api/oferta-tiempo', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT valor FROM configuracion_tienda WHERE clave = 'offer_end_time'");
+        res.json({ offer_end_time: result.rows.length > 0 ? Number(result.rows[0].valor) : null });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // === RELOJ OFERTA FLASH ===
 app.get('/api/oferta-tiempo', async (req, res) => {
