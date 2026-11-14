@@ -477,6 +477,10 @@ function renderProductGrid(productsList) {
         const productCode = product.code || `LIZ-${String(product.id).padStart(4, '0')}`;
         const productColors = product.colors && product.colors.length ? product.colors : ['Corinto', 'Negro', 'Rojo', 'Beige'];
         const selectedColor = state.selectedColorsPerCard[product.id] || productColors[0];
+        
+        const imagesList = product.images && Array.isArray(product.images) && product.images.length > 0 
+            ? product.images 
+            : [product.image];
 
         let tagBadgeClass = "bg-slate-900 text-white";
         if (product.tag === 'Remate Final') tagBadgeClass = "bg-rose-600 text-white";
@@ -486,15 +490,26 @@ function renderProductGrid(productsList) {
 
         return `
             <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
-                <div class="relative aspect-[4/5] bg-slate-100 overflow-hidden cursor-pointer" onclick="openQuickView(${product.id})">
-                    <img src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
-                    <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+                <!-- Carrusel Deslizante de Imágenes -->
+                <div class="relative aspect-[4/5] bg-slate-100 overflow-hidden group/img">
+                    <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(0%);">
+                        ${imagesList.map(imgUrl => `
+                            <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center shrink-0 cursor-pointer" onclick="openQuickView(${product.id})">
+                        `).join('')}
+                    </div>
+
+                    ${imagesList.length > 1 ? `
+                        <button type="button" onclick="event.stopPropagation(); slideImage(${product.id}, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity cursor-pointer z-10">❮</button>
+                        <button type="button" onclick="event.stopPropagation(); slideImage(${product.id}, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity cursor-pointer z-10">❯</button>
+                    ` : ''}
+
+                    <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start pointer-events-none">
                         ${discountPct > 0 ? `<span class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md">-${discountPct}% OFF</span>` : ''}
                         ${product.tag !== 'Normal'
                             ? `<span class="${tagBadgeClass} text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm uppercase">${product.tag}</span>`
                             : `<span class="bg-slate-900/85 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase">Nueva Colección</span>`}
                     </div>
-                    ${isLowStock ? `<div class="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>¡ÚLTIMAS ${totalStock} UNIDADES!</div>` : ''}
+                    ${isLowStock ? `<div class="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 pointer-events-none"><span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>¡ÚLTIMAS ${totalStock} UNIDADES!</div>` : ''}
                 </div>
 
                 <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
@@ -543,7 +558,7 @@ function renderProductGrid(productsList) {
                     </div>
 
                     <div>
-                        <span class="block text-[11px] font-bold text-slate-500 mb-1.5">Elige color (puedes agregar varios):</span>
+                        <span class="block text-[11px] font-bold text-slate-500 mb-1.5">Elige color:</span>
                         <div class="flex flex-wrap gap-1.5">
                             ${productColors.map(col => `
                                 <button type="button" onclick="selectCardColor(${product.id}, '${col.replace(/'/g, "\\'")}')"
@@ -579,7 +594,6 @@ function renderProductGrid(productsList) {
             </article>
         `;
     }).join('');
-
     lucide.createIcons();
 }
 
@@ -1513,4 +1527,20 @@ function openFabOrdersPrintWindow(ordersList, docTitle) {
         </html>
     `);
     win.document.close();
+}
+// Control del carrusel de imágenes por tarjeta
+const sliderIndexes = {};
+function slideImage(productId, direction) {
+    const slider = document.getElementById(`slider-${productId}`);
+    if (!slider) return;
+    const totalImages = slider.children.length;
+    if (totalImages <= 1) return;
+
+    if (!sliderIndexes[productId]) sliderIndexes[productId] = 0;
+    sliderIndexes[productId] += direction;
+
+    if (sliderIndexes[productId] >= totalImages) sliderIndexes[productId] = 0;
+    if (sliderIndexes[productId] < 0) sliderIndexes[productId] = totalImages - 1;
+
+    slider.style.transform = `translateX(-${sliderIndexes[productId] * 100}%)`;
 }
