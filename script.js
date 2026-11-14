@@ -765,7 +765,9 @@ window.addEventListener('DOMContentLoaded', () => {
     renderFilterControls();
     renderCart();
     fetchProductsFromDB();
+    fetchOfferTime();
 });
+
 // =====================================================================
 // CONTROL Y EDICIÓN DEL RELOJ DE OFERTA FLASH DESDE EL PANEL ADMIN
 // =====================================================================
