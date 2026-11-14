@@ -919,7 +919,7 @@ function handleSaveManualOrder() {
     const priceInput = document.getElementById('manProductPrice');
     const fileInput = document.getElementById('manProductFile');
 
-    if (!clientInput.value || !productInput.value || !priceInput.value) {
+    if (!clientInput || !clientInput.value || !productInput || !productInput.value || !priceInput || !priceInput.value) {
         alert('Por favor completa los campos obligatorios: Cliente, Nombre de la Prenda y Precio.');
         return;
     }
@@ -938,20 +938,31 @@ function handleSaveManualOrder() {
             date: new Date().toLocaleDateString()
         };
 
-        let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+        // Obtener pedidos actuales de localStorage
+        let orders = [];
+        try {
+            orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+        } catch (e) {
+            orders = [];
+        }
+
         orders.unshift(newOrder);
         localStorage.setItem('liz_manual_orders', JSON.stringify(orders));
 
-        // Limpiar formulario tras registrar
+        // Limpiar formulario
         clientInput.value = '';
         productInput.value = '';
         if (colorInput) colorInput.value = '';
         if (priceInput) priceInput.value = '';
         if (fileInput) fileInput.value = '';
 
+        // Actualizar la lista en pantalla
         renderManualOrders();
+        
         if (typeof showToast === 'function') {
             showToast('¡Pedido registrado y stock separado con éxito!');
+        } else {
+            alert('¡Pedido registrado con éxito!');
         }
     };
 
@@ -965,3 +976,59 @@ function handleSaveManualOrder() {
         saveOrderWithImage(null);
     }
 }
+
+// Renderizar listado de pedidos en el modal de forma segura
+function renderManualOrders() {
+    const container = document.getElementById('manualOrdersList');
+    if (!container) return;
+
+    let orders = [];
+    try {
+        orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    } catch (e) {
+        orders = [];
+    }
+
+    if (orders.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay pedidos registrados todavía.</p>`;
+        return;
+    }
+
+    container.innerHTML = orders.map(o => `
+        <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs gap-3">
+            <img src="${o.image}" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-rose-600">${o.id}</span>
+                    <h5 class="font-extrabold text-slate-900 text-xs truncate">${o.product}</h5>
+                </div>
+                <p class="text-[11px] text-slate-500">Cliente: <strong>${o.client}</strong> | Talla: <span class="text-rose-600 font-bold">${o.size}</span> | Color: <span class="font-bold">${o.color}</span></p>
+                <p class="text-xs font-black text-slate-900">S/ ${o.price}</p>
+            </div>
+            <div class="flex flex-col gap-1.5 shrink-0">
+                <button onclick="sendManualOrderWhatsApp('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer" title="Enviar por WhatsApp">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i>
+                </button>
+                <button onclick="downloadOrderPDF('${o.id}')" class="bg-slate-900 hover:bg-rose-600 text-white p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer" title="Descargar PDF">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+}
+
+// Asegurar que al abrir el modal se carguen los pedidos guardados
+const originalOpenOrderManagerModal = window.openOrderManagerModal;
+window.openOrderManagerModal = function() {
+    if (typeof originalOpenOrderManagerModal === 'function') {
+        originalOpenOrderManagerModal();
+    } else {
+        document.getElementById('orderManagerModal').classList.remove('hidden');
+        document.getElementById('orderManagerModal').classList.add('flex');
+    }
+    renderManualOrders();
+};
