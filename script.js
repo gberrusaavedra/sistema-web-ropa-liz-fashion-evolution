@@ -936,8 +936,8 @@ function downloadOrderPDF(orderId) {
 
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(9);
-    doc.text(`Emitido: ${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`, 145, 20, { align: 'right' });
-    doc.text(`Código: ${o.id}`, 145, 26, { align: 'right' });
+    doc.text(`Emitido: ${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`, 196, 20, { align: 'right' });
+    doc.text(`Código: ${o.id}`, 196, 26, { align: 'right' });
 
     // Información del cliente y estado
     doc.setTextColor(15, 23, 42);
@@ -1010,7 +1010,7 @@ function downloadOrderPDF(orderId) {
     doc.save(`Comprobante_${o.id}.pdf`);
 }
 
-// Descargar todos los pedidos en formato de reporte por bloques (Estilo la imagen que enviaste)
+// Descargar todos los pedidos en formato de reporte por bloques
 function downloadAllOrdersPDF(mode) {
     let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
     if (orders.length === 0) {
@@ -1020,7 +1020,6 @@ function downloadAllOrdersPDF(mode) {
 
     const doc = new window.jspdf.jsPDF();
     
-    // Encabezado del reporte general
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 35, 'F');
     
@@ -1048,7 +1047,6 @@ function downloadAllOrdersPDF(mode) {
             y = 20; 
         }
 
-        // Bloque individual por pedido
         doc.setDrawColor(200, 200, 200);
         doc.roundedRect(14, y, 182, 38, 2, 2);
 
@@ -1071,16 +1069,14 @@ function downloadAllOrdersPDF(mode) {
         doc.setFontSize(10);
         doc.text(`S/ ${o.price}`, 192, y + 8, { align: 'right' });
 
-        // Detalles dentro del bloque
         doc.setTextColor(15, 23, 42);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text(`1.   ${o.product}   |   Color: ${o.color}   |   Talla: ${o.size}`, 18, y + 25);
+        doc.text(`1.    ${o.product}    |    Color: ${o.color}    |    Talla: ${o.size}`, 18, y + 25);
 
         y += 45;
     });
 
-    // Total General al final del reporte
     if (y > 270) { doc.addPage(); y = 20; }
     doc.setDrawColor(15, 23, 42);
     doc.line(14, y, 196, y);
