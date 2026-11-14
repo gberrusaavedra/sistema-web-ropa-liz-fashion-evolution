@@ -682,6 +682,24 @@
             </div>
         </div>
 
+        <!-- MODAL GESTOR E INGRESAR PEDIDOS -->
+<div id="orderManagerModal" onclick="closeOrderManagerModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-7 shadow-2xl border border-slate-200 relative modal-animate my-auto" onclick="event.stopPropagation()">
+        
+        <button onclick="closeOrderManagerModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+
+        <div class="flex items-center gap-2.5 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-black text-slate-900">Módulo de Ingreso y Control de Pedidos</h3>
+                <p class="text-xs text-slate-500">Registra pedidos personalizados, edita tallas/colores y genera PDFs con foto.</p>
+            </div>
+        </div>
+
         <!-- Formulario para ingresar nuevo pedido -->
         <div class="space-y-3 text-xs sm:text-sm bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-5">
             <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Nuevo Registro de Pedido</h4>
@@ -722,6 +740,27 @@
                 Registrar y Separar Stock
             </button>
         </div>
+
+        <!-- Cabecera de listado y botones de descarga general con el total -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pt-2 border-t border-slate-100">
+            <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Pedidos Registrados Recientemente</h4>
+            <div class="flex items-center gap-1.5">
+                <button onclick="downloadAllOrdersPDF('general')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Descargar reporte general con el total">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF General
+                </button>
+                <button onclick="downloadAllOrdersPDF('categories')" class="bg-slate-950 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Descargar reporte por categorías">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF por Categorías
+                </button>
+            </div>
+        </div>
+        
+        <!-- Listado con scroll interno -->
+        <div id="manualOrdersList" class="space-y-3 max-h-56 overflow-y-auto pr-1">
+            <!-- Se carga dinámicamente con JS -->
+        </div>
+
+    </div>
+</div>
     <!-- Lógica unificada -->
     <script src="script.js"></script>
 </body>
