@@ -909,27 +909,44 @@ function closeOrderManagerModal() {
     document.getElementById('orderManagerModal').classList.remove('flex');
 }
 
-// Guardar Pedido Manual
+
+// Guardar Pedido Manual con soporte para archivos locales
 function handleSaveManualOrder(e) {
     e.preventDefault();
-    const newOrder = {
-        id: 'PED-' + Math.floor(1000 + Math.random() * 9000),
-        client: document.getElementById('manClientName').value,
-        product: document.getElementById('manProductName').value,
-        size: document.getElementById('manProductSize').value,
-        color: document.getElementById('manProductColor').value,
-        price: parseFloat(document.getElementById('manProductPrice').value).toFixed(2),
-        image: document.getElementById('manProductImg').value || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400',
-        date: new Date().toLocaleDateString()
+    
+    const fileInput = document.getElementById('manProductFile');
+    const file = fileInput ? fileInput.files[0] : null;
+
+    const saveOrderWithImage = (imageUrl) => {
+        const newOrder = {
+            id: 'PED-' + Math.floor(1000 + Math.random() * 9000),
+            client: document.getElementById('manClientName').value,
+            product: document.getElementById('manProductName').value,
+            size: document.getElementById('manProductSize').value,
+            color: document.getElementById('manProductColor').value,
+            price: parseFloat(document.getElementById('manProductPrice').value).toFixed(2),
+            image: imageUrl || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400',
+            date: new Date().toLocaleDateString()
+        };
+
+        let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+        orders.unshift(newOrder);
+        localStorage.setItem('liz_manual_orders', JSON.stringify(orders));
+
+        e.target.reset();
+        renderManualOrders();
+        showToast('¡Pedido registrado y stock separado con éxito!');
     };
 
-    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
-    orders.unshift(newOrder);
-    localStorage.setItem('liz_manual_orders', JSON.stringify(orders));
-
-    e.target.reset();
-    renderManualOrders();
-    showToast('¡Pedido registrado y stock separado con éxito!');
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(uploadEvent) {
+            saveOrderWithImage(uploadEvent.target.result);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        saveOrderWithImage(null);
+    }
 }
 
 // Renderizar listado de pedidos en el modal
