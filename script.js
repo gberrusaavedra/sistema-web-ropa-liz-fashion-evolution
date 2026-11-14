@@ -951,11 +951,7 @@ function handleSaveManualOrder() {
         if (fileInput) fileInput.value = '';
 
         renderManualOrders();
-        if (typeof showToast === 'function') {
-            showToast('¡Pedido de confección registrado con éxito!');
-        } else {
-            alert('¡Pedido registrado con éxito!');
-        }
+        showToast('¡Pedido de confección registrado con éxito!');
     };
 
     if (file) {
@@ -1058,7 +1054,7 @@ function downloadOrderPDF(orderId) {
 
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(9);
-    doc.text(`Emitido: ${new Date().toLocaleDateString()}`, 196, 20, { align: 'right' });
+    doc.text(`Emitido: ${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`, 196, 20, { align: 'right' });
     doc.text(`Código: ${o.id}`, 196, 26, { align: 'right' });
 
     doc.setTextColor(15, 23, 42);
@@ -1240,3 +1236,12 @@ function downloadAllOrdersPDF(mode) {
 
     doc.save('Reporte_General_Confeccion.pdf');
 }
+
+// INICIALIZACIÓN
+window.addEventListener('DOMContentLoaded', () => {
+    updateAuthUI();
+    renderFilterControls();
+    renderCart();
+    fetchProductsFromDB();
+    fetchOfferTime();
+});
