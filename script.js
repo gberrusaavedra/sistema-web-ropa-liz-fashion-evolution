@@ -911,179 +911,106 @@ function closeOrderManagerModal() {
 
 
 // ==========================================
-// MÓDULO DE GESTIÓN DE PEDIDOS Y REPORTES PDF
+// MÓDULO DE COMPROBANTES Y REPORTES PDF PROFESIONALES
 // ==========================================
 
-// Abrir / Cerrar Modal de Pedidos Manuales
-function openOrderManagerModal() {
-    document.getElementById('orderManagerModal').classList.remove('hidden');
-    document.getElementById('orderManagerModal').classList.add('flex');
-    renderManualOrders();
-}
-
-function closeOrderManagerModal() {
-    document.getElementById('orderManagerModal').classList.add('hidden');
-    document.getElementById('orderManagerModal').classList.remove('flex');
-}
-
-// Guardar Pedido Manual con soporte para archivos locales (Imágenes)
-function handleSaveManualOrder(e) {
-    e.preventDefault();
-    
-    const fileInput = document.getElementById('manProductFile');
-    const file = fileInput ? fileInput.files[0] : null;
-
-    const saveOrderWithImage = (imageUrl) => {
-        const newOrder = {
-            id: 'PED-' + Math.floor(1000 + Math.random() * 9000),
-            client: document.getElementById('manClientName').value,
-            product: document.getElementById('manProductName').value,
-            size: document.getElementById('manProductSize').value,
-            color: document.getElementById('manProductColor').value,
-            price: parseFloat(document.getElementById('manProductPrice').value).toFixed(2),
-            image: imageUrl || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400',
-            date: new Date().toLocaleDateString()
-        };
-
-        let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
-        orders.unshift(newOrder);
-        localStorage.setItem('liz_manual_orders', JSON.stringify(orders));
-
-        e.target.reset();
-        renderManualOrders();
-        if (typeof showToast === 'function') {
-            showToast('¡Pedido registrado y stock separado con éxito!');
-        }
-    };
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(uploadEvent) {
-            saveOrderWithImage(uploadEvent.target.result);
-        };
-        reader.readAsDataURL(file);
-    } else {
-        saveOrderWithImage(null);
-    }
-}
-
-// Renderizar listado de pedidos en el modal
-function renderManualOrders() {
-    const container = document.getElementById('manualOrdersList');
-    if (!container) return;
-    
-    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
-
-    if (orders.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay pedidos registrados todavía.</p>`;
-        return;
-    }
-
-    container.innerHTML = orders.map(o => `
-        <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs gap-3">
-            <img src="${o.image}" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0">
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-rose-600">${o.id}</span>
-                    <h5 class="font-extrabold text-slate-900 text-xs truncate">${o.product}</h5>
-                </div>
-                <p class="text-[11px] text-slate-500">Cliente: <strong>${o.client}</strong> | Talla: <span class="text-rose-600 font-bold">${o.size}</span> | Color: <span class="font-bold">${o.color}</span></p>
-                <p class="text-xs font-black text-slate-900">S/ ${o.price}</p>
-            </div>
-            <div class="flex flex-col gap-1.5 shrink-0">
-                <button onclick="sendManualOrderWhatsApp('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer" title="Enviar por WhatsApp">
-                    <i data-lucide="message-circle" class="w-4 h-4"></i>
-                </button>
-                <button onclick="downloadOrderPDF('${o.id}')" class="bg-slate-900 hover:bg-rose-600 text-white p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer" title="Descargar PDF">
-                    <i data-lucide="file-text" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
-    
-    if (window.lucide) lucide.createIcons();
-}
-
-// Enviar Pedido Individual por WhatsApp
-function sendManualOrderWhatsApp(orderId) {
-    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
-    let o = orders.find(item => item.id === orderId);
-    if (!o) return;
-
-    const message = `🛍️ *PEDIDO SEPARADO - LIZ FASHION EVOLUTION*\n\n` +
-                    `📌 *Código:* ${o.id}\n` +
-                    `👤 *Cliente:* ${o.client}\n` +
-                    `👗 *Prenda:* ${o.product}\n` +
-                    `📏 *Talla:* ${o.size}\n` +
-                    `🎨 *Color:* ${o.color}\n` +
-                    `💰 *Precio:* S/ ${o.price}\n\n` +
-                    `¡Hola! Deseo confirmar la separación de esta prenda.`;
-
-    window.open(`https://wa.me/51931598799?text=${encodeURIComponent(message)}`, '_blank');
-}
-
-// Descargar PDF del Pedido (Comprobante con diseño limpio corregido)
+// Descargar comprobante de un pedido individual (Con el diseño de la captura)
 function downloadOrderPDF(orderId) {
     let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
     let o = orders.find(item => item.id === orderId);
     if (!o) return;
 
-    const { jsPDF } = window.jspdf || {};
-    if (!jsPDF) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        script.onload = () => generatePDFDocument(o);
-        document.head.appendChild(script);
-    } else {
-        generatePDFDocument(o);
-    }
-}
-
-function generatePDFDocument(o) {
     const doc = new window.jspdf.jsPDF();
+    
+    // Encabezado de la marca
     doc.setFillColor(15, 23, 42); // slate-900
     doc.rect(0, 0, 210, 35, 'F');
     
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
+    doc.setFontSize(15);
     doc.setFont('helvetica', 'bold');
-    doc.text('LIZ FASHION EVOLUTION - COMPROBANTE DE PEDIDO', 14, 22);
-
-    doc.setTextColor(100, 100, 100);
+    doc.text('LIZ FASHION EVOLUTION', 14, 18);
     doc.setFontSize(10);
-    doc.text(`Código de Reserva: ${o.id}`, 14, 45);
-    doc.text(`Fecha: ${o.date}`, 14, 52);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Orden de Producción y Pedidos de Fabricación', 14, 26);
+
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(9);
+    doc.text(`Emitido: ${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`, 145, 20, { align: 'right' });
+    doc.text(`Código: ${o.id}`, 145, 26, { align: 'right' });
+
+    // Información del cliente y estado
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`CLIENTE: ${o.client.toUpperCase()}`, 14, 46);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Estado: Pendiente`, 14, 53);
+    doc.text(`Total Pedido:`, 160, 46);
+    doc.setTextColor(225, 29, 72); // rojo marca
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`S/ ${o.price}`, 196, 46, { align: 'right' });
 
     doc.setDrawColor(220, 220, 220);
-    doc.line(14, 58, 196, 58);
+    doc.line(14, 60, 196, 60);
+
+    // Cabecera de la tabla de artículos
+    doc.setFillColor(241, 245, 249);
+    doc.rect(14, 64, 182, 8, 'F');
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('#', 18, 69);
+    doc.text('FOTO', 35, 69);
+    doc.text('MODELO / PRENDA', 65, 69);
+    doc.text('COLOR', 130, 69);
+    doc.text('TALLA', 155, 69);
+    doc.text('SUBTOTAL', 180, 69);
+
+    // Insertar imagen miniatura si existe
+    let y = 76;
+    if (o.image && o.image.startsWith('data:image')) {
+        try {
+            doc.addImage(o.image, 'JPEG', 33, y, 12, 12);
+        } catch (err) {
+            console.log('No se pudo incrustar la imagen en el PDF');
+        }
+    }
+
+    // Datos del artículo en la tabla
+    doc.setFont('helvetica', 'normal');
+    doc.text('1', 18, y + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.text(o.product, 65, y + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Ropa / Liquidación', 65, y + 9);
 
     doc.setTextColor(15, 23, 42);
+    doc.setFontSize(10);
+    doc.text(o.color, 130, y + 6);
+    doc.text(o.size, 155, y + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`S/ ${o.price}`, 196, y + 6, { align: 'right' });
+
+    doc.setDrawColor(230, 230, 230);
+    doc.line(14, y + 16, 196, y + 16);
+
+    // Total General al pie
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Detalles del Artículo:', 14, 70);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.text(`• Cliente: ${o.client}`, 18, 80);
-    doc.text(`• Prenda: ${o.product}`, 18, 88);
-    doc.text(`• Talla Seleccionada: ${o.size}`, 18, 96);
-    doc.text(`• Color: ${o.color}`, 18, 104);
-    doc.text(`• Precio Total: S/ ${o.price}`, 18, 112);
-
-    // Caja de aviso corregida y centrada visualmente
-    doc.setFillColor(255, 241, 242);
-    doc.roundedRect(14, 130, 182, 25, 3, 3, 'F');
+    doc.text('TOTAL GENERAL:', 140, y + 28);
     doc.setTextColor(225, 29, 72);
-    doc.setFont('helvetica', 'bold');
-    doc.text('¡Stock separado por 30 minutos!', 18, 142.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Presenta este comprobante o envíalo por WhatsApp para concretar tu entrega.', 18, 150.5);
+    doc.text(`S/ ${o.price}`, 196, y + 28, { align: 'right' });
 
-    doc.save(`Pedido_${o.id}.pdf`);
+    doc.save(`Comprobante_${o.id}.pdf`);
 }
 
-// Descargar Todos los Pedidos (General o por Categorías/Tallas)
+// Descargar todos los pedidos en formato de reporte por bloques (Estilo la imagen que enviaste)
 function downloadAllOrdersPDF(mode) {
     let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
     if (orders.length === 0) {
@@ -1091,80 +1018,77 @@ function downloadAllOrdersPDF(mode) {
         return;
     }
 
-    const { jsPDF } = window.jspdf || {};
-    if (!jsPDF) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        script.onload = () => buildAllOrdersPDFDoc(orders, mode);
-        document.head.appendChild(script);
-    } else {
-        buildAllOrdersPDFDoc(orders, mode);
-    }
-}
-
-function buildAllOrdersPDFDoc(orders, mode) {
     const doc = new window.jspdf.jsPDF();
     
+    // Encabezado del reporte general
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 35, 'F');
     
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(15);
     doc.setFont('helvetica', 'bold');
-    doc.text(mode === 'general' ? 'REPORTE GENERAL DE PEDIDOS - LIZ FASHION' : 'REPORTE DE PEDIDOS POR TALLAS Y CATEGORÍAS', 14, 22);
-
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(9);
-    doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 14, 43);
-    doc.text(`Total de registros: ${orders.length}`, 150, 43);
-
-    doc.setDrawColor(220, 220, 220);
-    doc.line(14, 48, 196, 48);
-
-    let y = 56;
-    doc.setTextColor(15, 23, 42);
+    doc.text('LIZ FASHION EVOLUTION', 14, 18);
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Reporte General de Pedidos y Fabricación', 14, 26);
 
-    if (mode === 'general') {
-        orders.forEach((o, index) => {
-            if (y > 270) { doc.addPage(); y = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${index + 1}. [${o.id}] Cliente: ${o.client}`, 14, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Prenda: ${o.product} | Talla: ${o.size} | Color: ${o.color}`, 18, y + 6);
-            doc.text(`Precio: S/ ${o.price} | Fecha: ${o.date}`, 18, y + 12);
-            doc.setDrawColor(240, 240, 240);
-            doc.line(14, y + 16, 196, y + 16);
-            y += 22;
-        });
-    } else {
-        let grouped = {};
-        orders.forEach(o => {
-            let key = `Talla: ${o.size}`;
-            if (!grouped[key]) grouped[key] = [];
-            grouped[key].push(o);
-        });
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(9);
+    doc.text(`Emitido: ${new Date().toLocaleDateString()}`, 196, 20, { align: 'right' });
+    doc.text(`Pedidos incluidos: ${orders.length}`, 196, 26, { align: 'right' });
 
-        for (let group in grouped) {
-            if (y > 260) { doc.addPage(); y = 20; }
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(225, 29, 72);
-            doc.text(`--- ${group.toUpperCase()} ---`, 14, y);
-            y += 8;
+    let y = 48;
+    let totalGeneral = 0;
 
-            doc.setTextColor(15, 23, 42);
-            grouped[group].forEach(o => {
-                if (y > 270) { doc.addPage(); y = 20; }
-                doc.setFont('helvetica', 'bold');
-                doc.text(`• [${o.id}] ${o.product} (S/ ${o.price})`, 18, y);
-                doc.setFont('helvetica', 'normal');
-                doc.text(`  Cliente: ${o.client} | Color: ${o.color}`, 18, y + 6);
-                y += 14;
-            });
-            y += 6;
+    orders.forEach((o, index) => {
+        totalGeneral += parseFloat(o.price || 0);
+
+        if (y > 240) { 
+            doc.addPage(); 
+            y = 20; 
         }
-    }
 
-    doc.save(mode === 'general' ? 'Reporte_General_Pedidos.pdf' : 'Reporte_Pedidos_Por_Categorias.pdf');
-    if (typeof showToast === 'function') showToast('¡Reporte PDF descargado con éxito!');
+        // Bloque individual por pedido
+        doc.setDrawColor(200, 200, 200);
+        doc.roundedRect(14, y, 182, 38, 2, 2);
+
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(14, y, 182, 10, 2, 2, 'F');
+
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(8);
+        doc.text(`FAB-${o.id.replace('PED-', '')}`, 18, y + 6);
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(o.client.toUpperCase(), 45, y + 6);
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Total Pedido:', 160, y + 4);
+        doc.setTextColor(225, 29, 72);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`S/ ${o.price}`, 192, y + 8, { align: 'right' });
+
+        // Detalles dentro del bloque
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`1.   ${o.product}   |   Color: ${o.color}   |   Talla: ${o.size}`, 18, y + 25);
+
+        y += 45;
+    });
+
+    // Total General al final del reporte
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setDrawColor(15, 23, 42);
+    doc.line(14, y, 196, y);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(`TOTAL GENERAL: S/ ${totalGeneral.toFixed(2)}`, 196, y + 10, { align: 'right' });
+
+    doc.save('Reporte_Pedidos_Fabricacion_Liz_Fashion.pdf');
+    if (typeof showToast === 'function') showToast('¡Reporte generado con éxito!');
 }
