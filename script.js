@@ -255,8 +255,12 @@ function closeProductFormModal() {
 }
 
 function editProductById(id) {
-    const product = PRODUCTS.find(p => p.id === id);
-    if (product) openProductFormModal(product);
+    const product = PRODUCTS.find(p => String(p.id) === String(id));
+    if (product) {
+        openProductFormModal(product);
+    } else {
+        showToast('No se encontró la prenda para editar', 'error');
+    }
 }
 
 async function handleSaveProduct(e) {
