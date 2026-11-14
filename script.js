@@ -948,6 +948,7 @@ async function saveOfferEndTime(e) {
         showToast('Error al actualizar: ' + err.message, 'error');
     }
 }
+
 // =====================================================================
 // CORRECCIÓN: EDITAR PRODUCTO SIN ERRORES DE ID
 // =====================================================================
@@ -960,89 +961,3 @@ function editProductById(id) {
     }
 }
 
-// =====================================================================
-// CONTROL Y EDICIÓN DEL RELOJ DE OFERTA FLASH DESDE EL PANEL ADMIN
-// =====================================================================
-async function fetchOfferTime() {
-    try {
-        const res = await fetch(`${API_URL}/oferta-tiempo`);
-        const data = await res.json();
-        if (data && data.offer_end_time) {
-            startCountdown(Number(data.offer_end_time));
-        } else {
-            startCountdown(new Date().getTime() + 24 * 60 * 60 * 1000);
-        }
-    } catch (err) {
-        console.error('Error al obtener tiempo de oferta:', err);
-    }
-}
-
-function startCountdown(endTime) {
-    const timer = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = endTime - now;
-
-        if (distance < 0) {
-            clearInterval(timer);
-            const container = document.getElementById('countdownContainer');
-            if (container) {
-                container.innerHTML = "<span class='text-rose-500 font-bold col-span-4 py-2'>¡OFERTA FLASH FINALIZADA!</span>";
-            }
-            return;
-        }
-
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        if (document.getElementById('cd-days')) document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
-        if (document.getElementById('cd-hours')) document.getElementById('cd-hours').innerText = String(hours).padStart(2, '0');
-        if (document.getElementById('cd-minutes')) document.getElementById('cd-minutes').innerText = String(minutes).padStart(2, '0');
-        if (document.getElementById('cd-seconds')) document.getElementById('cd-seconds').innerText = String(seconds).padStart(2, '0');
-    }, 1000);
-}
-
-function openTimerModal() {
-    const modal = document.getElementById('timerModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-}
-
-function closeTimerModal() {
-    const modal = document.getElementById('timerModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-}
-
-async function saveOfferEndTime(e) {
-    e.preventDefault();
-    const inputVal = document.getElementById('offerEndInput').value;
-    if (!inputVal) return;
-
-    const offer_end_time = new Date(inputVal).getTime();
-    const { token } = getSession();
-
-    try {
-        const res = await fetch(`${API_URL}/oferta-tiempo`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ offer_end_time })
-        });
-
-        if (!res.ok) throw new Error('No se pudo guardar la fecha');
-        
-        showToast('¡Horario de oferta actualizado!', 'success');
-        closeTimerModal();
-        setTimeout(() => location.reload(), 1000);
-    } catch (err) {
-        showToast('Error al actualizar: ' + err.message, 'error');
-    }
-}
