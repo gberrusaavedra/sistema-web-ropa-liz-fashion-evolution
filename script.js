@@ -225,24 +225,43 @@ function openProductFormModal(product = null) {
     const modal = document.getElementById('productFormModal');
     if (!modal) return;
 
-    document.getElementById('formProductId').value = product ? product.id : '';
-    document.getElementById('productFormTitle').textContent = product ? 'Editar Prenda' : 'Subir Nueva Prenda';
-    document.getElementById('formCategory').value = product ? product.categoria : 'Polos/Camisetas';
-    document.getElementById('formTag').value = product ? product.tag : 'Normal';
-    document.getElementById('formSalePrice').value = product ? product.salePrice : '';
-    document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
-    document.getElementById('stocksS').value = product && product.stockBySize ? (product.stockBySize.S || 0) : 2;
-    document.getElementById('stockM').value = product && product.stockBySize ? (product.stockBySize.M || 0) : 3;
-    document.getElementById('stockL').value = product && product.stockBySize ? (product.stockBySize.L || 0) : 2;
-    document.getElementById('stockXL').value = product && product.stockBySize ? (product.stockBySize.XL || 0) : 1;
-    document.getElementById('formColors').value = product && product.colors ? product.colors.join(', ') : 'Corinto, Negro, Rojo, Beige';
-    document.getElementById('formDescription').value = product ? product.description : '';
-    document.getElementById('formImageUrl').value = product ? product.image : '';
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val !== undefined && val !== null ? val : '';
+    };
+
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+
+    setText('productFormTitle', product ? 'Editar Prenda' : 'Subir Nueva Prenda');
+    setVal('formProductId', product ? product.id : '');
+    setVal('formName', product ? (product.name || product.titulo || '') : '');
+    setVal('formCategory', product ? (product.category || product.categoria || 'Polos/Camisetas') : 'Polos/Camisetas');
+    setVal('formTag', product ? (product.tag || product.etiqueta || 'Normal') : 'Normal');
+    
+    const saleVal = product ? (product.salePrice !== undefined ? product.salePrice : product.precio_remate) : '';
+    const regVal = product ? (product.regularPrice !== undefined ? product.regularPrice : product.precio_original) : '';
+    
+    setVal('formSalePrice', saleVal);
+    setVal('formRegularPrice', regVal);
+    
+    const stock = product && (product.stockBySize || product.stock_by_size) ? (product.stockBySize || product.stock_by_size) : { S: 2, M: 3, L: 2, XL: 1 };
+    setVal('stocksS', stock.S || 0);
+    setVal('stockM', stock.M || 0);
+    setVal('stockL', stock.L || 0);
+    setVal('stockXL', stock.XL || 0);
+
+    const colorsArr = product && product.colors ? product.colors : ['Corinto', 'Negro', 'Rojo', 'Beige'];
+    setVal('formColors', Array.isArray(colorsArr) ? colorsArr.join(', ') : colorsArr);
+    setVal('formDescription', product ? (product.description || product.descripcion || '') : '');
+    setVal('formImageUrl', product ? (product.image || product.imagen_url || '') : '');
 
     const fileInput = document.getElementById('formImageFile');
     if (fileInput) fileInput.value = '';
 
-    toggleOfferFields();
+    if (typeof toggleOfferFields === 'function') toggleOfferFields();
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -250,13 +269,19 @@ function openProductFormModal(product = null) {
 
 function closeProductFormModal() {
     const modal = document.getElementById('productFormModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 
 function editProductById(id) {
-    const product = PRODUCTS.find(p => p.id === id);
-    if (product) openProductFormModal(product);
+    const product = PRODUCTS.find(p => String(p.id) === String(id));
+    if (product) {
+        openProductFormModal(product);
+    } else {
+        showToast('No se encontró la prenda para editar', 'error');
+    }
 }
 
 async function handleSaveProduct(e) {
