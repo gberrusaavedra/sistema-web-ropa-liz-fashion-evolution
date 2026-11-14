@@ -1,11 +1,10 @@
 // =====================================================================
 // 1. CONFIGURACIÓN GLOBAL Y CONEXIÓN A RENDER / NEON
 // =====================================================================
-const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api"; // <-- PEGA AQUÍ TU URL DE RENDER
+const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
 const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
 const WHATSAPP_PHONE = "931598799";
 
-// Catálogo dinámico cargado desde Neon (con respaldo inicial por si Render está despertando)
 let PRODUCTS = [
     {
         id: 1,
@@ -40,7 +39,7 @@ const SIZES = ['Todas', 'S', 'M', 'L', 'XL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
 // =====================================================================
-// 2. AUTENTICACIÓN Y ROLES (ADMINISTRADOR VS CLIENTE)
+// 2. AUTENTICACIÓN Y ROLES
 // =====================================================================
 function getSession() {
     const token = localStorage.getItem('rs_token');
@@ -157,7 +156,7 @@ function logoutUser() {
 }
 
 // =====================================================================
-// 3. SINCRONIZACIÓN CRUD CON NEON (CARGAR, CREAR, EDITAR, ELIMINAR)
+// 3. SINCRONIZACIÓN CRUD CON NEON Y GESTIÓN DE PRODUCTOS
 // =====================================================================
 async function fetchProductsFromDB() {
     try {
@@ -172,9 +171,13 @@ async function fetchProductsFromDB() {
                     : (p.stock_by_size || { S: 2, M: 3, L: 2, XL: 1 });
                 const total = Object.values(parsedStock).reduce((a, b) => a + b, 0);
 
-              const parsedColors = p.colores
+                const parsedColors = p.colores
                     ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
                     : ['Corinto', 'Negro', 'Rojo', 'Beige', 'Blanco'];
+
+                const parsedImages = p.imagenes
+                    ? (Array.isArray(p.imagenes) ? p.imagenes : JSON.parse(p.imagenes || '[]'))
+                    : [p.imagen_url];
 
                 return {
                     id: p.id,
@@ -185,6 +188,7 @@ async function fetchProductsFromDB() {
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
                     image: p.imagen_url,
+                    images: parsedImages.length > 0 ? parsedImages : [p.imagen_url],
                     stockBySize: parsedStock,
                     colors: parsedColors,
                     maxInitialStock: Math.max(total + 5, 15),
@@ -235,7 +239,6 @@ function openProductFormModal(product = null) {
     document.getElementById('formDescription').value = product ? product.description : '';
     document.getElementById('formImageUrl').value = product ? product.image : '';
 
-    // Limpieza segura del input de archivos sin romper el navegador
     const fileInput = document.getElementById('formImageFile');
     if (fileInput) fileInput.value = '';
 
@@ -244,6 +247,7 @@ function openProductFormModal(product = null) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
+
 function closeProductFormModal() {
     const modal = document.getElementById('productFormModal');
     modal.classList.add('hidden');
@@ -269,7 +273,7 @@ async function handleSaveProduct(e) {
         imagesArray = imageUrlInput.split(',').map(url => url.trim()).filter(Boolean);
     }
 
-    if (imageFileInput.files && imageFileInput.files.length > 0) {
+    if (imageFileInput && imageFileInput.files && imageFileInput.files.length > 0) {
         const files = Array.from(imageFileInput.files);
         const base64Promises = files.map(file => {
             return new Promise((resolve) => {
@@ -278,7 +282,8 @@ async function handleSaveProduct(e) {
                 reader.readAsDataURL(file);
             });
         });
-        imagesArray = await Promise.all(base64Promises);
+        const uploadedBase64s = await Promise.all(base64Promises);
+        imagesArray = imagesArray.concat(uploadedBase64s);
     }
 
     if (imagesArray.length === 0) {
@@ -337,6 +342,7 @@ async function handleSaveProduct(e) {
         showToast('Error de conexión con el servidor', 'error');
     }
 }
+
 async function deleteProductById(id) {
     if (!confirm('¿Estás seguro de eliminar esta prenda permanentemente?')) return;
     const { token } = getSession();
@@ -359,7 +365,7 @@ async function deleteProductById(id) {
 }
 
 // =====================================================================
-// 4. UTILIDADES DE FORMATO Y CÁLCULO
+// 4. FORMATO Y CÁLCULOS
 // =====================================================================
 function formatPrice(penAmount) {
     if (state.currency === 'USD') {
@@ -464,9 +470,6 @@ function applyFilters() {
     document.getElementById('resultsCount').textContent = filtered.length;
 
     renderProductGrid(filtered);
-    if (query.length >= 2 && window.scrollY < 320) {
-        document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
 }
 
 function renderProductGrid(productsList) {
@@ -482,7 +485,7 @@ function renderProductGrid(productsList) {
 
     emptyState.classList.add('hidden');
 
-   grid.innerHTML = productsList.map(product => {
+    grid.innerHTML = productsList.map(product => {
         const discountPct = getDiscountPercent(product.regularPrice, product.salePrice);
         const totalStock = getTotalStock(product);
         const stockPercent = Math.min(100, Math.max(10, Math.round((totalStock / product.maxInitialStock) * 100)));
@@ -504,7 +507,6 @@ function renderProductGrid(productsList) {
 
         return `
             <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
-                <!-- Carrusel Deslizante de Imágenes -->
                 <div class="relative aspect-[4/5] bg-slate-100 overflow-hidden group/img">
                     <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(0%);">
                         ${imagesList.map(imgUrl => `
@@ -620,54 +622,10 @@ function selectCardColor(productId, color) {
     state.selectedColorsPerCard[productId] = color;
     applyFilters();
 }
-function selectCardSize(productId, size) {
-    state.selectedSizesPerCard[productId] = size;
-    applyFilters();
-}
 
 // =====================================================================
-// 6. VISTA RÁPIDA, CARRITO Y WHATSAPP
+// 6. CARRITO, WHATSAPP Y UTILIDADES
 // =====================================================================
-let modalSelectedSize = null;
-
-function openQuickView(productId) {
-    const product = PRODUCTS.find(p => p.id === productId);
-    if (!product) return;
-    modalSelectedSize = state.selectedSizesPerCard[product.id] || getFirstAvailableSize(product);
-
-    const discountPct = getDiscountPercent(product.regularPrice, product.salePrice);
-    document.getElementById('quickViewContent').innerHTML = `
-        <div class="relative bg-slate-100 aspect-[4/5] md:h-full">
-            <img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover">
-            <span class="absolute top-4 left-4 bg-rose-600 text-white text-sm font-black px-3 py-1 rounded-xl">-${discountPct}% OFF</span>
-        </div>
-        <div class="p-6 sm:p-8 flex flex-col justify-between space-y-4">
-            <div class="space-y-3">
-                <span class="text-xs font-bold uppercase text-rose-600">${product.category}</span>
-                <h2 class="text-xl sm:text-2xl font-black text-slate-900">${product.name}</h2>
-                <div class="bg-rose-50 border border-rose-100 rounded-2xl p-3.5">
-                    <div class="text-xs text-slate-500 line-through">Antes: ${formatPrice(product.regularPrice)}</div>
-                    <div class="text-2xl font-black text-rose-600">${formatPrice(product.salePrice)}</div>
-                </div>
-                <p class="text-sm text-slate-600">${product.description}</p>
-                <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600"><strong>Material:</strong> ${product.material}</div>
-            </div>
-            <button onclick="addToCart(${product.id}, '${modalSelectedSize}'); closeQuickView(); toggleCartDrawer(true);" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
-                <i data-lucide="shopping-bag" class="w-5 h-5"></i> Agregar al Pedido
-            </button>
-        </div>
-    `;
-    const modal = document.getElementById('quickViewModal');
-    modal.classList.remove('hidden'); modal.classList.add('flex');
-    lucide.createIcons();
-}
-
-function closeQuickView() {
-    const modal = document.getElementById('quickViewModal');
-    modal.classList.add('hidden'); modal.classList.remove('flex');
-}
-document.getElementById('quickViewModal').addEventListener('click', closeQuickView);
-
 function addToCart(productId, explicitSize = null, explicitColor = null) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
@@ -676,14 +634,6 @@ function addToCart(productId, explicitSize = null, explicitColor = null) {
     const availableStock = product.stockBySize[size] || 0;
 
     if (availableStock <= 0) return showToast('Talla agotada', 'error');
-
-    const totalSameSizeInCart = state.cart
-        .filter(i => i.productId === productId && i.size === size)
-        .reduce((sum, i) => sum + i.qty, 0);
-
-    if (totalSameSizeInCart >= availableStock) {
-        return showToast(`Stock máximo en talla ${size}: ${availableStock} und.`, 'warning');
-    }
 
     const existing = state.cart.find(i => i.productId === productId && i.size === size && i.color === color);
     if (existing) {
@@ -772,20 +722,6 @@ function inquireSingleProductWhatsApp(productId) {
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-function simulateCheckout() {
-    state.cart = [];
-    renderCart();
-    toggleCartDrawer(false);
-    document.getElementById('reservationCode').textContent = `#RMT-${Math.floor(1000 + Math.random() * 9000)}`;
-    const modal = document.getElementById('orderSuccessModal');
-    modal.classList.remove('hidden'); modal.classList.add('flex');
-}
-
-function closeSuccessModal() {
-    const modal = document.getElementById('orderSuccessModal');
-    modal.classList.add('hidden'); modal.classList.remove('flex');
-}
-
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
@@ -797,752 +733,12 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.remove(), 3000);
 }
 
-let countdownInterval = null;
-
-function getOfferEndTimestamp() {
-    const saved = localStorage.getItem('liz_offer_end_time');
-    if (saved) return parseInt(saved, 10);
-    const defaultEnd = new Date();
-    defaultEnd.setDate(defaultEnd.getDate() + 1);
-    defaultEnd.setHours(23, 59, 59, 0);
-    return defaultEnd.getTime();
-}
-
-function openTimerModal() {
-    const endTs = getOfferEndTimestamp();
-    const dt = new Date(endTs - new Date().getTimezoneOffset() * 60000);
-    document.getElementById('offerEndInput').value = dt.toISOString().slice(0, 16);
-    const modal = document.getElementById('timerModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    lucide.createIcons();
-}
-
-function closeTimerModal() {
-    const modal = document.getElementById('timerModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
-
-function saveOfferEndTime(e) {
-    e.preventDefault();
-    const val = document.getElementById('offerEndInput').value;
-    if (!val) return;
-    const targetTime = new Date(val).getTime();
-    localStorage.setItem('liz_offer_end_time', targetTime.toString());
-    closeTimerModal();
-    startCountdownTimer();
-    showToast('Horario de oferta actualizado correctamente', 'success');
-}
-
-function startCountdownTimer() {
-    if (countdownInterval) clearInterval(countdownInterval);
-
-    const updateClock = () => {
-        const now = Date.now();
-        const end = getOfferEndTimestamp();
-        const diffSec = Math.max(0, Math.floor((end - now) / 1000));
-
-        const days = Math.floor(diffSec / 86400);
-        const hours = Math.floor((diffSec % 86400) / 3600);
-        const minutes = Math.floor((diffSec % 3600) / 60);
-        const seconds = diffSec % 60;
-
-        document.getElementById('cd-days').textContent = String(days).padStart(2, '0');
-        document.getElementById('cd-hours').textContent = String(hours).padStart(2, '0');
-        document.getElementById('cd-minutes').textContent = String(minutes).padStart(2, '0');
-        document.getElementById('cd-seconds').textContent = String(seconds).padStart(2, '0');
-    };
-
-    updateClock();
-    countdownInterval = setInterval(updateClock, 1000);
-}
 function updateGlobalStockCounter() {
     const total = PRODUCTS.reduce((sum, p) => sum + getTotalStock(p), 0);
     document.getElementById('totalStockCounter').textContent = total;
 }
 
-function setupSearchListeners() {
-    const dInput = document.getElementById('searchInputDesktop');
-    const mInput = document.getElementById('searchInputMobile');
-    const clearBtn = document.getElementById('clearSearchDesktop');
-
-    const onSearch = (val) => {
-        state.searchQuery = val;
-        dInput.value = val;
-        mInput.value = val;
-        clearBtn.classList.toggle('hidden', !val);
-        applyFilters();
-    };
-    dInput.addEventListener('input', e => onSearch(e.target.value));
-    mInput.addEventListener('input', e => onSearch(e.target.value));
-    clearBtn.addEventListener('click', () => onSearch(''));
-}
-
-// ARRANQUE DE LA APLICACIÓN
-window.addEventListener('DOMContentLoaded', () => {
-    updateAuthUI();
-    renderFilterControls();
-    renderCart();
-    setupSearchListeners();
-    startCountdownTimer();
-    fetchProductsFromDB();
-});
-// =========================================================
-// MÓDULO: PEDIDOS DE FABRICACIÓN (ADMIN Y CLIENTE)
-// =========================================================
-let fabModelos = [];
-let fabCart = [];
-
-async function openFabricacionModal() {
-    const modal = document.getElementById('fabricacionModal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    const { user } = getSession();
-    const isAdmin = user && user.rol === 'admin';
-    document.getElementById('tabFabAdminModelo').classList.toggle('hidden', !isAdmin);
-    document.getElementById('tabFabAdminPedidos').classList.toggle('hidden', !isAdmin);
-
-    switchFabTab('cliente');
-    await loadFabModelos();
-    if (isAdmin) await loadFabAdminOrders();
-    lucide.createIcons();
-}
-
-function closeFabricacionModal() {
-    const modal = document.getElementById('fabricacionModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
-
-function switchFabTab(tab) {
-    const views = {
-        'cliente': 'viewFabCliente',
-        'admin-modelo': 'viewFabAdminModelo',
-        'admin-pedidos': 'viewFabAdminPedidos'
-    };
-    const tabs = {
-        'cliente': 'tabFabCliente',
-        'admin-modelo': 'tabFabAdminModelo',
-        'admin-pedidos': 'tabFabAdminPedidos'
-    };
-
-    Object.keys(views).forEach(k => {
-        document.getElementById(views[k]).classList.toggle('hidden', k !== tab);
-        const btn = document.getElementById(tabs[k]);
-        if (k === tab) {
-            btn.classList.add('bg-white', 'text-slate-900', 'border', 'border-b-0', 'border-slate-200');
-            btn.classList.remove('text-slate-600');
-        } else {
-            btn.classList.remove('bg-white', 'text-slate-900', 'border', 'border-b-0', 'border-slate-200');
-            btn.classList.add('text-slate-600');
-        }
-    });
-}
-
-async function loadFabModelos() {
-    const grid = document.getElementById('fabModelosGrid');
-    grid.innerHTML = '<p class="text-xs text-slate-400 col-span-full">Cargando modelos disponibles para fabricación...</p>';
-    try {
-        const res = await fetch(`${API_URL}/fabricacion/modelos`);
-        fabModelos = await res.json();
-        renderFabModelos();
-    } catch (err) {
-        grid.innerHTML = '<p class="text-xs text-rose-600 col-span-full">Error al cargar modelos de fabricación.</p>';
-    }
-}
-
-function renderFabModelos() {
-    const grid = document.getElementById('fabModelosGrid');
-    const { user } = getSession();
-    const isAdmin = user && user.rol === 'admin';
-
-    if (!fabModelos.length) {
-        grid.innerHTML = '<div class="col-span-full text-center py-8 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-400">No hay modelos disponibles para fabricación en este momento.</div>';
-        return;
-    }
-
-    const now = Date.now();
-    grid.innerHTML = fabModelos.map(m => {
-        const colores = Array.isArray(m.colores) ? m.colores : JSON.parse(m.colores || '[]');
-        const tallas = Array.isArray(m.tallas) ? m.tallas : JSON.parse(m.tallas || '[]');
-        const deadline = Number(m.fecha_limite);
-        const vencido = !isNaN(deadline) && deadline <= now;
-        const fechaFormateada = !isNaN(deadline)
-            ? new Date(deadline).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : '';
-
-        return `
-        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs flex flex-col">
-            <div class="relative w-full h-64 sm:h-72 bg-slate-100 flex items-center justify-center p-2">
-                <img src="${m.imagen_url}" alt="${m.titulo}" class="max-h-full max-w-full w-auto h-auto object-contain rounded-lg">
-                <span class="absolute top-3 left-3 bg-slate-900/90 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg">
-                    ${m.categoria || 'Modelo'}
-                </span>
-                ${isAdmin ? `
-                    <div class="absolute top-3 right-3 flex items-center gap-1.5">
-                        <button type="button" onclick="editarFechaFabModel(${m.id}, ${deadline || now})" class="bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-extrabold px-2.5 py-1 rounded-lg shadow cursor-pointer">
-                            Editar Fecha
-                        </button>
-                        <button type="button" onclick="deleteFabModel(${m.id})" class="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow cursor-pointer">
-                            Eliminar
-                        </button>
-                    </div>
-                ` : ''}
-            </div>
-
-            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                    <div class="flex items-start justify-between gap-2">
-                        <h5 class="font-black text-slate-900 text-sm">${m.titulo}</h5>
-                        <span class="font-black text-rose-600 text-sm shrink-0">S/ ${Number(m.precio).toFixed(2)}</span>
-                    </div>
-                    ${m.descripcion ? `<p class="text-[11px] text-slate-500 mt-1">${m.descripcion}</p>` : ''}
-                    <p class="text-[11px] mt-1.5 font-semibold ${vencido ? 'text-rose-600' : 'text-emerald-700'}">
-                        ${vencido ? '⛔ Lote cerrado' : `⏳ Cierra: ${fechaFormateada}`}
-                    </p>
-                </div>
-
-                ${vencido ? `
-                    <div class="space-y-2">
-                        <div class="w-full py-2.5 px-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-center text-xs font-extrabold">
-                            Fecha límite vencida
-                        </div>
-                        ${isAdmin ? `
-                            <button type="button" onclick="editarFechaFabModel(${m.id}, ${deadline || now})" class="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-amber-500 hover:text-slate-950 text-white text-xs font-bold transition-colors cursor-pointer">
-                                Reabrir con Nueva Fecha Límite
-                            </button>
-                        ` : ''}
-                    </div>
-                ` : `
-                   <div class="space-y-2 text-xs">
-                        <div class="grid grid-cols-3 gap-1.5">
-                            <select id="fabColor_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
-                                ${colores.map(c => `<option value="${c}">${c}</option>`).join('')}
-                            </select>
-                            <select id="fabTalla_${m.id}" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 font-semibold">
-                                ${tallas.map(t => `<option value="${t}">${t}</option>`).join('')}
-                            </select>
-                            <input type="number" id="fabQty_${m.id}" min="1" value="1" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center font-bold">
-                        </div>
-                        <button type="button" onclick="addToFabCart(${m.id})" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer">
-                            + Agregar a mi Pedido
-                        </button>
-                    </div>
-                `}
-            </div>
-        </div>`;
-    }).join('');
-}
-
-async function editarFechaFabModel(id, timestampActual) {
-    const dt = new Date(timestampActual ? Number(timestampActual) : Date.now() + 86400000);
-    const pad = n => String(n).padStart(2, '0');
-    const sugerida = `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-
-    const nuevaFecha = prompt('Ingresa la nueva fecha y hora límite (Formato: AAAA-MM-DDTHH:MM):', sugerida);
-    if (!nuevaFecha) return;
-
-    const parsed = new Date(nuevaFecha);
-    if (isNaN(parsed.getTime())) {
-        showToast('Formato de fecha inválido. Usa AAAA-MM-DDTHH:MM', 'error');
-        return;
-    }
-
-    const { token } = getSession();
-    try {
-        const res = await fetch(`${API_URL}/fabricacion/modelos/${id}/fecha`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ fecha_limite: parsed.getTime() })
-        });
-        if (!res.ok) throw new Error('Error al actualizar');
-        showToast('Fecha límite actualizada y lote reabierto', 'success');
-        loadFabModelos();
-    } catch (err) {
-        showToast('No se pudo actualizar la fecha límite', 'error');
-    }
-}
-function addToFabCart(modelId) {
-    const model = fabModelos.find(m => m.id === modelId);
-    if (!model) return;
-    const color = document.getElementById(`fabColor_${modelId}`).value;
-    const talla = document.getElementById(`fabTalla_${modelId}`).value;
-    const cantidad = Math.max(1, parseInt(document.getElementById(`fabQty_${modelId}`).value) || 1);
-
-    const existing = fabCart.find(i => i.id === modelId && i.color === color && i.talla === talla);
-    if (existing) {
-        existing.cantidad += cantidad;
-    } else {
-        fabCart.push({
-            id: model.id,
-            titulo: model.titulo,
-            categoria: model.categoria,
-            precio: Number(model.precio),
-            color,
-            talla,
-            cantidad,
-            imagen_url: model.imagen_url
-        });
-    }
-    renderFabCart();
-    showToast('Prenda agregada a tu pedido de fabricación', 'success');
-}
-
-function removeFromFabCart(idx) {
-    fabCart.splice(idx, 1);
-    renderFabCart();
-}
-
-function renderFabCart() {
-    const list = document.getElementById('fabCartList');
-    const countEl = document.getElementById('fabCartCount');
-    const totalEl = document.getElementById('fabCartTotal');
-
-    const totalUnidades = fabCart.reduce((s, i) => s + i.cantidad, 0);
-    const totalMonto = fabCart.reduce((s, i) => s + (i.precio * i.cantidad), 0);
-
-    countEl.textContent = totalUnidades;
-    totalEl.textContent = `S/ ${totalMonto.toFixed(2)}`;
-
-    if (!fabCart.length) {
-        list.innerHTML = '<p class="text-slate-400 italic">Aún no agregas prendas a tu pedido de fabricación.</p>';
-        return;
-    }
-
-    list.innerHTML = fabCart.map((item, idx) => `
-        <div class="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-slate-200">
-            <div class="flex items-center gap-2.5">
-                <img src="${item.imagen_url}" class="w-10 h-10 rounded-lg object-cover shrink-0">
-                <div>
-                    <p class="font-bold text-slate-900">${item.titulo} (${item.cantidad} und.)</p>
-                    <p class="text-[11px] text-slate-500">Color: <strong>${item.color}</strong> • Talla: <strong>${item.talla}</strong> • S/ ${(item.precio * item.cantidad).toFixed(2)}</p>
-                </div>
-            </div>
-            <button type="button" onclick="removeFromFabCart(${idx})" class="text-rose-600 hover:underline font-bold text-[11px] cursor-pointer">Quitar</button>
-        </div>
-    `).join('');
-}
-
-async function handleSaveFabModel(e) {
-    e.preventDefault();
-    const { token } = getSession();
-    const titulo = document.getElementById('fabModTitulo').value.trim();
-    const categoria = document.getElementById('fabModCategoria').value.trim();
-    const precio = parseFloat(document.getElementById('fabModPrecio').value);
-    const fechaVal = document.getElementById('fabModFechaLimite').value;
-    const colores = document.getElementById('fabModColores').value.split(',').map(s => s.trim()).filter(Boolean);
-    const tallas = document.getElementById('fabModTallas').value.split(',').map(s => s.trim()).filter(Boolean);
-    const descripcion = document.getElementById('fabModDesc').value.trim();
-    const fileInput = document.getElementById('fabModImgFile');
-    let imagen_url = document.getElementById('fabModImgUrl').value.trim();
-
-    if (fileInput.files && fileInput.files[0]) {
-        imagen_url = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = ev => resolve(ev.target.result);
-            reader.readAsDataURL(fileInput.files[0]);
-        });
-    }
-
-    if (!imagen_url) {
-        showToast('Sube una imagen o pega una URL válida', 'error');
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_URL}/fabricacion/modelos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({
-                titulo,
-                categoria,
-                precio,
-                colores,
-                tallas,
-                imagen_url,
-                fecha_limite: new Date(fechaVal).getTime(),
-                descripcion
-            })
-        });
-        if (res.ok) {
-            e.target.reset();
-            showToast('Modelo publicado para fabricación', 'success');
-            await loadFabModelos();
-            switchFabTab('cliente');
-        } else {
-            const err = await res.json();
-            showToast(err.error || 'Error al guardar modelo', 'error');
-        }
-    } catch (err) {
-        showToast('Error de conexión con el servidor', 'error');
-    }
-}
-
-async function deleteFabModel(id) {
-    if (!confirm('¿Eliminar este modelo de fabricación?')) return;
-    const { token } = getSession();
-    try {
-        const res = await fetch(`${API_URL}/fabricacion/modelos/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-            showToast('Modelo eliminado', 'success');
-            await loadFabModelos();
-        }
-    } catch (err) {
-        showToast('No se pudo eliminar', 'error');
-    }
-}
-
-async function submitFabricacionOrder(e) {
-    e.preventDefault();
-    if (!fabCart.length) {
-        showToast('Agrega al menos una prenda a tu pedido', 'error');
-        return;
-    }
-
-    const cliente_nombre = document.getElementById('fabClientName').value.trim();
-    const cliente_telefono = document.getElementById('fabClientPhone').value.trim();
-    const notas = document.getElementById('fabClientNotes').value.trim();
-    const total = fabCart.reduce((s, i) => s + (i.precio * i.cantidad), 0);
-
-    try {
-        const res = await fetch(`${API_URL}/fabricacion/pedidos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cliente_nombre, cliente_telefono, notas, items: fabCart, total })
-        });
-        const savedOrder = await res.json();
-        if (!res.ok) {
-            showToast(savedOrder.error || 'Error al registrar pedido', 'error');
-            return;
-        }
-
-        // Construir mensaje de WhatsApp con fotos e información completa del pedido
-        let msg = `🧵 *NUEVO PEDIDO DE FABRICACIÓN - LIZ FASHION EVOLUTION*\n`;
-        msg += `📋 *Código:* ${savedOrder.codigo_pedido}\n`;
-        msg += `👤 *Cliente:* ${cliente_nombre}\n`;
-        msg += `📱 *WhatsApp:* ${cliente_telefono}\n`;
-        if (notas) msg += `📝 *Notas:* ${notas}\n`;
-        msg += `\n*DETALLE DEL PEDIDO TOTAL:*\n`;
-
-        fabCart.forEach((item, idx) => {
-            msg += `\n${idx + 1}. *${item.titulo}* (${item.categoria})\n`;
-            msg += `   • Color: ${item.color} | Talla: ${item.talla} | Cant: ${item.cantidad}\n`;
-            msg += `   • Subtotal: S/ ${(item.precio * item.cantidad).toFixed(2)}\n`;
-            if (item.imagen_url && item.imagen_url.startsWith('http')) {
-                msg += `   • Foto modelo: ${item.imagen_url}\n`;
-            }
-        });
-
-        msg += `\n💰 *TOTAL PEDIDO FABRICACIÓN: S/ ${total.toFixed(2)}*`;
-
-        const waUrl = `https://wa.me/51931598799?text=${encodeURIComponent(msg)}`;
-        window.open(waUrl, '_blank');
-
-        fabCart = [];
-        renderFabCart();
-        e.target.reset();
-        showToast(`Pedido ${savedOrder.codigo_pedido} guardado y enviado a WhatsApp`, 'success');
-    } catch (err) {
-        showToast('Error de conexión con el servidor', 'error');
-    }
-}
-
-async function loadFabAdminOrders() {
-    const container = document.getElementById('fabAdminOrdersList');
-    const { token } = getSession();
-    try {
-        const res = await fetch(`${API_URL}/fabricacion/pedidos`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const orders = await res.json();
-        if (!orders.length) {
-            container.innerHTML = '<p class="text-slate-400">Aún no hay pedidos de fabricación registrados.</p>';
-            return;
-        }
-        container.innerHTML = orders.map(o => {
-            const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
-            return `
-            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2.5">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <span class="font-black text-rose-600">${o.codigo_pedido}</span> •
-                        <strong class="text-slate-900">${o.cliente_nombre}</strong> (${o.cliente_telefono})
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-black text-slate-900">S/ ${Number(o.total).toFixed(2)}</span>
-                        <select onchange="updateFabOrderStatus(${o.id}, this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 font-bold text-[11px]">
-                            <option value="Pendiente" ${o.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                            <option value="En Fabricación" ${o.estado === 'En Fabricación' ? 'selected' : ''}>En Fabricación</option>
-                            <option value="Entregado" ${o.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    ${items.map(it => `
-                        <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
-                            <img src="${it.imagen_url}" class="w-12 h-12 rounded-lg object-cover shrink-0">
-                            <div>
-                                <p class="font-bold text-slate-900">${it.titulo} x${it.cantidad}</p>
-                                <p class="text-[11px] text-slate-500">Color: ${it.color} • Talla: ${it.talla}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>`;
-        }).join('');
-    } catch (err) {
-        container.innerHTML = '<p class="text-rose-600">Error al cargar pedidos recibidos.</p>';
-    }
-}
-
-async function updateFabOrderStatus(id, estado) {
-    const { token } = getSession();
-    await fetch(`${API_URL}/fabricacion/pedidos/${id}/estado`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ estado })
-    });
-    showToast('Estado del pedido actualizado', 'success');
-}
-
-// =========================================================
-// CORRECCIÓN DEL BUSCADOR (DESKTOP Y MÓVIL)
-// =========================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const desktopInput = document.getElementById('searchInputDesktop');
-    const mobileInput = document.getElementById('searchInputMobile');
-    const clearBtn = document.getElementById('clearSearchDesktop');
-
-    function sincronizarYBuscar(valor) {
-        if (desktopInput && desktopInput.value !== valor) desktopInput.value = valor;
-        if (mobileInput && mobileInput.value !== valor) mobileInput.value = valor;
-
-        if (clearBtn) {
-            clearBtn.classList.toggle('hidden', valor.trim().length === 0);
-        }
-
-        if (typeof state !== 'undefined') {
-            state.searchQuery = valor;
-        }
-        if (typeof applyFilters === 'function') {
-            applyFilters();
-        }
-    }
-
-    if (desktopInput) {
-        desktopInput.addEventListener('input', (e) => sincronizarYBuscar(e.target.value));
-    }
-    if (mobileInput) {
-        mobileInput.addEventListener('input', (e) => sincronizarYBuscar(e.target.value));
-    }
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            sincronizarYBuscar('');
-            if (desktopInput) desktopInput.focus();
-        });
-    }
-});
-let cachedFabOrders = [];
-
-async function loadFabAdminOrders() {
-    const container = document.getElementById('fabAdminOrdersList');
-    const { token } = getSession();
-    container.innerHTML = '<p class="text-slate-400">Cargando pedidos de fabricación...</p>';
-    try {
-        const res = await fetch(`${API_URL}/fabricacion/pedidos`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const orders = await res.json();
-        cachedFabOrders = Array.isArray(orders) ? orders : [];
-
-        if (!cachedFabOrders.length) {
-            container.innerHTML = '<p class="text-slate-400">Aún no hay pedidos de fabricación registrados.</p>';
-            return;
-        }
-
-        container.innerHTML = cachedFabOrders.map(o => {
-            const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
-            const fechaRegistro = o.created_at
-                ? new Date(o.created_at).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                : '';
-
-            return `
-            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 pb-2.5">
-                    <div class="space-y-0.5">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="font-black text-rose-600 text-sm">${o.codigo_pedido}</span>
-                            <span class="font-black text-slate-900 text-sm uppercase">${o.cliente_nombre}</span>
-                        </div>
-                        <p class="text-[11px] text-slate-600">
-                            📱 WhatsApp: <strong>${o.cliente_telefono}</strong>
-                            ${fechaRegistro ? ` • 🕒 ${fechaRegistro}` : ''}
-                        </p>
-                        ${o.notas ? `<p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg inline-block mt-1">📝 ${o.notas}</p>` : ''}
-                    </div>
-
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="font-black text-slate-900 text-sm">S/ ${Number(o.total).toFixed(2)}</span>
-                        <select onchange="updateFabOrderStatus(${o.id}, this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1 font-bold text-[11px]">
-                            <option value="Pendiente" ${o.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                            <option value="En Fabricación" ${o.estado === 'En Fabricación' ? 'selected' : ''}>En Fabricación</option>
-                            <option value="Entregado" ${o.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
-                        </select>
-                        <button type="button" onclick="downloadSingleFabOrderPDF(${o.id})" class="bg-slate-900 hover:bg-rose-600 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] inline-flex items-center gap-1 cursor-pointer">
-                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF
-                        </button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    ${items.map(it => `
-                        <div class="flex items-center gap-2.5 bg-white p-2.5 rounded-xl border border-slate-200">
-                            <img src="${it.imagen_url}" class="w-12 h-12 rounded-lg object-cover shrink-0">
-                            <div class="min-w-0">
-                                <p class="font-bold text-slate-900 truncate">${it.titulo} <span class="text-rose-600">x${it.cantidad}</span></p>
-                                <p class="text-[11px] text-slate-500">Color: <strong>${it.color}</strong> • Talla: <strong>${it.talla}</strong></p>
-                                <p class="text-[11px] font-bold text-slate-700">Subtotal: S/ ${(Number(it.precio) * Number(it.cantidad)).toFixed(2)}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>`;
-        }).join('');
-        lucide.createIcons();
-    } catch (err) {
-        container.innerHTML = '<p class="text-rose-600">Error al cargar pedidos recibidos.</p>';
-    }
-}
-
-async function updateFabOrderStatus(id, estado) {
-    const { token } = getSession();
-    await fetch(`${API_URL}/fabricacion/pedidos/${id}/estado`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ estado })
-    });
-    showToast('Estado del pedido actualizado', 'success');
-}
-
-function downloadSingleFabOrderPDF(orderId) {
-    const order = cachedFabOrders.find(o => o.id === orderId);
-    if (!order) return;
-    openFabOrdersPrintWindow([order], `Pedido_${order.codigo_pedido}_${order.cliente_nombre}`);
-}
-
-function downloadAllFabOrdersPDF() {
-    if (!cachedFabOrders.length) {
-        showToast('No hay pedidos registrados para descargar', 'error');
-        return;
-    }
-    openFabOrdersPrintWindow(cachedFabOrders, 'Reporte_Pedidos_Fabricacion_Liz_Fashion');
-}
-
-function openFabOrdersPrintWindow(ordersList, docTitle) {
-    const totalGeneral = ordersList.reduce((sum, o) => sum + Number(o.total || 0), 0);
-    const fechaEmision = new Date().toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-    const bloquesHTML = ordersList.map((o, idx) => {
-        const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
-        const filasProductos = items.map((it, i) => `
-            <tr>
-                <td>${i + 1}</td>
-                <td><img src="${it.imagen_url}" style="width:42px;height:42px;object-fit:cover;border-radius:6px;"></td>
-                <td><strong>${it.titulo}</strong><br><small style="color:#64748b;">${it.categoria || ''}</small></td>
-                <td>${it.color}</td>
-                <td><strong>${it.talla}</strong></td>
-                <td style="text-align:center;"><strong>${it.cantidad}</strong></td>
-                <td style="text-align:right;">S/ ${(Number(it.precio) * Number(it.cantidad)).toFixed(2)}</td>
-            </tr>
-        `).join('');
-
-        return `
-        <div class="order-box">
-            <div class="order-header">
-                <div>
-                    <span class="badge">${o.codigo_pedido}</span>
-                    <strong style="font-size:15px;margin-left:8px;">${o.cliente_nombre.toUpperCase()}</strong>
-                    <div style="font-size:12px;color:#475569;margin-top:4px;">
-                        WhatsApp: <strong>${o.cliente_telefono}</strong> &nbsp;|&nbsp; Estado: <strong>${o.estado || 'Pendiente'}</strong>
-                        ${o.notas ? `<br>Observaciones: <em>${o.notas}</em>` : ''}
-                    </div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:11px;color:#64748b;">Total Pedido</div>
-                    <div style="font-size:16px;font-weight:900;color:#e11d48;">S/ ${Number(o.total).toFixed(2)}</div>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width:28px;">#</th>
-                        <th style="width:52px;">Foto</th>
-                        <th>Modelo / Prenda</th>
-                        <th>Color</th>
-                        <th>Talla</th>
-                        <th style="text-align:center;">Cant.</th>
-                        <th style="text-align:right;">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>${filasProductos}</tbody>
-            </table>
-        </div>`;
-    }).join('');
-
-    const win = window.open('', '_blank');
-    win.document.write(`
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>${docTitle}</title>
-            <style>
-                body { font-family: Arial, sans-serif; color: #0f172a; padding: 24px; margin: 0; }
-                .top { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 18px; }
-                .brand { font-size: 20px; font-weight: 900; }
-                .brand span { color: #e11d48; }
-                .order-box { border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin-bottom: 16px; page-break-inside: avoid; }
-                .order-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-                .badge { background: #0f172a; color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
-                table { width: 100%; border-collapse: collapse; font-size: 12px; }
-                th, td { border-top: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; }
-                th { background: #f8fafc; font-size: 11px; text-transform: uppercase; color: #475569; }
-                .footer-total { text-align: right; font-size: 16px; font-weight: 900; margin-top: 14px; padding-top: 10px; border-top: 2px solid #0f172a; }
-                @media print { body { padding: 10px; } }
-            </style>
-        </head>
-        <body>
-            <div class="top">
-                <div>
-                    <div class="brand">LIZ FASHION <span>EVOLUTION</span></div>
-                    <div style="font-size:12px;color:#475569;">Orden de Producción y Pedidos de Fabricación</div>
-                </div>
-                <div style="text-align:right;font-size:11px;color:#475569;">
-                    Emitido: ${fechaEmision}<br>
-                    Pedidos incluidos: <strong>${ordersList.length}</strong>
-                </div>
-            </div>
-            ${bloquesHTML}
-            <div class="footer-total">TOTAL GENERAL: S/ ${totalGeneral.toFixed(2)}</div>
-            <script>
-                window.onload = function() {
-                    setTimeout(function() { window.print(); }, 400);
-                };
-            <\/script>
-        </body>
-        </html>
-    `);
-    win.document.close();
-}
-// Control del carrusel de imágenes por tarjeta
+// Control del carrusel por tarjeta
 const sliderIndexes = {};
 function slideImage(productId, direction) {
     const slider = document.getElementById(`slider-${productId}`);
@@ -1558,3 +754,11 @@ function slideImage(productId, direction) {
 
     slider.style.transform = `translateX(-${sliderIndexes[productId] * 100}%)`;
 }
+
+// INICIALIZACIÓN
+window.addEventListener('DOMContentLoaded', () => {
+    updateAuthUI();
+    renderFilterControls();
+    renderCart();
+    fetchProductsFromDB();
+});
