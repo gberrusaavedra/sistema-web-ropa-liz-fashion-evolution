@@ -920,7 +920,7 @@ function handleSaveManualOrder() {
     const fileInput = document.getElementById('manProductFile');
 
     if (!clientInput.value || !productInput.value || !priceInput.value) {
-        alert('Por favor completa los campos obligatorios (Cliente, Prenda y Precio).');
+        alert('Por favor completa los campos obligatorios: Cliente, Nombre de la Prenda y Precio.');
         return;
     }
 
@@ -942,7 +942,7 @@ function handleSaveManualOrder() {
         orders.unshift(newOrder);
         localStorage.setItem('liz_manual_orders', JSON.stringify(orders));
 
-        // Limpiar campos
+        // Limpiar formulario tras registrar
         clientInput.value = '';
         productInput.value = '';
         if (colorInput) colorInput.value = '';
