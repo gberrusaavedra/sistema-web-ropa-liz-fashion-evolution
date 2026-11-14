@@ -236,7 +236,6 @@ function openProductFormModal(product = null) {
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
     
-    // Corregido: uso de stockS en lugar de stocksS para evitar el error nulo
     document.getElementById('stockS').value = product && product.stockBySize ? (product.stockBySize.S || 0) : 2;
     document.getElementById('stockM').value = product && product.stockBySize ? (product.stockBySize.M || 0) : 3;
     document.getElementById('stockL').value = product && product.stockBySize ? (product.stockBySize.L || 0) : 2;
@@ -307,7 +306,6 @@ async function handleSaveProduct(e) {
         imagesArray = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
     }
 
-    // Corregido: lectura de stockS (sin doble 's')
     const stock_by_size = {
         S: parseInt(document.getElementById('stockS').value) || 0,
         M: parseInt(document.getElementById('stockM').value) || 0,
@@ -785,7 +783,6 @@ function updateGlobalStockCounter() {
     counter.textContent = total;
 }
 
-// Control del carrusel por tarjeta
 const sliderIndexes = {};
 function slideImage(productId, direction) {
     const slider = document.getElementById(`slider-${productId}`);
@@ -800,6 +797,93 @@ function slideImage(productId, direction) {
     if (sliderIndexes[productId] < 0) sliderIndexes[productId] = totalImages - 1;
 
     slider.style.transform = `translateX(-${sliderIndexes[productId] * 100}%)`;
+}
+
+// =====================================================================
+// CONTROL Y EDICIÓN DEL RELOJ DE OFERTA FLASH DESDE EL PANEL ADMIN
+// =====================================================================
+async function fetchOfferTime() {
+    try {
+        const res = await fetch(`${API_URL}/oferta-tiempo`);
+        const data = await res.json();
+        if (data && data.offer_end_time) {
+            startCountdown(Number(data.offer_end_time));
+        } else {
+            startCountdown(new Date().getTime() + 24 * 60 * 60 * 1000);
+        }
+    } catch (err) {
+        console.error('Error al obtener tiempo de oferta:', err);
+    }
+}
+
+function startCountdown(endTime) {
+    const timer = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = endTime - now;
+
+        if (distance < 0) {
+            clearInterval(timer);
+            const container = document.getElementById('countdownContainer');
+            if (container) {
+                container.innerHTML = "<span class='text-rose-500 font-bold col-span-4 py-2'>¡OFERTA FLASH FINALIZADA!</span>";
+            }
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        if (document.getElementById('cd-days')) document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
+        if (document.getElementById('cd-hours')) document.getElementById('cd-hours').innerText = String(hours).padStart(2, '0');
+        if (document.getElementById('cd-minutes')) document.getElementById('cd-minutes').innerText = String(minutes).padStart(2, '0');
+        if (document.getElementById('cd-seconds')) document.getElementById('cd-seconds').innerText = String(seconds).padStart(2, '0');
+    }, 1000);
+}
+
+function openTimerModal() {
+    const modal = document.getElementById('timerModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeTimerModal() {
+    const modal = document.getElementById('timerModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function saveOfferEndTime(e) {
+    e.preventDefault();
+    const inputVal = document.getElementById('offerEndInput').value;
+    if (!inputVal) return;
+
+    const offer_end_time = new Date(inputVal).getTime();
+    const { token } = getSession();
+
+    try {
+        const res = await fetch(`${API_URL}/oferta-tiempo`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ offer_end_time })
+        });
+
+        if (!res.ok) throw new Error('No se pudo guardar la fecha');
+        
+        showToast('¡Horario de oferta actualizado!', 'success');
+        closeTimerModal();
+        setTimeout(() => location.reload(), 1000);
+    } catch (err) {
+        showToast('Error al actualizar: ' + err.message, 'error');
+    }
 }
 
 // ==========================================
@@ -867,12 +951,7 @@ function handleSaveManualOrder() {
         if (fileInput) fileInput.value = '';
 
         renderManualOrders();
-        
-        if (typeof showToast === 'function') {
-            showToast('¡Pedido registrado y stock separado con éxito!');
-        } else {
-            alert('¡Pedido registrado con éxito!');
-        }
+        showToast('¡Pedido de confección registrado con éxito!');
     };
 
     if (file) {
@@ -898,7 +977,7 @@ function renderManualOrders() {
     }
 
     if (orders.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay pedidos registrados todavía.</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay pedidos de confección registrados todavía.</p>`;
         return;
     }
 
@@ -934,14 +1013,14 @@ function sendManualOrderWhatsApp(orderId) {
     let o = orders.find(item => item.id === orderId);
     if (!o) return;
 
-    const message = `🛍️ *PEDIDO SEPARADO - LIZ FASHION EVOLUTION*\n\n` +
+    const message = `✂️ *PEDIDO DE CONFECCIÓN - LIZ FASHION EVOLUTION*\n\n` +
                     `📌 *Código:* ${o.id}\n` +
                     `👤 *Cliente:* ${o.client}\n` +
                     `👗 *Prenda:* ${o.product}\n` +
                     `📏 *Talla:* ${o.size}\n` +
                     `🎨 *Color:* ${o.color}\n` +
                     `💰 *Precio:* S/ ${o.price}\n\n` +
-                    `¡Hola! Deseo confirmar la separación de esta prenda.`;
+                    `¡Hola! Deseo confirmar la orden de confección para esta prenda.`;
 
     window.open(`https://wa.me/51931598799?text=${encodeURIComponent(message)}`, '_blank');
 }
@@ -971,7 +1050,7 @@ function downloadOrderPDF(orderId) {
     doc.text('LIZ FASHION EVOLUTION', 14, 18);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('Orden de Producción y Pedidos de Fabricación', 14, 26);
+    doc.text('Orden de Producción y Confección a Medida', 14, 26);
 
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(9);
@@ -985,7 +1064,7 @@ function downloadOrderPDF(orderId) {
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Estado: Pendiente`, 14, 53);
+    doc.text(`Estado: En Proceso de Confección`, 14, 53);
     doc.text(`Total Pedido:`, 160, 46);
     doc.setTextColor(225, 29, 72);
     doc.setFont('helvetica', 'bold');
@@ -1023,7 +1102,7 @@ function downloadOrderPDF(orderId) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('Ropa / Liquidación', 65, y + 9);
+    doc.text('Taller de Confección', 65, y + 9);
 
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(10);
@@ -1041,13 +1120,13 @@ function downloadOrderPDF(orderId) {
     doc.setTextColor(225, 29, 72);
     doc.text(`S/ ${o.price}`, 196, y + 28, { align: 'right' });
 
-    doc.save(`Comprobante_${o.id}.pdf`);
+    doc.save(`Comprobante_Confeccion_${o.id}.pdf`);
 }
 
 function downloadAllOrdersPDF(mode) {
     let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
     if (orders.length === 0) {
-        alert('No hay pedidos registrados para exportar.');
+        alert('No hay pedidos de confección registrados para exportar.');
         return;
     }
 
@@ -1068,12 +1147,12 @@ function downloadAllOrdersPDF(mode) {
     doc.text('LIZ FASHION EVOLUTION', 14, 18);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(mode === 'general' ? 'Reporte General de Pedidos y Fabricación' : 'Reporte de Pedidos por Tallas y Categorías', 14, 26);
+    doc.text(mode === 'general' ? 'Reporte General de Órdenes de Confección' : 'Reporte de Confección por Tallas y Categorías', 14, 26);
 
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(9);
     doc.text(`Emitido: ${new Date().toLocaleDateString()}`, 196, 20, { align: 'right' });
-    doc.text(`Pedidos incluidos: ${orders.length}`, 196, 26, { align: 'right' });
+    doc.text(`Órdenes incluidas: ${orders.length}`, 196, 26, { align: 'right' });
 
     let y = 48;
     let totalGeneral = 0;
@@ -1095,7 +1174,7 @@ function downloadAllOrdersPDF(mode) {
 
             doc.setTextColor(100, 100, 100);
             doc.setFontSize(8);
-            doc.text(`FAB-${o.id.replace('PED-', '')}`, 18, y + 6);
+            doc.text(`CONF-${o.id.replace('PED-', '')}`, 18, y + 6);
             doc.setTextColor(15, 23, 42);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
@@ -1103,7 +1182,7 @@ function downloadAllOrdersPDF(mode) {
 
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
-            doc.text('Total Pedido:', 160, y + 4);
+            doc.text('Total Orden:', 160, y + 4);
             doc.setTextColor(225, 29, 72);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
@@ -1153,7 +1232,16 @@ function downloadAllOrdersPDF(mode) {
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
-    doc.text(`TOTAL GENERAL: S/ ${totalGeneral.toFixed(2)}`, 196, y + 10, { align: 'right' });
+    doc.text(`TOTAL GENERAL CONFECCIÓN: S/ ${totalGeneral.toFixed(2)}`, 196, y + 10, { align: 'right' });
 
-    doc.save(mode === 'general' ? 'Reporte_General_Pedidos.pdf' : 'Reporte_Pedidos_Por_Categorias.pdf');
+    doc.save('Reporte_General_Confeccion.pdf');
 }
+
+// INICIALIZACIÓN
+window.addEventListener('DOMContentLoaded', () => {
+    updateAuthUI();
+    renderFilterControls();
+    renderCart();
+    fetchProductsFromDB();
+    fetchOfferTime();
+});
