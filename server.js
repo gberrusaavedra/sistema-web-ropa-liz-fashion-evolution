@@ -199,11 +199,11 @@ app.get('/api/oferta-tiempo', async (req, res) => {
     }
 });
 
-// === RELOJ OFERTA FLASH ===
-app.get('/api/oferta-tiempo', async (req, res) => {
+// === ELIMINAR PRODUCTO (Ruta DELETE) ===
+app.delete('/api/productos/:id', soloAdmin, async (req, res) => {
     try {
-        const result = await pool.query("SELECT valor FROM configuracion_tienda WHERE clave = 'offer_end_time'");
-        res.json({ offer_end_time: result.rows.length > 0 ? Number(result.rows[0].valor) : null });
+        await pool.query('DELETE FROM productos WHERE id = $1', [req.params.id]);
+        res.json({ mensaje: 'Prenda eliminada correctamente' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
