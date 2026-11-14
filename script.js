@@ -951,7 +951,7 @@ function handleSaveManualOrder() {
         if (fileInput) fileInput.value = '';
 
         renderManualOrders();
-        showToast('¡Pedido de confección registrado con éxito!');
+        showToast('¡Pedido registrado y stock separado con éxito!');
     };
 
     if (file) {
@@ -977,7 +977,7 @@ function renderManualOrders() {
     }
 
     if (orders.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay pedidos de confección registrados todavía.</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay pedidos registrados todavía.</p>`;
         return;
     }
 
@@ -1013,14 +1013,14 @@ function sendManualOrderWhatsApp(orderId) {
     let o = orders.find(item => item.id === orderId);
     if (!o) return;
 
-    const message = `✂️ *PEDIDO DE CONFECCIÓN - LIZ FASHION EVOLUTION*\n\n` +
+    const message = `🛍️ *PEDIDO SEPARADO - LIZ FASHION EVOLUTION*\n\n` +
                     `📌 *Código:* ${o.id}\n` +
                     `👤 *Cliente:* ${o.client}\n` +
                     `👗 *Prenda:* ${o.product}\n` +
                     `📏 *Talla:* ${o.size}\n` +
                     `🎨 *Color:* ${o.color}\n` +
                     `💰 *Precio:* S/ ${o.price}\n\n` +
-                    `¡Hola! Deseo confirmar la orden de confección para esta prenda.`;
+                    `¡Hola! Deseo confirmar la separación de esta prenda.`;
 
     window.open(`https://wa.me/51931598799?text=${encodeURIComponent(message)}`, '_blank');
 }
@@ -1050,7 +1050,7 @@ function downloadOrderPDF(orderId) {
     doc.text('LIZ FASHION EVOLUTION', 14, 18);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('Orden de Producción y Confección a Medida', 14, 26);
+    doc.text('Orden de Producción y Pedidos de Fabricación', 14, 26);
 
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(9);
@@ -1064,7 +1064,7 @@ function downloadOrderPDF(orderId) {
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Estado: En Proceso de Confección`, 14, 53);
+    doc.text(`Estado: Pendiente`, 14, 53);
     doc.text(`Total Pedido:`, 160, 46);
     doc.setTextColor(225, 29, 72);
     doc.setFont('helvetica', 'bold');
@@ -1102,7 +1102,7 @@ function downloadOrderPDF(orderId) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('Taller de Confección', 65, y + 9);
+    doc.text('Ropa / Liquidación', 65, y + 9);
 
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(10);
@@ -1120,13 +1120,13 @@ function downloadOrderPDF(orderId) {
     doc.setTextColor(225, 29, 72);
     doc.text(`S/ ${o.price}`, 196, y + 28, { align: 'right' });
 
-    doc.save(`Comprobante_Confeccion_${o.id}.pdf`);
+    doc.save(`Comprobante_${o.id}.pdf`);
 }
 
 function downloadAllOrdersPDF(mode) {
     let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
     if (orders.length === 0) {
-        alert('No hay pedidos de confección registrados para exportar.');
+        alert('No hay pedidos registrados para exportar.');
         return;
     }
 
@@ -1147,12 +1147,12 @@ function downloadAllOrdersPDF(mode) {
     doc.text('LIZ FASHION EVOLUTION', 14, 18);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(mode === 'general' ? 'Reporte General de Órdenes de Confección' : 'Reporte de Confección por Tallas y Categorías', 14, 26);
+    doc.text(mode === 'general' ? 'Reporte General de Pedidos y Fabricación' : 'Reporte de Pedidos por Tallas y Categorías', 14, 26);
 
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(9);
     doc.text(`Emitido: ${new Date().toLocaleDateString()}`, 196, 20, { align: 'right' });
-    doc.text(`Órdenes incluidas: ${orders.length}`, 196, 26, { align: 'right' });
+    doc.text(`Pedidos incluidos: ${orders.length}`, 196, 26, { align: 'right' });
 
     let y = 48;
     let totalGeneral = 0;
@@ -1174,7 +1174,7 @@ function downloadAllOrdersPDF(mode) {
 
             doc.setTextColor(100, 100, 100);
             doc.setFontSize(8);
-            doc.text(`CONF-${o.id.replace('PED-', '')}`, 18, y + 6);
+            doc.text(`FAB-${o.id.replace('PED-', '')}`, 18, y + 6);
             doc.setTextColor(15, 23, 42);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
@@ -1182,7 +1182,7 @@ function downloadAllOrdersPDF(mode) {
 
             doc.setFontSize(8);
             doc.setFont('helvetica', 'normal');
-            doc.text('Total Orden:', 160, y + 4);
+            doc.text('Total Pedido:', 160, y + 4);
             doc.setTextColor(225, 29, 72);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(10);
@@ -1232,9 +1232,9 @@ function downloadAllOrdersPDF(mode) {
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
-    doc.text(`TOTAL GENERAL CONFECCIÓN: S/ ${totalGeneral.toFixed(2)}`, 196, y + 10, { align: 'right' });
+    doc.text(`TOTAL GENERAL: S/ ${totalGeneral.toFixed(2)}`, 196, y + 10, { align: 'right' });
 
-    doc.save('Reporte_General_Confeccion.pdf');
+    doc.save(mode === 'general' ? 'Reporte_General_Pedidos.pdf' : 'Reporte_Pedidos_Por_Categorias.pdf');
 }
 
 // INICIALIZACIÓN
