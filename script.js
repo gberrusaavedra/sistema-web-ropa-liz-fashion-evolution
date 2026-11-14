@@ -216,9 +216,13 @@ async function fetchProductsFromDB() {
 }
 
 function toggleOfferFields() {
-    const isNormal = document.getElementById('formTag').value === 'Normal';
-    document.getElementById('regularPriceGroup').classList.toggle('hidden', isNormal);
-    document.getElementById('labelSalePrice').textContent = isNormal ? 'Precio Normal (S/) *' : 'Precio Remate (S/) *';
+    const tagElem = document.getElementById('formTag');
+    if (!tagElem) return;
+    const isNormal = tagElem.value === 'Normal';
+    const regGroup = document.getElementById('regularPriceGroup');
+    const saleLabel = document.getElementById('labelSalePrice');
+    if (regGroup) regGroup.classList.toggle('hidden', isNormal);
+    if (saleLabel) saleLabel.textContent = isNormal ? 'Precio Normal (S/) *' : 'Precio Remate (S/) *';
 }
 
 function openProductFormModal(product = null) {
@@ -231,11 +235,18 @@ function openProductFormModal(product = null) {
     document.getElementById('formTag').value = product ? product.tag : 'Normal';
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
-    document.getElementById('stocksS').value = product && product.stockBySize ? (product.stockBySize.S || 0) : 2;
+    
+    // Corregido: uso de stockS en lugar de stocksS para evitar el error nulo
+    document.getElementById('stockS').value = product && product.stockBySize ? (product.stockBySize.S || 0) : 2;
     document.getElementById('stockM').value = product && product.stockBySize ? (product.stockBySize.M || 0) : 3;
     document.getElementById('stockL').value = product && product.stockBySize ? (product.stockBySize.L || 0) : 2;
     document.getElementById('stockXL').value = product && product.stockBySize ? (product.stockBySize.XL || 0) : 1;
-    document.getElementById('formColors').value = product && product.colors ? product.colors.join(', ') : 'Corinto, Negro, Rojo, Beige';
+    
+    const colorsInput = document.getElementById('formColors');
+    if (colorsInput) {
+        colorsInput.value = product && product.colors ? product.colors.join(', ') : 'Corinto, Negro, Rojo, Beige';
+    }
+    
     document.getElementById('formDescription').value = product ? product.description : '';
     document.getElementById('formImageUrl').value = product ? product.image : '';
 
@@ -250,8 +261,10 @@ function openProductFormModal(product = null) {
 
 function closeProductFormModal() {
     const modal = document.getElementById('productFormModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 
 function editProductById(id) {
@@ -294,8 +307,9 @@ async function handleSaveProduct(e) {
         imagesArray = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
     }
 
+    // Corregido: lectura de stockS (sin doble 's')
     const stock_by_size = {
-        S: parseInt(document.getElementById('stocksS').value) || 0,
+        S: parseInt(document.getElementById('stockS').value) || 0,
         M: parseInt(document.getElementById('stockM').value) || 0,
         L: parseInt(document.getElementById('stockL').value) || 0,
         XL: parseInt(document.getElementById('stockXL').value) || 0
@@ -307,6 +321,9 @@ async function handleSaveProduct(e) {
         ? salePriceVal
         : (parseFloat(document.getElementById('formRegularPrice').value) || salePriceVal);
 
+    const colorsInput = document.getElementById('formColors');
+    const coloresArray = colorsInput ? colorsInput.value.split(',').map(c => c.trim()).filter(Boolean) : ['Corinto', 'Negro', 'Rojo'];
+
     const payload = {
         titulo: document.getElementById('formName').value.trim(),
         categoria: document.getElementById('formCategory').value,
@@ -315,7 +332,7 @@ async function handleSaveProduct(e) {
         precio_original: regularPriceVal,
         stock_by_size,
         material: document.getElementById('formMaterial').value.trim(),
-        colores: document.getElementById('formColors').value.split(',').map(c => c.trim()).filter(Boolean),
+        colores: coloresArray,
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url: imagesArray[0],
         imagenes: imagesArray
@@ -397,26 +414,36 @@ function getFirstAvailableSize(product) {
 // 5. FILTROS Y RENDERIZADO DEL CATÁLOGO
 // =====================================================================
 function renderFilterControls() {
-    document.getElementById('categoryFilters').innerHTML = CATEGORIES.map(cat => `
-        <button onclick="setCategory('${cat}')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
-            state.category === cat ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900'
-        }">${cat}</button>
-    `).join('');
+    const catContainer = document.getElementById('categoryFilters');
+    const promoContainer = document.getElementById('promoFilters');
+    const sizeContainer = document.getElementById('sizeFilters');
 
-    document.getElementById('promoFilters').innerHTML = `<span class="text-xs font-bold text-slate-400 uppercase mr-1">Etiqueta:</span>` + PROMO_TAGS.map(tag => {
-        const icons = { 'Remate Final': '🔥 ', 'Oferta Flash': '⚡ ', 'Últimas Tallas': '⏳ ', '2x1': '🎁 ' };
-        return `
-            <button onclick="setPromoTag('${tag}')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                state.promoTag === tag ? 'bg-rose-600 text-white border-rose-600 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:border-rose-300 hover:text-rose-600'
-            }">${icons[tag] || ''}${tag === 'Remate Final' ? 'Remate Final (-70%)' : tag}</button>
-        `;
-    }).join('');
+    if (catContainer) {
+        catContainer.innerHTML = CATEGORIES.map(cat => `
+            <button onclick="setCategory('${cat}')" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                state.category === cat ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900'
+            }">${cat}</button>
+        `).join('');
+    }
 
-    document.getElementById('sizeFilters').innerHTML = `<span class="text-[11px] font-bold text-slate-500 px-2">Talla:</span>` + SIZES.map(sz => `
-        <button onclick="setSizeFilter('${sz}')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-            state.size === sz ? 'bg-white text-rose-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-        }">${sz}</button>
-    `).join('');
+    if (promoContainer) {
+        promoContainer.innerHTML = `<span class="text-xs font-bold text-slate-400 uppercase mr-1">Etiqueta:</span>` + PROMO_TAGS.map(tag => {
+            const icons = { 'Remate Final': '🔥 ', 'Oferta Flash': '⚡ ', 'Últimas Tallas': '⏳ ', '2x1': '🎁 ' };
+            return `
+                <button onclick="setPromoTag('${tag}')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                    state.promoTag === tag ? 'bg-rose-600 text-white border-rose-600 shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:border-rose-300 hover:text-rose-600'
+                }">${icons[tag] || ''}${tag === 'Remate Final' ? 'Remate Final (-70%)' : tag}</button>
+            `;
+        }).join('');
+    }
+
+    if (sizeContainer) {
+        sizeContainer.innerHTML = `<span class="text-[11px] font-bold text-slate-500 px-2">Talla:</span>` + SIZES.map(sz => `
+            <button onclick="setSizeFilter('${sz}')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                state.size === sz ? 'bg-white text-rose-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            }">${sz}</button>
+        `).join('');
+    }
 }
 
 function setCategory(cat) { state.category = cat; renderFilterControls(); applyFilters(); }
@@ -426,29 +453,38 @@ function setSizeFilter(sz) { state.size = sz; renderFilterControls(); applyFilte
 function quickFilterTag(tag) {
     state.promoTag = tag; state.category = 'Todos'; state.size = 'Todas';
     renderFilterControls(); applyFilters();
-    document.getElementById('catalogo').scrollIntoView({ behavior: 'smooth' });
+    const catalogElem = document.getElementById('catalogo');
+    if (catalogElem) catalogElem.scrollIntoView({ behavior: 'smooth' });
 }
 
 function setCurrency(curr) {
     state.currency = curr;
-    document.getElementById('btnCurrencyPEN').className = curr === 'PEN' ? "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer";
-    document.getElementById('btnCurrencyUSD').className = curr === 'USD' ? "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer";
+    const btnPEN = document.getElementById('btnCurrencyPEN');
+    const btnUSD = document.getElementById('btnCurrencyUSD');
+    if (btnPEN) btnPEN.className = curr === 'PEN' ? "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer";
+    if (btnUSD) btnUSD.className = curr === 'USD' ? "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer" : "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer";
     applyFilters();
     renderCart();
 }
 
 function resetAllFilters() {
     state.category = 'Todos'; state.promoTag = 'Todos'; state.size = 'Todas'; state.searchQuery = ''; state.sortBy = 'featured';
-    document.getElementById('searchInputDesktop').value = '';
-    document.getElementById('searchInputMobile').value = '';
-    document.getElementById('sortSelect').value = 'featured';
-    document.getElementById('clearSearchDesktop').classList.add('hidden');
+    const sDesc = document.getElementById('searchInputDesktop');
+    const sMob = document.getElementById('searchInputMobile');
+    const sSort = document.getElementById('sortSelect');
+    const clearDesc = document.getElementById('clearSearchDesktop');
+    
+    if (sDesc) sDesc.value = '';
+    if (sMob) sMob.value = '';
+    if (sSort) sSort.value = 'featured';
+    if (clearDesc) clearDesc.classList.add('hidden');
     renderFilterControls();
     applyFilters();
 }
 
 function applyFilters() {
-    state.sortBy = document.getElementById('sortSelect').value;
+    const sortSelect = document.getElementById('sortSelect');
+    state.sortBy = sortSelect ? sortSelect.value : 'featured';
     const desktopVal = document.getElementById('searchInputDesktop')?.value || '';
     const mobileVal = document.getElementById('searchInputMobile')?.value || '';
     state.searchQuery = (desktopVal || mobileVal || state.searchQuery || '');
@@ -470,8 +506,10 @@ function applyFilters() {
     });
 
     const isFiltered = state.category !== 'Todos' || state.promoTag !== 'Todos' || state.size !== 'Todas' || query !== '';
-    document.getElementById('activeFilterSummary').classList.toggle('hidden', !isFiltered);
-    document.getElementById('resultsCount').textContent = filtered.length;
+    const filterSummary = document.getElementById('activeFilterSummary');
+    const resultsCount = document.getElementById('resultsCount');
+    if (filterSummary) filterSummary.classList.toggle('hidden', !isFiltered);
+    if (resultsCount) resultsCount.textContent = filtered.length;
 
     renderProductGrid(filtered);
 }
@@ -479,15 +517,16 @@ function applyFilters() {
 function renderProductGrid(productsList) {
     const grid = document.getElementById('productGrid');
     const emptyState = document.getElementById('emptyState');
+    if (!grid) return;
     const { isAdmin } = getSession();
 
     if (productsList.length === 0) {
         grid.innerHTML = '';
-        emptyState.classList.remove('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
         return;
     }
 
-    emptyState.classList.add('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
 
     grid.innerHTML = productsList.map(product => {
         const discountPct = getDiscountPercent(product.regularPrice, product.salePrice);
@@ -651,6 +690,7 @@ function addToCart(productId, explicitSize = null, explicitColor = null) {
 
 function renderCart() {
     const container = document.getElementById('cartItemsContainer');
+    if (!container) return;
     const totalItems = state.cart.reduce((sum, i) => sum + i.qty, 0);
     document.getElementById('headerCartBadge').textContent = totalItems;
     document.getElementById('drawerItemCountText').textContent = `${totalItems} prendas seleccionadas`;
@@ -728,6 +768,7 @@ function inquireSingleProductWhatsApp(productId) {
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
     const toast = document.createElement('div');
     const color = type === 'error' ? 'text-rose-400' : type === 'warning' ? 'text-amber-400' : 'text-emerald-400';
     toast.className = 'bg-slate-900 text-white border border-slate-700 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-semibold pointer-events-auto';
@@ -738,8 +779,10 @@ function showToast(message, type = 'success') {
 }
 
 function updateGlobalStockCounter() {
+    const counter = document.getElementById('totalStockCounter');
+    if (!counter) return;
     const total = PRODUCTS.reduce((sum, p) => sum + getTotalStock(p), 0);
-    document.getElementById('totalStockCounter').textContent = total;
+    counter.textContent = total;
 }
 
 // Control del carrusel por tarjeta
@@ -757,109 +800,6 @@ function slideImage(productId, direction) {
     if (sliderIndexes[productId] < 0) sliderIndexes[productId] = totalImages - 1;
 
     slider.style.transform = `translateX(-${sliderIndexes[productId] * 100}%)`;
-}
-
-// INICIALIZACIÓN
-window.addEventListener('DOMContentLoaded', () => {
-    updateAuthUI();
-    renderFilterControls();
-    renderCart();
-    fetchProductsFromDB();
-    fetchOfferTime();
-});
-
-// =====================================================================
-// CONTROL Y EDICIÓN DEL RELOJ DE OFERTA FLASH DESDE EL PANEL ADMIN
-// =====================================================================
-
-async function fetchOfferTime() {
-    try {
-        const res = await fetch(`${API_URL}/oferta-tiempo`);
-        const data = await res.json();
-        if (data && data.offer_end_time) {
-            startCountdown(Number(data.offer_end_time));
-        } else {
-            // Valor por defecto: 24 horas a partir de ahora si no hay fecha configurada
-            startCountdown(new Date().getTime() + 24 * 60 * 60 * 1000);
-        }
-    } catch (err) {
-        console.error('Error al obtener tiempo de oferta:', err);
-    }
-}
-
-function startCountdown(endTime) {
-    const timer = setInterval(() => {
-        const now = new Date().getTime();
-        const distance = endTime - now;
-
-        if (distance < 0) {
-            clearInterval(timer);
-            const container = document.getElementById('countdownContainer');
-            if (container) {
-                container.innerHTML = "<span class='text-rose-500 font-bold col-span-4 py-2'>¡OFERTA FLASH FINALIZADA!</span>";
-            }
-            return;
-        }
-
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        const cdDays = document.getElementById('cd-days');
-        const cdHours = document.getElementById('cd-hours');
-        const cdMinutes = document.getElementById('cd-minutes');
-        const cdSeconds = document.getElementById('cd-seconds');
-
-        if (cdDays) cdDays.innerText = String(days).padStart(2, '0');
-        if (cdHours) cdHours.innerText = String(hours).padStart(2, '0');
-        if (cdMinutes) cdMinutes.innerText = String(minutes).padStart(2, '0');
-        if (cdSeconds) cdSeconds.innerText = String(seconds).padStart(2, '0');
-    }, 1000);
-}
-
-// Función ejecutada por el botón "Editar Hora Oferta" del panel de administración
-async function handleEditOfferTime() {
-    const nuevaHoraStr = prompt("Ingresa cuántas horas de duración tendrá la Oferta Flash (ej. 24, 48, 72):", "24");
-    if (!nuevaHoraStr) return;
-    
-    const horas = parseFloat(nuevaHoraStr);
-    if (isNaN(horas) || horas <= 0) {
-        showToast("Por favor ingresa un número válido de horas.", "error");
-        return;
-    }
-
-    const offer_end_time = new Date().getTime() + (horas * 60 * 60 * 1000);
-    const { token } = getSession();
-
-    try {
-        const res = await fetch(`${API_URL}/oferta-tiempo`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ offer_end_time })
-        });
-
-        if (!res.ok) throw new Error('No se pudo actualizar el tiempo de oferta');
-        
-        showToast("¡Hora de oferta actualizada con éxito!", "success");
-        setTimeout(() => location.reload(), 1500);
-    } catch (err) {
-        showToast("Error al guardar: " + err.message, "error");
-    }
-}
-// =====================================================================
-// CORRECCIÓN: EDITAR PRODUCTO SIN ERRORES DE ID
-// =====================================================================
-function editProductById(id) {
-    const product = PRODUCTS.find(p => String(p.id) === String(id));
-    if (product) {
-        openProductFormModal(product);
-    } else {
-        showToast('No se encontró la prenda para editar', 'error');
-    }
 }
 
 // =====================================================================
@@ -949,15 +889,11 @@ async function saveOfferEndTime(e) {
     }
 }
 
-// =====================================================================
-// CORRECCIÓN: EDITAR PRODUCTO SIN ERRORES DE ID
-// =====================================================================
-function editProductById(id) {
-    const product = PRODUCTS.find(p => String(p.id) === String(id));
-    if (product) {
-        openProductFormModal(product);
-    } else {
-        showToast('No se encontró la prenda para editar', 'error');
-    }
-}
-
+// INICIALIZACIÓN
+window.addEventListener('DOMContentLoaded', () => {
+    updateAuthUI();
+    renderFilterControls();
+    renderCart();
+    fetchProductsFromDB();
+    fetchOfferTime();
+});
