@@ -897,3 +897,150 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchProductsFromDB();
     fetchOfferTime();
 });
+// Abrir / Cerrar Modal de Pedidos Manuales
+function openOrderManagerModal() {
+    document.getElementById('orderManagerModal').classList.remove('hidden');
+    document.getElementById('orderManagerModal').classList.add('flex');
+    renderManualOrders();
+}
+
+function closeOrderManagerModal() {
+    document.getElementById('orderManagerModal').classList.add('hidden');
+    document.getElementById('orderManagerModal').classList.remove('flex');
+}
+
+// Guardar Pedido Manual
+function handleSaveManualOrder(e) {
+    e.preventDefault();
+    const newOrder = {
+        id: 'PED-' + Math.floor(1000 + Math.random() * 9000),
+        client: document.getElementById('manClientName').value,
+        product: document.getElementById('manProductName').value,
+        size: document.getElementById('manProductSize').value,
+        color: document.getElementById('manProductColor').value,
+        price: parseFloat(document.getElementById('manProductPrice').value).toFixed(2),
+        image: document.getElementById('manProductImg').value || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400',
+        date: new Date().toLocaleDateString()
+    };
+
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    orders.unshift(newOrder);
+    localStorage.setItem('liz_manual_orders', JSON.stringify(orders));
+
+    e.target.reset();
+    renderManualOrders();
+    showToast('¡Pedido registrado y stock separado con éxito!');
+}
+
+// Renderizar listado de pedidos en el modal
+function renderManualOrders() {
+    const container = document.getElementById('manualOrdersList');
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+
+    if (orders.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay pedidos registrados todavía.</p>`;
+        return;
+    }
+
+    container.innerHTML = orders.map(o => `
+        <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-xs gap-3">
+            <img src="${o.image}" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-rose-600">${o.id}</span>
+                    <h5 class="font-extrabold text-slate-900 text-xs truncate">${o.product}</h5>
+                </div>
+                <p class="text-[11px] text-slate-500">Cliente: <strong>${o.client}</strong> | Talla: <span class="text-rose-600 font-bold">${o.size}</span> | Color: <span class="font-bold">${o.color}</span></p>
+                <p class="text-xs font-black text-slate-900">S/ ${o.price}</p>
+            </div>
+            <div class="flex flex-col gap-1.5 shrink-0">
+                <button onclick="sendManualOrderWhatsApp('${o.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer" title="Enviar por WhatsApp">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i>
+                </button>
+                <button onclick="downloadOrderPDF('${o.id}')" class="bg-slate-900 hover:bg-rose-600 text-white p-2 rounded-xl text-xs flex items-center justify-center cursor-pointer" title="Descargar PDF">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    if (window.lucide) lucide.createIcons();
+}
+
+// Enviar Pedido Individual por WhatsApp
+function sendManualOrderWhatsApp(orderId) {
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    let o = orders.find(item => item.id === orderId);
+    if (!o) return;
+
+    const message = `🛍️ *PEDIDO SEPARADO - LIZ FASHION EVOLUTION*\n\n` +
+                    `📌 *Código:* ${o.id}\n` +
+                    `👤 *Cliente:* ${o.client}\n` +
+                    `👗 *Prenda:* ${o.product}\n` +
+                    `📏 *Talla:* ${o.size}\n` +
+                    `🎨 *Color:* ${o.color}\n` +
+                    `💰 *Precio:* S/ ${o.price}\n\n` +
+                    `¡Hola! Deseo confirmar la separación de esta prenda.`;
+
+    window.open(`https://wa.me/51931598799?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+// Descargar PDF del Pedido (Comprobante con diseño limpio)
+function downloadOrderPDF(orderId) {
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    let o = orders.find(item => item.id === orderId);
+    if (!o) return;
+
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) {
+        // Carga dinámica de jsPDF si no estuviera enlazado
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.onload = () => generatePDFDocument(o);
+        document.head.appendChild(script);
+    } else {
+        generatePDFDocument(o);
+    }
+}
+
+function generatePDFDocument(o) {
+    const doc = new window.jspdf.jsPDF();
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LIZ FASHION EVOLUTION - COMPROBANTE DE PEDIDO', 14, 22);
+
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(10);
+    doc.text(`Código de Reserva: ${o.id}`, 14, 45);
+    doc.text(`Fecha: ${o.date}`, 14, 52);
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 58, 196, 58);
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalles del Artículo:', 14, 70);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(`• Cliente: ${o.client}`, 18, 80);
+    doc.text(`• Prenda: ${o.product}`, 18, 88);
+    doc.text(`• Talla Seleccionada: ${o.size}`, 18, 96);
+    doc.text(`• Color: ${o.color}`, 18, 104);
+    doc.text(`• Precio Total: S/ ${o.price}`, 18, 112);
+
+    doc.setFillColor(255, 241, 242);
+    doc.roundedRect(14, 130, 182, 25, 3, 3, 'F');
+    doc.setTextColor(225, 29, 72);
+    doc.setFont('helvetica', 'bold');
+    doc.text('¡Stock separado por 30 minutos!', 18, 1425 / 10);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Presenta este comprobante o envíalo por WhatsApp para concretar tu entrega.', 18, 1505 / 10);
+
+    doc.save(`Pedido_${o.id}.pdf`);
+}
