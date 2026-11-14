@@ -218,29 +218,32 @@ function toggleOfferFields() {
 }
 
 function openProductFormModal(product = null) {
+    const modal = document.getElementById('productFormModal');
+    if (!modal) return;
+
     document.getElementById('formProductId').value = product ? product.id : '';
     document.getElementById('productFormTitle').textContent = product ? 'Editar Prenda' : 'Subir Nueva Prenda';
-    document.getElementById('formName').value = product ? product.name : '';
-    document.getElementById('formCategory').value = product ? product.category : 'Polos/Camisetas';
+    document.getElementById('formCategory').value = product ? product.categoria : 'Polos/Camisetas';
     document.getElementById('formTag').value = product ? product.tag : 'Normal';
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
-    document.getElementById('stockS').value = product ? (product.stockBySize.S || 0) : 2;
-    document.getElementById('stockM').value = product ? (product.stockBySize.M || 0) : 3;
-    document.getElementById('stockL').value = product ? (product.stockBySize.L || 0) : 2;
-    document.getElementById('stockXL').value = product ? (product.stockBySize.XL || 0) : 1;
- document.getElementById('formColors').value = product && product.colors ? product.colors.join(', ') : 'Corinto, Negro, Rojo, Beige';
+    document.getElementById('stocksS').value = product && product.stockBySize ? (product.stockBySize.S || 0) : 2;
+    document.getElementById('stockM').value = product && product.stockBySize ? (product.stockBySize.M || 0) : 3;
+    document.getElementById('stockL').value = product && product.stockBySize ? (product.stockBySize.L || 0) : 2;
+    document.getElementById('stockXL').value = product && product.stockBySize ? (product.stockBySize.XL || 0) : 1;
+    document.getElementById('formColors').value = product && product.colors ? product.colors.join(', ') : 'Corinto, Negro, Rojo, Beige';
     document.getElementById('formDescription').value = product ? product.description : '';
     document.getElementById('formImageUrl').value = product ? product.image : '';
-    document.getElementById('formImageFile').value = '';
+
+    // Limpieza segura del input de archivos sin romper el navegador
+    const fileInput = document.getElementById('formImageFile');
+    if (fileInput) fileInput.value = '';
 
     toggleOfferFields();
 
-    const modal = document.getElementById('productFormModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
-
 function closeProductFormModal() {
     const modal = document.getElementById('productFormModal');
     modal.classList.add('hidden');
