@@ -137,12 +137,12 @@ app.get('/api/productos', async (req, res) => {
 });
 
 app.post('/api/productos', soloAdmin, async (req, res) => {
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url } = req.body;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores } = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), porcentaje_vendido ?? 35, material, descripcion, imagen_url]
+            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), porcentaje_vendido, material, descripcion, imagen_url, JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige'])]
         );
         res.json(result.rows[0]);
     } catch (err) {
@@ -151,12 +151,12 @@ app.post('/api/productos', soloAdmin, async (req, res) => {
 });
 
 app.put('/api/productos/:id', soloAdmin, async (req, res) => {
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url } = req.body;
+    const { id } = req.params;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores } = req.body;
     try {
         const result = await pool.query(
-            `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5,
-             stock_by_size=$6, porcentaje_vendido=$7, material=$8, descripcion=$9, imagen_url=$10 WHERE id=$11 RETURNING *`,
-            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), porcentaje_vendido ?? 35, material, descripcion, imagen_url, req.params.id]
+            `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, stock_by_size=$6, porcentaje_vendido=$7, material=$8, descripcion=$9, imagen_url=$10, colores=$11 WHERE id=$12 RETURNING *`,
+            [titulo, categoria, etiqueta, precio_remate, precio_original, JSON.stringify(stock_by_size), porcentaje_vendido, material, descripcion, imagen_url, JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), id]
         );
         res.json(result.rows[0]);
     } catch (err) {
@@ -164,14 +164,6 @@ app.put('/api/productos/:id', soloAdmin, async (req, res) => {
     }
 });
 
-app.delete('/api/productos/:id', soloAdmin, async (req, res) => {
-    try {
-        await pool.query('DELETE FROM productos WHERE id = $1', [req.params.id]);
-        res.json({ mensaje: 'Eliminado' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // === RELOJ OFERTA FLASH ===
 app.get('/api/oferta-tiempo', async (req, res) => {

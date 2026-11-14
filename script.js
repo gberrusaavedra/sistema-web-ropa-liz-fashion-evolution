@@ -30,6 +30,7 @@ let state = {
     searchQuery: '',
     sortBy: 'featured',
     selectedSizesPerCard: {},
+    selectedColorsPerCard: {},
     cart: [],
     isRegisterMode: false
 };
@@ -171,8 +172,13 @@ async function fetchProductsFromDB() {
                     : (p.stock_by_size || { S: 2, M: 3, L: 2, XL: 1 });
                 const total = Object.values(parsedStock).reduce((a, b) => a + b, 0);
 
+              const parsedColors = p.colores
+                    ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
+                    : ['Corinto', 'Negro', 'Rojo', 'Beige', 'Blanco'];
+
                 return {
                     id: p.id,
+                    code: `LIZ-${String(p.id).padStart(4, '0')}`,
                     name: p.titulo,
                     category: p.categoria,
                     tag: p.etiqueta || 'Remate Final',
@@ -180,6 +186,7 @@ async function fetchProductsFromDB() {
                     salePrice: Number(p.precio_remate),
                     image: p.imagen_url,
                     stockBySize: parsedStock,
+                    colors: parsedColors,
                     maxInitialStock: Math.max(total + 5, 15),
                     material: p.material || 'Algodón seleccionado de exportación.',
                     description: p.descripcion || 'Prenda en liquidación de temporada hasta agotar stock.',
@@ -194,6 +201,9 @@ async function fetchProductsFromDB() {
     PRODUCTS.forEach(p => {
         if (!state.selectedSizesPerCard[p.id]) {
             state.selectedSizesPerCard[p.id] = getFirstAvailableSize(p);
+        }
+        if (!state.selectedColorsPerCard[p.id]) {
+            state.selectedColorsPerCard[p.id] = (p.colors && p.colors[0]) || 'Único';
         }
     });
 
@@ -219,7 +229,7 @@ function openProductFormModal(product = null) {
     document.getElementById('stockM').value = product ? (product.stockBySize.M || 0) : 3;
     document.getElementById('stockL').value = product ? (product.stockBySize.L || 0) : 2;
     document.getElementById('stockXL').value = product ? (product.stockBySize.XL || 0) : 1;
-    document.getElementById('formMaterial').value = product ? product.material : '';
+ document.getElementById('formColors').value = product && product.colors ? product.colors.join(', ') : 'Corinto, Negro, Rojo, Beige';
     document.getElementById('formDescription').value = product ? product.description : '';
     document.getElementById('formImageUrl').value = product ? product.image : '';
     document.getElementById('formImageFile').value = '';
@@ -283,6 +293,7 @@ async function handleSaveProduct(e) {
         precio_original: regularPriceVal,
         stock_by_size,
         material: document.getElementById('formMaterial').value.trim(),
+        colores: document.getElementById('formColors').value.split(',').map(c => c.trim()).filter(Boolean),
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url
     };
@@ -457,12 +468,15 @@ function renderProductGrid(productsList) {
 
     emptyState.classList.add('hidden');
 
-    grid.innerHTML = productsList.map(product => {
+   grid.innerHTML = productsList.map(product => {
         const discountPct = getDiscountPercent(product.regularPrice, product.salePrice);
         const totalStock = getTotalStock(product);
         const stockPercent = Math.min(100, Math.max(10, Math.round((totalStock / product.maxInitialStock) * 100)));
         const selectedSize = state.selectedSizesPerCard[product.id];
         const isLowStock = totalStock <= 4;
+        const productCode = product.code || `LIZ-${String(product.id).padStart(4, '0')}`;
+        const productColors = product.colors && product.colors.length ? product.colors : ['Corinto', 'Negro', 'Rojo', 'Beige'];
+        const selectedColor = state.selectedColorsPerCard[product.id] || productColors[0];
 
         let tagBadgeClass = "bg-slate-900 text-white";
         if (product.tag === 'Remate Final') tagBadgeClass = "bg-rose-600 text-white";
@@ -475,24 +489,28 @@ function renderProductGrid(productsList) {
                 <div class="relative aspect-[4/5] bg-slate-100 overflow-hidden cursor-pointer" onclick="openQuickView(${product.id})">
                     <img src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500">
                     <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-                     ${discountPct > 0 ? `<span class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md">-${discountPct}% OFF</span>` : ''}
-                     ${product.tag !== 'Normal'
-                         ? `<span class="${tagBadgeClass} text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm uppercase">${product.tag}</span>`
-                         : `<span class="bg-slate-900/85 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase">Nueva Colección</span>`}
-                 </div>
+                        ${discountPct > 0 ? `<span class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md">-${discountPct}% OFF</span>` : ''}
+                        ${product.tag !== 'Normal'
+                            ? `<span class="${tagBadgeClass} text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm uppercase">${product.tag}</span>`
+                            : `<span class="bg-slate-900/85 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase">Nueva Colección</span>`}
+                    </div>
                     ${isLowStock ? `<div class="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>¡ÚLTIMAS ${totalStock} UNIDADES!</div>` : ''}
                 </div>
 
                 <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                     <div>
-                        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">${product.category}</div>
+                        <div class="flex items-center justify-between gap-2 mb-1">
+                            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${product.category}</span>
+                            <span class="text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md">CÓD: ${productCode}</span>
+                        </div>
                         <h3 onclick="openQuickView(${product.id})" class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2 hover:text-rose-600 cursor-pointer">${product.name}</h3>
                     </div>
 
                     <div class="flex items-baseline gap-2">
-                     <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(product.salePrice)}</span>
-                     ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
-                 </div>
+                        <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(product.salePrice)}</span>
+                        ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
+                    </div>
+
                     <div class="space-y-1">
                         <div class="flex justify-between text-[11px] font-semibold">
                             <span class="${isLowStock ? 'text-rose-600 font-bold' : 'text-slate-500'}">${isLowStock ? `¡Quedan solo ${totalStock}!` : `Stock: ${totalStock} und.`}</span>
@@ -524,6 +542,20 @@ function renderProductGrid(productsList) {
                         </div>
                     </div>
 
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-500 mb-1.5">Elige color (puedes agregar varios):</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${productColors.map(col => `
+                                <button type="button" onclick="selectCardColor(${product.id}, '${col.replace(/'/g, "\\'")}')"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                                        selectedColor === col
+                                            ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400'
+                                    }">${col}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+
                     <div class="pt-2 flex items-center gap-2">
                         <button onclick="addToCart(${product.id})" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
                             <i data-lucide="shopping-bag" class="w-4 h-4"></i> Agregar
@@ -533,7 +565,6 @@ function renderProductGrid(productsList) {
                         </button>
                     </div>
 
-                    <!-- CONTROLES EXCLUSIVOS DEL ADMINISTRADOR -->
                     ${isAdmin ? `
                         <div class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
                             <button onclick="editProductById(${product.id})" class="bg-amber-100 hover:bg-amber-500 text-amber-900 hover:text-white font-bold py-1.5 rounded-lg text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer">
@@ -552,6 +583,15 @@ function renderProductGrid(productsList) {
     lucide.createIcons();
 }
 
+function selectCardSize(productId, size) {
+    state.selectedSizesPerCard[productId] = size;
+    applyFilters();
+}
+
+function selectCardColor(productId, color) {
+    state.selectedColorsPerCard[productId] = color;
+    applyFilters();
+}
 function selectCardSize(productId, size) {
     state.selectedSizesPerCard[productId] = size;
     applyFilters();
@@ -600,23 +640,31 @@ function closeQuickView() {
 }
 document.getElementById('quickViewModal').addEventListener('click', closeQuickView);
 
-function addToCart(productId, explicitSize = null) {
+function addToCart(productId, explicitSize = null, explicitColor = null) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
     const size = explicitSize || state.selectedSizesPerCard[productId] || getFirstAvailableSize(product);
+    const color = explicitColor || state.selectedColorsPerCard[productId] || (product.colors && product.colors[0]) || 'Único';
     const availableStock = product.stockBySize[size] || 0;
 
     if (availableStock <= 0) return showToast('Talla agotada', 'error');
 
-    const existing = state.cart.find(i => i.productId === productId && i.size === size);
+    const totalSameSizeInCart = state.cart
+        .filter(i => i.productId === productId && i.size === size)
+        .reduce((sum, i) => sum + i.qty, 0);
+
+    if (totalSameSizeInCart >= availableStock) {
+        return showToast(`Stock máximo en talla ${size}: ${availableStock} und.`, 'warning');
+    }
+
+    const existing = state.cart.find(i => i.productId === productId && i.size === size && i.color === color);
     if (existing) {
-        if (existing.qty >= availableStock) return showToast(`Stock máximo: ${availableStock} und.`, 'warning');
         existing.qty += 1;
     } else {
-        state.cart.push({ productId, size, qty: 1 });
+        state.cart.push({ productId, size, color, qty: 1 });
     }
     renderCart();
-    showToast(`Agregado: ${product.name} (Talla ${size})`, 'success');
+    showToast(`Agregado: ${product.name} (${color} - Talla ${size})`, 'success');
 }
 
 function renderCart() {
@@ -639,17 +687,19 @@ function renderCart() {
     container.innerHTML = state.cart.map((item, idx) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (!p) return '';
+        const code = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         regTotal += p.regularPrice * item.qty;
         saleTotal += p.salePrice * item.qty;
         return `
             <div class="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200">
                 <img src="${p.image}" class="w-16 h-20 object-cover rounded-xl">
                 <div class="flex-1">
+                    <span class="text-[10px] font-black text-slate-500 uppercase">CÓD: ${code}</span>
                     <h4 class="font-bold text-xs text-slate-900">${p.name}</h4>
-                    <span class="text-[11px] bg-slate-100 px-2 py-0.5 rounded font-bold">Talla: ${item.size} | Cant: ${item.qty}</span>
+                    <span class="text-[11px] bg-slate-100 px-2 py-0.5 rounded font-bold inline-block mt-0.5">Color: ${item.color || 'Único'} | Talla: ${item.size} | Cant: ${item.qty}</span>
                     <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(p.salePrice * item.qty)}</div>
                 </div>
-                <button onclick="state.cart.splice(${idx},1); renderCart();" class="text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <button onclick="state.cart.splice(${idx},1); renderCart();" class="text-slate-400 hover:text-rose-600 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         `;
     }).join('');
@@ -669,12 +719,17 @@ function toggleCartDrawer(open) {
 
 function sendOrderToWhatsApp() {
     if (state.cart.length === 0) return;
-    let msg = `🔥 *PEDIDO LIZ FASHION EVOLUTION* 🔥\n\n`;
+    const orderCode = `PED-${Math.floor(100000 + Math.random() * 900000)}`;
+    let msg = `🔥 *PEDIDO LIZ FASHION EVOLUTION* 🔥\n`;
+    msg += `🧾 *Código de Orden:* ${orderCode}\n\n`;
     let total = 0;
     state.cart.forEach((item, i) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
+        const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         total += p.salePrice * item.qty;
-        msg += `${i + 1}. *${p.name}* (Talla ${item.size}) x${item.qty} = ${formatPrice(p.salePrice * item.qty)}\n`;
+        msg += `${i + 1}. *[${prodCode}] ${p.name}*\n`;
+        msg += `   • Color: *${item.color || 'Único'}* | Talla: *${item.size}* | Cant: *${item.qty}*\n`;
+        msg += `   • Subtotal: ${formatPrice(p.salePrice * item.qty)}\n`;
     });
     msg += `\n💰 *TOTAL: ${formatPrice(total)}*`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -682,8 +737,10 @@ function sendOrderToWhatsApp() {
 
 function inquireSingleProductWhatsApp(productId) {
     const p = PRODUCTS.find(prod => prod.id === productId);
+    const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
     const sz = state.selectedSizesPerCard[productId] || 'M';
-    const msg = `Hola *LIZ FASHION EVOLUTION*, me interesa: *${p.name}* (Talla ${sz}) a ${formatPrice(p.salePrice)}. ¿Sigue disponible?`;
+    const col = state.selectedColorsPerCard[productId] || (p.colors && p.colors[0]) || 'Único';
+    const msg = `Hola *LIZ FASHION EVOLUTION*, quiero separar/consultar:\n• *Código Producto:* ${prodCode}\n• *Prenda:* ${p.name}\n• *Color:* ${col}\n• *Talla:* ${sz}\n• *Precio:* ${formatPrice(p.salePrice)}\n¿Sigue disponible?`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
