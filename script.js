@@ -762,3 +762,85 @@ window.addEventListener('DOMContentLoaded', () => {
     renderCart();
     fetchProductsFromDB();
 });
+// =====================================================================
+// CONTROL Y EDICIÓN DEL RELOJ DE OFERTA FLASH DESDE EL PANEL ADMIN
+// =====================================================================
+
+async function fetchOfferTime() {
+    try {
+        const res = await fetch(`${API_URL}/oferta-tiempo`);
+        const data = await res.json();
+        if (data && data.offer_end_time) {
+            startCountdown(Number(data.offer_end_time));
+        } else {
+            // Valor por defecto: 24 horas a partir de ahora si no hay fecha configurada
+            startCountdown(new Date().getTime() + 24 * 60 * 60 * 1000);
+        }
+    } catch (err) {
+        console.error('Error al obtener tiempo de oferta:', err);
+    }
+}
+
+function startCountdown(endTime) {
+    const timer = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = endTime - now;
+
+        if (distance < 0) {
+            clearInterval(timer);
+            const container = document.getElementById('countdownContainer');
+            if (container) {
+                container.innerHTML = "<span class='text-rose-500 font-bold col-span-4 py-2'>¡OFERTA FLASH FINALIZADA!</span>";
+            }
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        const cdDays = document.getElementById('cd-days');
+        const cdHours = document.getElementById('cd-hours');
+        const cdMinutes = document.getElementById('cd-minutes');
+        const cdSeconds = document.getElementById('cd-seconds');
+
+        if (cdDays) cdDays.innerText = String(days).padStart(2, '0');
+        if (cdHours) cdHours.innerText = String(hours).padStart(2, '0');
+        if (cdMinutes) cdMinutes.innerText = String(minutes).padStart(2, '0');
+        if (cdSeconds) cdSeconds.innerText = String(seconds).padStart(2, '0');
+    }, 1000);
+}
+
+// Función ejecutada por el botón "Editar Hora Oferta" del panel de administración
+async function handleEditOfferTime() {
+    const nuevaHoraStr = prompt("Ingresa cuántas horas de duración tendrá la Oferta Flash (ej. 24, 48, 72):", "24");
+    if (!nuevaHoraStr) return;
+    
+    const horas = parseFloat(nuevaHoraStr);
+    if (isNaN(horas) || horas <= 0) {
+        showToast("Por favor ingresa un número válido de horas.", "error");
+        return;
+    }
+
+    const offer_end_time = new Date().getTime() + (horas * 60 * 60 * 1000);
+    const { token } = getSession();
+
+    try {
+        const res = await fetch(`${API_URL}/oferta-tiempo`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ offer_end_time })
+        });
+
+        if (!res.ok) throw new Error('No se pudo actualizar el tiempo de oferta');
+        
+        showToast("¡Hora de oferta actualizada con éxito!", "success");
+        setTimeout(() => location.reload(), 1500);
+    } catch (err) {
+        showToast("Error al guardar: " + err.message, "error");
+    }
+}
