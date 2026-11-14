@@ -684,28 +684,28 @@
 
         <!-- MODAL GESTOR E INGRESAR PEDIDOS -->
 <div id="orderManagerModal" onclick="closeOrderManagerModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 relative modal-animate my-auto overflow-hidden" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-3xl max-w-2xl w-full h-[80vh] flex flex-col shadow-2xl border border-slate-200 relative modal-animate my-auto overflow-hidden" onclick="event.stopPropagation()">
         
-        <!-- Cabecera fija del Modal -->
-        <div class="p-6 pb-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+        <!-- Cabecera fija -->
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50">
             <div class="flex items-center gap-2.5">
                 <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
                     <i data-lucide="clipboard-list" class="w-6 h-6"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-black text-slate-900">Módulo de Ingreso y Control de Pedidos</h3>
-                    <p class="text-xs text-slate-500">Registra pedidos personalizados, edita tallas/colores y genera PDFs con foto.</p>
+                    <h3 class="text-base font-black text-slate-900">Módulo de Ingreso y Control de Pedidos</h3>
+                    <p class="text-[11px] text-slate-500">Registra pedidos, edita tallas/colores y genera PDFs.</p>
                 </div>
             </div>
-            <button onclick="closeOrderManagerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer">
+            <button onclick="closeOrderManagerModal()" class="w-8 h-8 rounded-full bg-white hover:bg-slate-200 flex items-center justify-center text-slate-600 shadow-xs cursor-pointer">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
         </div>
 
-        <!-- Contenido con Scroll Interno -->
-        <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        <!-- Contenido con Scroll Interno forzado -->
+        <div class="p-5 overflow-y-auto space-y-4 flex-1 bg-white">
             
-            <!-- Formulario para ingresar nuevo pedido -->
+            <!-- Formulario de Registro -->
             <div class="space-y-3 text-xs sm:text-sm bg-slate-50 p-4 rounded-2xl border border-slate-200">
                 <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Nuevo Registro de Pedido</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -746,22 +746,22 @@
                 </button>
             </div>
 
-            <!-- Cabecera de listado y botones de descarga general con el total -->
+            <!-- Botones de Reportes y PDF General -->
             <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Pedidos Registrados Recientemente</h4>
                 <div class="flex items-center gap-1.5">
-                    <button onclick="downloadAllOrdersPDF('general')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Descargar reporte general con el total">
+                    <button onclick="downloadAllOrdersPDF('general')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Reporte general con total en PDF">
                         <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF General
                     </button>
-                    <button onclick="downloadAllOrdersPDF('categories')" class="bg-slate-950 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Descargar reporte por categorías">
+                    <button onclick="downloadAllOrdersPDF('categories')" class="bg-slate-950 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Reporte por categorías en PDF">
                         <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF por Categorías
                     </button>
                 </div>
             </div>
             
-            <!-- Listado de Pedidos -->
-            <div id="manualOrdersList" class="space-y-3 pb-2">
-                <!-- Se carga dinámicamente con JS -->
+            <!-- Listado donde aparecen los pedidos -->
+            <div id="manualOrdersList" class="space-y-3 pb-4">
+                <!-- Se carga dinámicamente -->
             </div>
 
         </div>
