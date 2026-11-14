@@ -1,0 +1,65 @@
+/* ==========================================================================
+   ESTILOS PERSONALIZADOS - REMATE STYLE OUTLET
+   ========================================================================== */
+
+/* Patrón de puntos decorativo en el Hero Banner */
+.hero-pattern {
+    background-image: radial-gradient(#e11d48 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Ocultar barra de desplazamiento horizontal en pestañas de categorías */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Scrollbar personalizado sutil para el carrito y modales */
+#cartItemsContainer::-webkit-scrollbar,
+#quickViewModal > div::-webkit-scrollbar {
+    width: 6px;
+}
+
+#cartItemsContainer::-webkit-scrollbar-track,
+#quickViewModal > div::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+#cartItemsContainer::-webkit-scrollbar-thumb,
+#quickViewModal > div::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+}
+
+#cartItemsContainer::-webkit-scrollbar-thumb:hover,
+#quickViewModal > div::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animación de entrada suave para modales */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-animate {
+    animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Efecto de elevación en tarjetas de producto */
+#productGrid article {
+    will-change: transform, box-shadow;
+}
+
+#productGrid article:hover {
+    transform: translateY(-2px);
+}
