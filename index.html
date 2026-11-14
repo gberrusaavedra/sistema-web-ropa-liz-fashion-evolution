@@ -723,14 +723,21 @@
             </button>
         </form>
 
-        <!-- Listado de Pedidos Registrados -->
-        <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider mb-2">Pedidos Registrados Recientemente</h4>
+        <!-- Cabecera de listado y botones de descarga general por categorías -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pt-2 border-t border-slate-100">
+            <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Pedidos Registrados Recientemente</h4>
+            <div class="flex items-center gap-1.5">
+                <button onclick="downloadAllOrdersPDF('general')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Descargar reporte general de todos los pedidos">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i> PDF General
+                </button>
+                <button onclick="downloadAllOrdersPDF('categories')" class="bg-slate-950 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] flex items-center gap-1 transition-all cursor-pointer shadow-xs" title="Descargar reporte agrupado por categorías/tallas">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF por Categorías
+                </button>
+            </div>
+        </div>
         <div id="manualOrdersList" class="space-y-3 max-h-60 overflow-y-auto pr-1">
             <!-- Se carga dinámicamente con JS -->
-        </div>
-    </div>
-</div>
-
+    
     <!-- Lógica unificada -->
     <script src="script.js"></script>
 </body>

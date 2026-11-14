@@ -910,7 +910,23 @@ function closeOrderManagerModal() {
 }
 
 
-// Guardar Pedido Manual con soporte para archivos locales
+// ==========================================
+// MÓDULO DE GESTIÓN DE PEDIDOS Y REPORTES PDF
+// ==========================================
+
+// Abrir / Cerrar Modal de Pedidos Manuales
+function openOrderManagerModal() {
+    document.getElementById('orderManagerModal').classList.remove('hidden');
+    document.getElementById('orderManagerModal').classList.add('flex');
+    renderManualOrders();
+}
+
+function closeOrderManagerModal() {
+    document.getElementById('orderManagerModal').classList.add('hidden');
+    document.getElementById('orderManagerModal').classList.remove('flex');
+}
+
+// Guardar Pedido Manual con soporte para archivos locales (Imágenes)
 function handleSaveManualOrder(e) {
     e.preventDefault();
     
@@ -935,7 +951,9 @@ function handleSaveManualOrder(e) {
 
         e.target.reset();
         renderManualOrders();
-        showToast('¡Pedido registrado y stock separado con éxito!');
+        if (typeof showToast === 'function') {
+            showToast('¡Pedido registrado y stock separado con éxito!');
+        }
     };
 
     if (file) {
@@ -952,6 +970,8 @@ function handleSaveManualOrder(e) {
 // Renderizar listado de pedidos en el modal
 function renderManualOrders() {
     const container = document.getElementById('manualOrdersList');
+    if (!container) return;
+    
     let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
 
     if (orders.length === 0) {
@@ -960,7 +980,7 @@ function renderManualOrders() {
     }
 
     container.innerHTML = orders.map(o => `
-        <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-xs gap-3">
+        <div class="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs gap-3">
             <img src="${o.image}" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-100 shrink-0">
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
@@ -980,6 +1000,7 @@ function renderManualOrders() {
             </div>
         </div>
     `).join('');
+    
     if (window.lucide) lucide.createIcons();
 }
 
@@ -1001,7 +1022,7 @@ function sendManualOrderWhatsApp(orderId) {
     window.open(`https://wa.me/51931598799?text=${encodeURIComponent(message)}`, '_blank');
 }
 
-// Descargar PDF del Pedido (Comprobante con diseño limpio)
+// Descargar PDF del Pedido (Comprobante con diseño limpio corregido)
 function downloadOrderPDF(orderId) {
     let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
     let o = orders.find(item => item.id === orderId);
@@ -1009,7 +1030,6 @@ function downloadOrderPDF(orderId) {
 
     const { jsPDF } = window.jspdf || {};
     if (!jsPDF) {
-        // Carga dinámica de jsPDF si no estuviera enlazado
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
         script.onload = () => generatePDFDocument(o);
@@ -1050,14 +1070,101 @@ function generatePDFDocument(o) {
     doc.text(`• Color: ${o.color}`, 18, 104);
     doc.text(`• Precio Total: S/ ${o.price}`, 18, 112);
 
+    // Caja de aviso corregida y centrada visualmente
     doc.setFillColor(255, 241, 242);
     doc.roundedRect(14, 130, 182, 25, 3, 3, 'F');
     doc.setTextColor(225, 29, 72);
     doc.setFont('helvetica', 'bold');
-    doc.text('¡Stock separado por 30 minutos!', 18, 1425 / 10);
+    doc.text('¡Stock separado por 30 minutos!', 18, 142.5);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text('Presenta este comprobante o envíalo por WhatsApp para concretar tu entrega.', 18, 1505 / 10);
+    doc.text('Presenta este comprobante o envíalo por WhatsApp para concretar tu entrega.', 18, 150.5);
 
     doc.save(`Pedido_${o.id}.pdf`);
+}
+
+// Descargar Todos los Pedidos (General o por Categorías/Tallas)
+function downloadAllOrdersPDF(mode) {
+    let orders = JSON.parse(localStorage.getItem('liz_manual_orders') || '[]');
+    if (orders.length === 0) {
+        if (typeof showToast === 'function') showToast('No hay pedidos registrados para exportar.');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        script.onload = () => buildAllOrdersPDFDoc(orders, mode);
+        document.head.appendChild(script);
+    } else {
+        buildAllOrdersPDFDoc(orders, mode);
+    }
+}
+
+function buildAllOrdersPDFDoc(orders, mode) {
+    const doc = new window.jspdf.jsPDF();
+    
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(15);
+    doc.setFont('helvetica', 'bold');
+    doc.text(mode === 'general' ? 'REPORTE GENERAL DE PEDIDOS - LIZ FASHION' : 'REPORTE DE PEDIDOS POR TALLAS Y CATEGORÍAS', 14, 22);
+
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(9);
+    doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 14, 43);
+    doc.text(`Total de registros: ${orders.length}`, 150, 43);
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 48, 196, 48);
+
+    let y = 56;
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(10);
+
+    if (mode === 'general') {
+        orders.forEach((o, index) => {
+            if (y > 270) { doc.addPage(); y = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${index + 1}. [${o.id}] Cliente: ${o.client}`, 14, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Prenda: ${o.product} | Talla: ${o.size} | Color: ${o.color}`, 18, y + 6);
+            doc.text(`Precio: S/ ${o.price} | Fecha: ${o.date}`, 18, y + 12);
+            doc.setDrawColor(240, 240, 240);
+            doc.line(14, y + 16, 196, y + 16);
+            y += 22;
+        });
+    } else {
+        let grouped = {};
+        orders.forEach(o => {
+            let key = `Talla: ${o.size}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(o);
+        });
+
+        for (let group in grouped) {
+            if (y > 260) { doc.addPage(); y = 20; }
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(225, 29, 72);
+            doc.text(`--- ${group.toUpperCase()} ---`, 14, y);
+            y += 8;
+
+            doc.setTextColor(15, 23, 42);
+            grouped[group].forEach(o => {
+                if (y > 270) { doc.addPage(); y = 20; }
+                doc.setFont('helvetica', 'bold');
+                doc.text(`• [${o.id}] ${o.product} (S/ ${o.price})`, 18, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`  Cliente: ${o.client} | Color: ${o.color}`, 18, y + 6);
+                y += 14;
+            });
+            y += 6;
+        }
+    }
+
+    doc.save(mode === 'general' ? 'Reporte_General_Pedidos.pdf' : 'Reporte_Pedidos_Por_Categorias.pdf');
+    if (typeof showToast === 'function') showToast('¡Reporte PDF descargado con éxito!');
 }
