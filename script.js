@@ -703,7 +703,7 @@ function selectCardColor(productId, colorName) {
         const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
         if (colorIndex !== -1) {
             const imagesList = product.images && product.images.length > 0 ? product.images : [product.image];
-            // Sincronización segura usando operador módulo para evitar desbordes si hay menos fotos que colores
+            // Mapeo seguro con operador módulo para cambiar la imagen exactamente según el color seleccionado
             const targetIdx = colorIndex % imagesList.length;
             sliderIndexes[productId] = targetIdx;
             
