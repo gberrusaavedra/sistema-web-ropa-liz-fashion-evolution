@@ -708,7 +708,6 @@ function selectCardColor(productId, colorName) {
             
             const slider = document.getElementById(`slider-${productId}`);
             if (slider) {
-                // Desplazamiento porcentual exacto basado en el número total de imágenes del slider
                 slider.style.transform = `translateX(-${targetIdx * (100 / imagesList.length)}%)`;
             }
         }
