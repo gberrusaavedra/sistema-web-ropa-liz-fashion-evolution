@@ -1495,15 +1495,23 @@ function descargarPDFConfeccion(id) {
     showToast('¡PDF generado y registrado en reporte!', 'success');
 }
 // =====================================================================
-// AUTENTICACIÓN SOCIAL (GOOGLE Y FACEBOOK)
+// AUTENTICACIÓN SOCIAL SEGURA (GOOGLE Y FACEBOOK)
 // =====================================================================
 function loginWithGoogle() {
-    if (typeof google === 'undefined') {
-        showToast('El SDK de Google aún está cargando...', 'warning');
+    if (typeof google === 'undefined' || !google.accounts) {
+        showToast('El SDK de Google se está cargando. Inténtalo en un momento.', 'warning');
         return;
     }
+    
+    // Si estás usando el Client ID genérico de prueba, avisa en lugar de romper
+    const clientId = 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+    if (clientId.includes('TU_GOOGLE_CLIENT_ID')) {
+        showToast('Configura tu Google Client ID real en el script.', 'warning');
+        return;
+    }
+
     google.accounts.id.initialize({
-        client_id: 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // Reemplaza por tu Client ID real de Google Cloud
+        client_id: clientId,
         callback: async (response) => {
             try {
                 const res = await fetch(`${API_URL}/auth/google`, {
@@ -1523,7 +1531,7 @@ function loginWithGoogle() {
                     showToast(data.error || 'Error en autenticación con Google', 'error');
                 }
             } catch (err) {
-                showToast('No se pudo conectar con el servidor', 'error');
+                showToast('No se pudo conectar con el servidor de Render', 'error');
             }
         }
     });
@@ -1532,38 +1540,141 @@ function loginWithGoogle() {
 
 function loginWithFacebook() {
     if (typeof FB === 'undefined') {
-        showToast('El SDK de Facebook está cargando...', 'warning');
+        showToast('El SDK de Facebook aún está cargando. Espera un segundo.', 'warning');
         return;
     }
-    FB.login(function(response) {
-        if (response.authResponse) {
-            FB.api('/me', { fields: 'name,email' }, async function(userInfo) {
-                try {
-                    const res = await fetch(`${API_URL}/auth/facebook`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            nombre: userInfo.name, 
-                            email: userInfo.email || `${userInfo.id}@facebook.user` 
-                        })
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        localStorage.setItem('rs_token', data.token);
-                        localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
-                        closeAuthModal();
-                        updateAuthUI();
-                        applyFilters();
-                        showToast(`¡Bienvenido, ${data.usuario.nombre}!`, 'success');
-                    } else {
-                        showToast(data.error || 'Error en autenticación con Facebook', 'error');
-                    }
-                } catch (err) {
-                    showToast('No se pudo conectar con el servidor', 'error');
-                }
-            });
+
+    FB.getLoginStatus(function(response) {
+        if (response.status === 'connected') {
+            procesarTokenFacebook(response.authResponse.accessToken);
         } else {
-            showToast('Inicio de sesión con Facebook cancelado', 'warning');
+            FB.login(function(res) {
+                if (res.authResponse) {
+                    procesarTokenFacebook(res.authResponse.accessToken);
+                } else {
+                    showToast('Inicio de sesión con Facebook cancelado', 'warning');
+                }
+            }, { scope: 'public_profile,email' });
         }
-    }, { scope: 'public_profile,email' });
+    });
+}
+
+function procesarTokenFacebook(accessToken) {
+    FB.api('/me', { fields: 'name,email' }, async function(userInfo) {
+        try {
+            const res = await fetch(`${API_URL}/auth/facebook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    nombre: userInfo.name, 
+                    email: userInfo.email || `${userInfo.id}@facebook.user` 
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('rs_token', data.token);
+                localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
+                closeAuthModal();
+                updateAuthUI();
+                applyFilters();
+                showToast(`¡Bienvenido, ${data.usuario.nombre}!`, 'success');
+            } else {
+                showToast(data.error || 'Error en autenticación con Facebook', 'error');
+            }
+        } catch (err) {
+            showToast('No se pudo conectar con el servidor de Render', 'error');
+        }
+    });
+}
+// =====================================================================
+// AUTENTICACIÓN SOCIAL SEGURA (GOOGLE Y FACEBOOK)
+// =====================================================================
+function loginWithGoogle() {
+    if (typeof google === 'undefined' || !google.accounts) {
+        showToast('El SDK de Google se está cargando. Inténtalo en un momento.', 'warning');
+        return;
+    }
+    
+    // Si estás usando el Client ID genérico de prueba, avisa en lugar de romper
+    const clientId = 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+    if (clientId.includes('TU_GOOGLE_CLIENT_ID')) {
+        showToast('Configura tu Google Client ID real en el script.', 'warning');
+        return;
+    }
+
+    google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response) => {
+            try {
+                const res = await fetch(`${API_URL}/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: response.credential })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('rs_token', data.token);
+                    localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
+                    closeAuthModal();
+                    updateAuthUI();
+                    applyFilters();
+                    showToast(`¡Bienvenido, ${data.usuario.nombre}!`, 'success');
+                } else {
+                    showToast(data.error || 'Error en autenticación con Google', 'error');
+                }
+            } catch (err) {
+                showToast('No se pudo conectar con el servidor de Render', 'error');
+            }
+        }
+    });
+    google.accounts.id.prompt();
+}
+
+function loginWithFacebook() {
+    if (typeof FB === 'undefined') {
+        showToast('El SDK de Facebook aún está cargando. Espera un segundo.', 'warning');
+        return;
+    }
+
+    FB.getLoginStatus(function(response) {
+        if (response.status === 'connected') {
+            procesarTokenFacebook(response.authResponse.accessToken);
+        } else {
+            FB.login(function(res) {
+                if (res.authResponse) {
+                    procesarTokenFacebook(res.authResponse.accessToken);
+                } else {
+                    showToast('Inicio de sesión con Facebook cancelado', 'warning');
+                }
+            }, { scope: 'public_profile,email' });
+        }
+    });
+}
+
+function procesarTokenFacebook(accessToken) {
+    FB.api('/me', { fields: 'name,email' }, async function(userInfo) {
+        try {
+            const res = await fetch(`${API_URL}/auth/facebook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    nombre: userInfo.name, 
+                    email: userInfo.email || `${userInfo.id}@facebook.user` 
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('rs_token', data.token);
+                localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
+                closeAuthModal();
+                updateAuthUI();
+                applyFilters();
+                showToast(`¡Bienvenido, ${data.usuario.nombre}!`, 'success');
+            } else {
+                showToast(data.error || 'Error en autenticación con Facebook', 'error');
+            }
+        } catch (err) {
+            showToast('No se pudo conectar con el servidor de Render', 'error');
+        }
+    });
 }
