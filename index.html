@@ -664,6 +664,20 @@
                 
                 <!-- SECCIÓN 1: CATÁLOGO Y SELECCIÓN DE CLIENTES -->
                 <div id="seccionTabCatalogo" class="space-y-4">
+                    <!-- Banner de Período y Aviso de Cierre -->
+                    <div id="confeccionPeriodoBanner" class="bg-amber-100 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm">
+                        <div class="flex items-center gap-2 text-amber-950 font-bold">
+                            <i class="fas fa-calendar-alt text-amber-700 text-lg"></i>
+                            <div>
+                                <span>Período de Pedidos: </span>
+                                <span id="lblPeriodoFechas" class="font-extrabold text-amber-900">Del --/--/---- al --/--/----</span>
+                            </div>
+                        </div>
+                        <div id="lblEstadoPeriodo" class="bg-amber-800 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider">
+                            Cargando...
+                        </div>
+                    </div>
+
                     <h4 class="font-black text-slate-900 text-lg">Selecciona tu modelo para confección a medida:</h4>
                     <div id="catalogoConfeccionGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <!-- Dinámico por JS -->
@@ -705,6 +719,18 @@
                                 <label class="block text-xs font-bold text-amber-900 mb-1">Imagen de la Prenda (Sube archivo local o pega enlace)</label>
                                 <input type="file" id="confImagenFile" accept="image/*" class="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs mb-2 cursor-pointer">
                                 <input type="text" id="confImagenUrl" placeholder="O pega el enlace de la imagen aquí (https://...)" class="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs outline-none focus:border-amber-600">
+                            </div>
+
+                            <!-- Configuración de Fechas de Confección (Editable Admin) -->
+                            <div class="md:col-span-2 bg-amber-50 p-4 rounded-xl border border-amber-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-amber-900 mb-1">📅 Fecha y Hora de Inicio *</label>
+                                    <input type="datetime-local" id="confFechaInicio" required class="w-full p-2.5 bg-white border border-amber-300 rounded-xl text-xs outline-none focus:border-amber-600 font-semibold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-amber-900 mb-1">⏰ Fecha y Hora de Término *</label>
+                                    <input type="datetime-local" id="confFechaFin" required class="w-full p-2.5 bg-white border border-amber-300 rounded-xl text-xs outline-none focus:border-amber-600 font-semibold">
+                                </div>
                             </div>
 
                             <div class="md:col-span-2 flex justify-end gap-2 pt-2">
