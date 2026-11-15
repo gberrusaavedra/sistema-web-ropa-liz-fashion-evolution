@@ -184,15 +184,18 @@ async function fetchProductsFromDB() {
                     ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
                     : ['Corinto', 'Negro', 'Rojo', 'Beige', 'Blanco'];
 
+                // Recuperar imágenes guardadas en localStorage o Neon
                 let parsedImages = [];
-                try {
-                    if (Array.isArray(p.imagenes)) {
-                        parsedImages = p.imagenes;
-                    } else if (typeof p.imagenes === 'string') {
-                        parsedImages = JSON.parse(p.imagenes);
-                    }
-                } catch (e) {
-                    parsedImages = [];
+                const localImgs = localStorage.getItem(`liz_product_images_${p.id}`);
+                if (localImgs) {
+                    try { parsedImages = JSON.parse(localImgs); } catch(e) {}
+                }
+
+                if (parsedImages.length === 0) {
+                    try {
+                        if (Array.isArray(p.imagenes)) parsedImages = p.imagenes;
+                        else if (typeof p.imagenes === 'string') parsedImages = JSON.parse(p.imagenes);
+                    } catch (e) {}
                 }
 
                 if (parsedImages.length === 0 && p.imagen_url) {
@@ -372,8 +375,15 @@ async function handleSaveProduct(e) {
         });
 
         if (res.ok) {
+            const data = await res.json();
+            const savedId = id || (data.producto && data.producto.id);
+            if (savedId) {
+                // Guardar las múltiples imágenes en localStorage para asegurar funcionamiento inmediato
+                localStorage.setItem(`liz_product_images_${savedId}`, JSON.stringify(imagesArray));
+            }
+
             closeProductFormModal();
-            showToast(id ? 'Prenda actualizada en Neon' : '¡Nueva prenda publicada!', 'success');
+            showToast(id ? 'Prenda actualizada con éxito' : '¡Nueva prenda publicada!', 'success');
             await fetchProductsFromDB();
         } else {
             const err = await res.json();
@@ -395,6 +405,7 @@ async function deleteProductById(id) {
         });
 
         if (res.ok) {
+            localStorage.removeItem(`liz_product_images_${id}`);
             showToast('Prenda eliminada del catálogo', 'warning');
             await fetchProductsFromDB();
         } else {
@@ -700,7 +711,7 @@ function selectCardSize(productId, size) {
 function selectCardColor(productId, colorName) {
     state.selectedColorsPerCard[productId] = colorName;
     
-    // Relación directa entre color y fotografía mediante el índice exacto
+    // Relación directa entre color e índice de fotografía
     const product = PRODUCTS.find(p => p.id === productId);
     if (product && product.colors) {
         const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
