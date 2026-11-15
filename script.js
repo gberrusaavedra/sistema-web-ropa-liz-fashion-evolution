@@ -1537,3 +1537,261 @@ function descargarPDFConfeccion(id) {
     doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
     showToast('¡PDF generado y registrado en reporte!', 'success');
 }
+// =====================================================================
+// MÓDULO DE PEDIDOS DE CONFECCIÓN, GESTIÓN DE IMÁGENES Y REPORTE
+// =====================================================================
+
+function abrirModuloConfeccion() {
+    const modal = document.getElementById('confeccionModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        cambiarTabConfeccion('catalogo');
+        renderizarBannerPeriodoConfeccion();
+        renderCatalogoConfeccion();
+        verificarPermisosAdminConfeccionTabs();
+    }
+}
+
+function cerrarModuloConfeccion() {
+    const modal = document.getElementById('confeccionModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function verificarPermisosAdminConfeccionTabs() {
+    const { isAdmin } = getSession();
+    const btnAdmin = document.getElementById('tabBtnAdmin');
+    const btnReporte = document.getElementById('tabBtnReporte');
+    const badgeRol = document.getElementById('badgeRolConfeccion');
+
+    if (isAdmin) {
+        if (btnAdmin) btnAdmin.classList.remove('hidden');
+        if (btnReporte) btnReporte.classList.remove('hidden');
+        if (badgeRol) {
+            badgeRol.textContent = 'Modo Administrador';
+            badgeRol.className = 'text-xs font-extrabold text-amber-950 bg-amber-300 px-3 py-1 rounded-full';
+        }
+        
+        // Cargar fechas actuales en el form de admin
+        const configFechas = obtenerConfigFechasConfeccion();
+        const inputInicio = document.getElementById('confFechaInicio');
+        const inputFin = document.getElementById('confFechaFin');
+        if (inputInicio && configFechas.inicio) inputInicio.value = configFechas.inicio;
+        if (inputFin && configFechas.fin) inputFin.value = configFechas.fin;
+    } else {
+        if (btnAdmin) btnAdmin.classList.add('hidden');
+        if (btnReporte) btnReporte.classList.add('hidden');
+        if (badgeRol) {
+            badgeRol.textContent = 'Vista Cliente';
+            badgeRol.className = 'text-xs font-extrabold text-amber-900 bg-amber-200 px-3 py-1 rounded-full';
+        }
+    }
+}
+
+function cambiarTabConfeccion(tab) {
+    const secCat = document.getElementById('seccionTabCatalogo');
+    const secAdm = document.getElementById('seccionTabAdmin');
+    const secRep = document.getElementById('seccionTabReporte');
+
+    const btnCat = document.getElementById('tabBtnCatalogo');
+    const btnAdm = document.getElementById('tabBtnAdmin');
+    const btnRep = document.getElementById('tabBtnReporte');
+
+    secCat.classList.add('hidden');
+    secAdm.classList.add('hidden');
+    secRep.classList.add('hidden');
+
+    btnCat.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
+    if (btnAdm) btnAdm.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
+    if (btnRep) btnRep.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
+
+    if (tab === 'catalogo') {
+        secCat.classList.remove('hidden');
+        btnCat.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
+        renderizarBannerPeriodoConfeccion();
+        renderCatalogoConfeccion();
+    } else if (tab === 'admin') {
+        secAdm.classList.remove('hidden');
+        if (btnAdm) btnAdm.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
+    } else if (tab === 'reporte') {
+        secRep.classList.remove('hidden');
+        if (btnRep) btnRep.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
+        renderReporteClientes();
+    }
+}
+
+function obtenerConfigFechasConfeccion() {
+    const defaultConfig = {
+        inicio: new Date().toISOString().slice(0, 16),
+        fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
+    };
+    return JSON.parse(localStorage.getItem('liz_confeccion_fechas')) || defaultConfig;
+}
+
+function renderizarBannerPeriodoConfeccion() {
+    const lblFechas = document.getElementById('lblPeriodoFechas');
+    const lblEstado = document.getElementById('lblEstadoPeriodo');
+    const banner = document.getElementById('confeccionPeriodoBanner');
+    if (!lblFechas || !lblEstado) return;
+
+    const conf = obtenerConfigFechasConfeccion();
+    const ahora = new Date().getTime();
+    const fInicio = new Date(conf.inicio).getTime();
+    const fFin = new Date(conf.fin).getTime();
+
+    const formatF = (dStr) => {
+        const d = new Date(dStr);
+        return isNaN(d) ? dStr : d.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' });
+    };
+
+    lblFechas.textContent = `Del ${formatF(conf.inicio)} al ${formatF(conf.fin)}`;
+
+    if (ahora < fInicio) {
+        lblEstado.textContent = '⏳ PRÓXIMAMENTE';
+        lblEstado.className = 'bg-amber-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
+        if (banner) banner.className = "bg-amber-100 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
+    } else if (ahora >= fInicio && ahora <= fFin) {
+        lblEstado.textContent = '🟢 PEDIDOS ABIERTOS';
+        lblEstado.className = 'bg-emerald-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
+        if (banner) banner.className = "bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
+    } else {
+        lblEstado.textContent = '🔴 PLAZO CULMINADO';
+        lblEstado.className = 'bg-rose-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
+        if (banner) banner.className = "bg-rose-50 border border-rose-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
+    }
+}
+
+function obtenerPrendasConfeccion() {
+    return JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [
+        {
+            id: 1,
+            modelo: 'Casaca Biker Exclusiva de Cuero Sintético',
+            precio: 149.00,
+            colores: ['Negro', 'Corinto', 'Marrón'],
+            tallas: ['S', 'M', 'L', 'XL'],
+            imagen: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500'
+        },
+        {
+            id: 2,
+            modelo: 'Conjunto Urbano Oversize con Capucha',
+            precio: 129.00,
+            colores: ['Beige', 'Gris', 'Negro', 'Verde Militar'],
+            tallas: ['S', 'M', 'L'],
+            imagen: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500'
+        }
+    ];
+}
+
+function guardarPrendaConfeccion(e) {
+    e.preventDefault();
+    const id = document.getElementById('confPrendaId').value;
+    const modelo = document.getElementById('confModelo').value.trim();
+    const precio = parseFloat(document.getElementById('confPrecio').value);
+    const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
+    const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
+    let imagenUrl = document.getElementById('confImagenUrl').value.trim();
+    const fileInput = document.getElementById('confImagenFile');
+
+    // Guardar también las fechas editadas por el admin
+    const fechaInicio = document.getElementById('confFechaInicio').value;
+    const fechaFin = document.getElementById('confFechaFin').value;
+    if (fechaInicio && fechaFin) {
+        localStorage.setItem('liz_confeccion_fechas', JSON.stringify({ inicio: fechaInicio, fin: fechaFin }));
+    }
+
+    const procesarGuardado = (imgFinal) => {
+        let prendas = obtenerPrendasConfeccion();
+        if (id) {
+            prendas = prendas.map(p => p.id == id ? { id: Number(id), modelo, precio, colores, tallas, imagen: imgFinal || p.imagen } : p);
+        } else {
+            const nueva = {
+                id: Date.now(),
+                modelo,
+                precio,
+                colores,
+                tallas,
+                imagen: imgFinal || 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500'
+            };
+            prendas.push(nueva);
+        }
+        localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
+        showToast('¡Fechas y prenda de confección guardadas con éxito!', 'success');
+        document.getElementById('formAdminConfeccion').reset();
+        document.getElementById('confPrendaId').value = '';
+        cambiarTabConfeccion('catalogo');
+    };
+
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            procesarGuardado(evt.target.result);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        procesarGuardado(imagenUrl);
+    }
+}
+
+function renderCatalogoConfeccion() {
+    const grid = document.getElementById('catalogoConfeccionGrid');
+    if (!grid) return;
+    const prendas = obtenerPrendasConfeccion();
+    const { isAdmin } = getSession();
+
+    // Validar si el plazo de pedidos ha culminado
+    const conf = obtenerConfigFechasConfeccion();
+    const ahora = new Date().getTime();
+    const fInicio = new Date(conf.inicio).getTime();
+    const fFin = new Date(conf.fin).getTime();
+    const plazoVencido = ahora > fFin || ahora < fInicio;
+
+    grid.innerHTML = prendas.map(p => {
+        const colorOpts = p.colores.map(c => `<option value="${c}">${c}</option>`).join('');
+        const tallaOpts = p.tallas.map(t => `<option value="${t}">${t}</option>`).join('');
+
+        return `
+            <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+                <div>
+                    <img src="${p.imagen}" alt="${p.modelo}" class="w-full h-44 object-cover rounded-xl mb-3 border border-slate-100" onerror="this.src='https://placehold.co/500x500/1e293b/ffffff?text=Prenda'">
+                    <h5 class="font-bold text-slate-900 text-sm mb-1">${p.modelo}</h5>
+                    <p class="text-amber-700 font-black text-base mb-3">S/ ${p.precio.toFixed(2)}</p>
+                    
+                    <div class="space-y-2 mb-3">
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-600 block">Color:</label>
+                            <select id="select-color-${p.id}" ${plazoVencido && !isAdmin ? 'disabled' : ''} class="w-full p-2 text-xs bg-slate-50 border rounded-xl outline-none">${colorOpts}</select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-600 block">Talla:</label>
+                            <select id="select-talla-${p.id}" ${plazoVencido && !isAdmin ? 'disabled' : ''} class="w-full p-2 text-xs bg-slate-50 border rounded-xl outline-none">${tallaOpts}</select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-2">
+                    ${plazoVencido && !isAdmin ? `
+                        <div class="bg-rose-100 text-rose-700 font-bold text-xs p-2.5 rounded-xl text-center border border-rose-200">
+                            ⛔ Plazo de pedidos finalizado
+                        </div>
+                    ` : `
+                        <button onclick="descargarPDFConfeccion(${p.id})" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <i class="fas fa-file-pdf"></i> Descargar Orden PDF
+                        </button>
+                        <button onclick="consultarConfeccionWhatsApp(${p.id})" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <i class="fab fa-whatsapp"></i> Separar por WhatsApp
+                        </button>
+                    `}
+
+                    ${isAdmin ? `
+                    <div class="flex gap-1.5 pt-1 border-t border-amber-100 mt-2">
+                        <button onclick="editarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg cursor-pointer">Editar</button>
+                        <button onclick="eliminarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer">Eliminar</button>
+                    </div>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
