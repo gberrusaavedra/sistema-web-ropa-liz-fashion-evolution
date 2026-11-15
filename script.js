@@ -567,10 +567,12 @@ function renderProductGrid(productsList) {
 
         return `
             <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
-                <div class="relative w-full h-72 sm:h-80 bg-slate-100 overflow-hidden group/img">
-                    <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(-${currentImgIdx * 100}%);">
+                <div class="relative w-full aspect-[4/5] bg-slate-100 overflow-hidden group/img">
+                    <div id="slider-${product.id}" class="absolute inset-0 w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(-${currentImgIdx * 100}%);">
                         ${imagesList.map(imgUrl => `
-                            <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center shrink-0 cursor-pointer">
+                            <div class="w-full h-full shrink-0 relative">
+                                <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
+                            </div>
                         `).join('')}
                     </div>
 
@@ -579,13 +581,13 @@ function renderProductGrid(productsList) {
                         <button type="button" onclick="event.stopPropagation(); slideImage(${product.id}, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/75 text-white w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity cursor-pointer z-10">❯</button>
                     ` : ''}
 
-                    <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start pointer-events-none">
+                    <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start pointer-events-none z-20">
                         ${discountPct > 0 ? `<span class="bg-rose-600 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-md">-${discountPct}% OFF</span>` : ''}
                         ${product.tag !== 'Normal'
                             ? `<span class="${tagBadgeClass} text-[11px] font-extrabold px-2.5 py-0.5 rounded-md shadow-sm uppercase">${product.tag}</span>`
                             : `<span class="bg-slate-900/85 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase">Nueva Colección</span>`}
                     </div>
-                    ${isLowStock ? `<div class="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 pointer-events-none"><span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>¡ÚLTIMAS ${totalStock} UNIDADES!</div>` : ''}
+                    ${isLowStock ? `<div class="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-xs text-white text-[11px] font-bold px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 pointer-events-none z-20"><span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>¡ÚLTIMAS ${totalStock} UNIDADES!</div>` : ''}
                 </div>
 
                 <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
