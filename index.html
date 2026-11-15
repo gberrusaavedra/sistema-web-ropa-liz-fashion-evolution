@@ -421,7 +421,7 @@
             <h3 id="productFormTitle" class="text-lg font-black text-slate-900 mb-1">Subir Nueva Prenda</h3>
             <p class="text-xs text-slate-500 mb-4">Completa los datos y el stock por talla para publicarlo en vivo.</p>
 
-            <form onsubmit="handleSaveProduct(event)" class="space-y-3 text-xs sm:text-sm">
+           <form onsubmit="handleSaveProduct(event)" novalidate class="space-y-3 text-xs sm:text-sm"></form>
                 <input type="hidden" id="formProductId">
 
                 <div>
@@ -524,7 +524,7 @@
                 </button>
 
         </div>
-    </div>l
+    </div>
 
     <!-- DRAWER: CARRITO DE COMPRAS Y WHATSAPP -->
     <div id="cartDrawerBackdrop" onclick="toggleCartDrawer(false)" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
