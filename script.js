@@ -1587,18 +1587,18 @@ function procesarTokenFacebook(accessToken) {
     });
 }
 // =====================================================================
-// AUTENTICACIÓN SOCIAL SEGURA (GOOGLE Y FACEBOOK)
+// AUTENTICACIÓN SOCIAL CORREGIDA Y ROBUSTA (GOOGLE Y FACEBOOK)
 // =====================================================================
 function loginWithGoogle() {
-    if (typeof google === 'undefined' || !google.accounts) {
-        showToast('El SDK de Google se está cargando. Inténtalo en un momento.', 'warning');
+    const clientId = 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // <-- Reemplaza aquí con tu Client ID real de Google Cloud cuando lo tengas
+    
+    if (clientId.includes('TU_GOOGLE_CLIENT_ID')) {
+        showToast('Por favor, coloca tu Google Client ID real en script.js', 'warning');
         return;
     }
-    
-    // Si estás usando el Client ID genérico de prueba, avisa en lugar de romper
-    const clientId = 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-    if (clientId.includes('TU_GOOGLE_CLIENT_ID')) {
-        showToast('Configura tu Google Client ID real en el script.', 'warning');
+
+    if (typeof google === 'undefined' || !google.accounts) {
+        showToast('El SDK de Google está cargando. Espera un segundo.', 'warning');
         return;
     }
 
@@ -1620,10 +1620,10 @@ function loginWithGoogle() {
                     applyFilters();
                     showToast(`¡Bienvenido, ${data.usuario.nombre}!`, 'success');
                 } else {
-                    showToast(data.error || 'Error en autenticación con Google', 'error');
+                    showToast(data.error || 'Error al autenticar con Google', 'error');
                 }
             } catch (err) {
-                showToast('No se pudo conectar con el servidor de Render', 'error');
+                showToast('Error de conexión con el servidor', 'error');
             }
         }
     });
@@ -1631,18 +1631,19 @@ function loginWithGoogle() {
 }
 
 function loginWithFacebook() {
+    // Verificación segura si el SDK de Facebook ya cargó
     if (typeof FB === 'undefined') {
-        showToast('El SDK de Facebook aún está cargando. Espera un segundo.', 'warning');
+        showToast('El SDK de Facebook está cargando. Inténtalo de nuevo en un momento.', 'warning');
         return;
     }
 
     FB.getLoginStatus(function(response) {
         if (response.status === 'connected') {
-            procesarTokenFacebook(response.authResponse.accessToken);
+            enviarDatosFacebook(response.authResponse.accessToken);
         } else {
             FB.login(function(res) {
                 if (res.authResponse) {
-                    procesarTokenFacebook(res.authResponse.accessToken);
+                    enviarDatosFacebook(res.authResponse.accessToken);
                 } else {
                     showToast('Inicio de sesión con Facebook cancelado', 'warning');
                 }
@@ -1651,14 +1652,14 @@ function loginWithFacebook() {
     });
 }
 
-function procesarTokenFacebook(accessToken) {
+function enviarDatosFacebook(accessToken) {
     FB.api('/me', { fields: 'name,email' }, async function(userInfo) {
         try {
             const res = await fetch(`${API_URL}/auth/facebook`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    nombre: userInfo.name, 
+                    nombre: userInfo.name || 'Usuario Facebook', 
                     email: userInfo.email || `${userInfo.id}@facebook.user` 
                 })
             });
@@ -1671,10 +1672,10 @@ function procesarTokenFacebook(accessToken) {
                 applyFilters();
                 showToast(`¡Bienvenido, ${data.usuario.nombre}!`, 'success');
             } else {
-                showToast(data.error || 'Error en autenticación con Facebook', 'error');
+                showToast(data.error || 'Error al autenticar con Facebook', 'error');
             }
         } catch (err) {
-            showToast('No se pudo conectar con el servidor de Render', 'error');
+            showToast('Error de conexión con el servidor de Render', 'error');
         }
     });
 }
