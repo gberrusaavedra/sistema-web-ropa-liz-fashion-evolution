@@ -156,22 +156,6 @@ async function handleAuthSubmit(e) {
     }
 }
 
-function loginWithSocial(provider) {
-    const demoUser = {
-        id: Date.now(),
-        nombre: provider === 'Google' ? 'Usuario Google' : 'Usuario Facebook',
-        email: `usuario_${provider.toLowerCase()}@lizfashion.com`,
-        rol: 'cliente'
-    };
-    
-    localStorage.setItem('rs_token', 'social_token_' + Date.now());
-    localStorage.setItem('rs_usuario', JSON.stringify(demoUser));
-    closeAuthModal();
-    updateAuthUI();
-    applyFilters();
-    showToast(`¡Bienvenido a LIZ FASHION EVOLUTION con ${provider}!`, 'success');
-}
-
 function logoutUser() {
     if (confirm('¿Deseas cerrar tu sesión actual?')) {
         localStorage.removeItem('rs_token');
@@ -519,7 +503,7 @@ async function handleSaveProduct(e) {
 
         if (res.ok) {
             closeProductFormModal();
-            showToast(id ? 'Prenda actualizada con éxito' : '¡Nueva prenda publicada!', 'success');
+            showToast(id ? 'Prenda actualizada con éxito' : '¡Nueva prenda publicada con stock por imagen!', 'success');
             await fetchProductsFromDB();
         } else {
             const err = await res.json();
@@ -806,7 +790,7 @@ function renderProductGrid(productsList) {
                         <div class="flex items-center justify-between mb-1.5">
                             <span class="text-[11px] font-bold text-slate-500">Tallas en Stock:</span>
                         </div>
-                        <div class="grid grid-cols-4 gap-1.5">
+                        <div class="grid grid-cols-5 gap-1">
                             ${['S', 'M', 'L', 'XL', 'XXL'].map(sz => {
                                 const qty = currentStockMap[sz] || 0;
                                 const outOfStock = qty <= 0;
@@ -1537,4 +1521,18 @@ function descargarPDFConfeccion(id) {
 
     try {
         doc.addImage(prenda.imagen, 'JPEG', 120, 58, 70, 70);
+    } catch (err) {
+        console.warn('Imagen omitida en PDF por políticas de CORS.');
     }
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 145, 195, 145);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('¡Gracias por confiar en Liz Fashion Evolution!', 15, 155);
+    doc.text('Comparte este PDF con nuestro asesor para coordinar tu confección.', 15, 162);
+
+    doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
+    showToast('¡PDF generado y registrado en reporte!', 'success');
+}
