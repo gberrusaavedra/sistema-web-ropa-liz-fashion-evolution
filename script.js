@@ -380,12 +380,13 @@ function openProductFormModal(product = null) {
 
     document.getElementById('formProductId').value = product ? product.id : '';
     document.getElementById('productFormTitle').textContent = product ? 'Editar Prenda' : 'Subir Nueva Prenda';
-    document.getElementById('formCategory').value = product ? product.categoria : 'Polos/Camisetas';
-    document.getElementById('formTag').value = product ? product.tag : 'Normal';
+    document.getElementById('formName').value = product ? (product.name || '') : '';
+    document.getElementById('formCategory').value = product ? (product.category || 'Polos/Camisetas') : 'Polos/Camisetas';
+    document.getElementById('formTag').value = product ? (product.tag || 'Normal') : 'Normal';
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
-    document.getElementById('formDescription').value = product ? product.description : '';
-    document.getElementById('formMaterial').value = product ? product.material : '';
+    document.getElementById('formDescription').value = product ? (product.description || '') : '';
+    document.getElementById('formMaterial').value = product ? (product.material || '') : '';
     
     tempUploadedImages = product && product.images ? [...product.images] : (product ? [product.image] : []);
     renderDynamicVariantsInputs(product ? product.variantDetails : null);
