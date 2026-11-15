@@ -45,7 +45,7 @@ const SIZES = ['Todas', 'S', 'M', 'L', 'XL', 'XXL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
 // =====================================================================
-// 2. AUTENTICACIÓN Y ROLES
+// 2. AUTENTICACIÓN Y ROLES (INCLUYE GOOGLE Y FACEBOOK REALES)
 // =====================================================================
 function getSession() {
     const token = localStorage.getItem('rs_token');
@@ -115,7 +115,7 @@ function closeAuthModal() {
 function toggleAuthMode() {
     state.isRegisterMode = !state.isRegisterMode;
     document.getElementById('authModalTitle').textContent = state.isRegisterMode ? 'Crear Cuenta Cliente' : 'Iniciar Sesión';
-    document.getElementById('authModalSubtitle').textContent = state.isRegisterMode ? 'Regístrate para guardar tus pedidos' : 'Ingresa como Administrador o Cliente';
+    document.getElementById('authModalSubtitle').textContent = state.isRegisterMode ? 'Regístrate para guardar tus pedidos' : 'Ingresa con tus cuentas reales o credenciales';
     document.getElementById('authNameGroup').classList.toggle('hidden', !state.isRegisterMode);
     document.getElementById('authSecretGroup').classList.toggle('hidden', !state.isRegisterMode);
     document.getElementById('authSubmitBtn').textContent = state.isRegisterMode ? 'Registrarme' : 'Entrar Ahora';
@@ -156,32 +156,76 @@ async function handleAuthSubmit(e) {
     }
 }
 
-async function socialLogin(provider) {
-    const nombreSimulado = provider === 'google' ? 'Usuario Google' : 'Usuario Facebook';
-    const emailSimulado = `${provider}_user_${Math.floor(Math.random() * 10000)}@rematestyle.com`;
-    
+// === GOOGLE LOGIN REAL ===
+function loginWithGoogleReal() {
+    if (typeof google === 'undefined') {
+        showToast('El SDK de Google no ha cargado correctamente.', 'error');
+        return;
+    }
+    google.accounts.id.initialize({
+        client_id: "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // Reemplaza con tu Client ID real de Google Cloud
+        callback: handleGoogleResponse
+    });
+    google.accounts.id.prompt();
+}
+
+async function handleGoogleResponse(response) {
     try {
-        const res = await fetch(API_URL + '/social-login', {
+        const res = await fetch(API_URL + '/auth/google', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider, nombre: nombreSimulado, email: emailSimulado })
+            body: JSON.stringify({ token: response.credential })
         });
         const data = await res.json();
-
-        if (!res.ok) {
-            showToast(data.error || 'Error en autenticación social', 'error');
-            return;
-        }
+        if (!res.ok) throw new Error(data.error);
 
         localStorage.setItem('rs_token', data.token);
         localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
         closeAuthModal();
         updateAuthUI();
         applyFilters();
-        showToast(`¡Conectado exitosamente con ${provider.toUpperCase()}!`, 'success');
+        showToast(`¡Bienvenido con Google, ${data.usuario.nombre}!`, 'success');
     } catch (err) {
-        showToast('No se pudo conectar con el servidor para autenticación social.', 'error');
+        showToast('Error al conectar con Google: ' + err.message, 'error');
     }
+}
+
+// === FACEBOOK LOGIN REAL ===
+function loginWithFacebookReal() {
+    if (typeof FB === 'undefined') {
+        showToast('El SDK de Facebook no ha cargado correctamente.', 'error');
+        return;
+    }
+    FB.login(function(response) {
+        if (response.authResponse) {
+            FB.api('/me', { fields: 'name,email' }, async function(userInfo) {
+                try {
+                    const res = await fetch(API_URL + '/auth/facebook', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            nombre: userInfo.name, 
+                            email: userInfo.email || `${userInfo.id}@facebook.com`,
+                            facebookId: userInfo.id 
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+
+                    localStorage.setItem('rs_token', data.token);
+                    localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
+                    closeAuthModal();
+                    updateAuthUI();
+                    applyFilters();
+                    showToast(`¡Bienvenido con Facebook, ${data.usuario.nombre}!`, 'success');
+                } catch (err) {
+                    showToast('Error al procesar cuenta de Facebook: ' + err.message, 'error');
+                }
+            });
+        } else {
+            showToast('Inicio de sesión con Facebook cancelado.', 'warning');
+        }
+    }, { scope: 'public_profile,email' });
 }
 
 function logoutUser() {

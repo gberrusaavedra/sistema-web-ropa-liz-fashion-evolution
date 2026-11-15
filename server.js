@@ -2,18 +2,21 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
 const SECRET_KEY = process.env.JWT_SECRET || 'Teddy12@12';
+const googleClient = new OAuth2Client('TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
 
 async function initDB() {
     await pool.query(`
@@ -132,8 +135,41 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.post('/api/social-login', async (req, res) => {
-    const { provider, nombre, email } = req.body;
+// === AUTENTICACIÓN GOOGLE REAL ===
+app.post('/api/auth/google', async (req, res) => {
+    const { token } = req.body;
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+        });
+        const payload = ticket.getPayload();
+        const { name, email } = payload;
+
+        let result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+        let user;
+
+        if (result.rows.length === 0) {
+            const passwordRandom = Math.random().toString(36).slice(-8);
+            const insertRes = await pool.query(
+                'INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol',
+                [name, email, passwordRandom, 'google_oauth', 'cliente']
+            );
+            user = insertRes.rows[0];
+        } else {
+            user = result.rows[0];
+        }
+
+        const jwtToken = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
+        res.json({ token: jwtToken, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
+    } catch (err) {
+        res.status(400).json({ error: 'Token de Google inválido.' });
+    }
+});
+
+// === AUTENTICACIÓN FACEBOOK REAL ===
+app.post('/api/auth/facebook', async (req, res) => {
+    const { nombre, email } = req.body;
     try {
         let result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
         let user;
@@ -142,15 +178,15 @@ app.post('/api/social-login', async (req, res) => {
             const passwordRandom = Math.random().toString(36).slice(-8);
             const insertRes = await pool.query(
                 'INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol',
-                [nombre, email, passwordRandom, provider, 'cliente']
+                [nombre, email, passwordRandom, 'facebook_oauth', 'cliente']
             );
             user = insertRes.rows[0];
         } else {
             user = result.rows[0];
         }
 
-        const token = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
-        res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
+        const jwtToken = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
+        res.json({ token: jwtToken, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
