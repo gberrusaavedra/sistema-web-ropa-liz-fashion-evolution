@@ -355,7 +355,7 @@ async function handleSaveProduct(e) {
         colores: coloresArray,
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url: imagesArray[0],
-        imagenes: imagesArray // Ahora se envía correctamente al backend actualizado
+        imagenes: imagesArray
     };
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
@@ -419,13 +419,19 @@ function getDiscountPercent(regular, sale) {
     return Math.round(((regular - sale) / regular) * 100);
 }
 
-function getTotalStock(product) {
-    return Object.values(product.stockBySize).reduce((sum, val) => sum + val, 0);
+function getTotalStock(product, currentImgIdx = 0) {
+    const stockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
+        ? product.variantDetails[currentImgIdx].stockBySize 
+        : product.stockBySize;
+    return Object.values(stockMap).reduce((sum, val) => sum + val, 0);
 }
 
-function getFirstAvailableSize(product) {
+function getFirstAvailableSize(product, currentImgIdx = 0) {
+    const stockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
+        ? product.variantDetails[currentImgIdx].stockBySize 
+        : product.stockBySize;
     for (const sz of ['S', 'M', 'L', 'XL']) {
-        if (product.stockBySize[sz] > 0) return sz;
+        if (stockMap[sz] > 0) return sz;
     }
     return 'M';
 }
@@ -513,9 +519,15 @@ function applyFilters() {
     const query = queryText.trim().toLowerCase();
 
     let filtered = PRODUCTS.filter(p => {
+        const rawImgIdx = sliderIndexes[p.id] || 0;
+        const currentImgIdx = rawImgIdx < (p.images?.length || 1) ? rawImgIdx : 0;
+        const currentStockMap = (p.variantDetails && p.variantDetails[currentImgIdx]) 
+            ? p.variantDetails[currentImgIdx].stockBySize 
+            : p.stockBySize;
+
         if (state.category !== 'Todos' && p.category !== state.category) return false;
         if (state.promoTag !== 'Todos' && p.tag !== state.promoTag) return false;
-        if (state.size !== 'Todas' && (!p.stockBySize[state.size] || p.stockBySize[state.size] <= 0)) return false;
+        if (state.size !== 'Todas' && (!currentStockMap[state.size] || currentStockMap[state.size] <= 0)) return false;
         
         if (query) {
             const matchName = p.name.toLowerCase().includes(query);
@@ -558,21 +570,30 @@ function renderProductGrid(productsList) {
     if (emptyState) emptyState.classList.add('hidden');
 
     grid.innerHTML = productsList.map(product => {
-        const discountPct = getDiscountPercent(product.regularPrice, product.salePrice);
-        const totalStock = getTotalStock(product);
-        const stockPercent = Math.min(100, Math.max(10, Math.round((totalStock / product.maxInitialStock) * 100)));
-        const selectedSize = state.selectedSizesPerCard[product.id];
-        const isLowStock = totalStock <= 4;
-        const productCode = product.code || `LIZ-${String(product.id).padStart(4, '0')}`;
-        const productColors = product.colors && product.colors.length ? product.colors : ['Corinto', 'Negro', 'Rojo', 'Beige'];
-        const selectedColor = state.selectedColorsPerCard[product.id] || productColors[0];
-        
+        const rawImgIdx = sliderIndexes[product.id] || 0;
         let imagesList = product.images && Array.isArray(product.images) && product.images.length > 0 
             ? product.images 
             : [product.image || 'https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
 
-        const rawImgIdx = sliderIndexes[product.id] || 0;
         const currentImgIdx = rawImgIdx < imagesList.length ? rawImgIdx : 0;
+
+        // Selección dinámica de stock y precio según la variante de la imagen actual
+        const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
+            ? product.variantDetails[currentImgIdx].stockBySize 
+            : product.stockBySize;
+
+        const currentSalePrice = (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].salePrice !== undefined)
+            ? product.variantDetails[currentImgIdx].salePrice
+            : product.salePrice;
+
+        const discountPct = getDiscountPercent(product.regularPrice, currentSalePrice);
+        const totalStock = Object.values(currentStockMap).reduce((sum, val) => sum + val, 0);
+        const stockPercent = Math.min(100, Math.max(10, Math.round((totalStock / product.maxInitialStock) * 100)));
+        const selectedSize = state.selectedSizesPerCard[product.id] || getFirstAvailableSize(product, currentImgIdx);
+        const isLowStock = totalStock <= 4;
+        const productCode = product.code || `LIZ-${String(product.id).padStart(4, '0')}`;
+        const productColors = product.colors && product.colors.length ? product.colors : ['Corinto', 'Negro', 'Rojo', 'Beige'];
+        const selectedColor = state.selectedColorsPerCard[product.id] || productColors[0];
 
         let tagBadgeClass = "bg-slate-900 text-white";
         if (product.tag === 'Remate Final') tagBadgeClass = "bg-rose-600 text-white";
@@ -615,7 +636,7 @@ function renderProductGrid(productsList) {
                     </div>
                    ${product.description ? `<p class="text-xs text-slate-600 mt-1 mb-2">${product.description}</p>` : ''}
                     <div class="flex items-baseline gap-2">
-                        <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(product.salePrice)}</span>
+                        <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(currentSalePrice)}</span>
                         ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
                     </div>
 
@@ -635,7 +656,7 @@ function renderProductGrid(productsList) {
                         </div>
                         <div class="grid grid-cols-4 gap-1.5">
                             ${['S', 'M', 'L', 'XL'].map(sz => {
-                                const qty = product.stockBySize[sz] || 0;
+                                const qty = currentStockMap[sz] || 0;
                                 const outOfStock = qty <= 0;
                                 const isSelected = selectedSize === sz && !outOfStock;
                                 return `
@@ -700,7 +721,6 @@ function selectCardSize(productId, size) {
 function selectCardColor(productId, colorName) {
     state.selectedColorsPerCard[productId] = colorName;
     
-    // Relación directa entre color e índice de fotografía
     const product = PRODUCTS.find(p => p.id === productId);
     if (product && product.colors) {
         const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
@@ -716,21 +736,7 @@ function selectCardColor(productId, colorName) {
         }
     }
 
-    // Actualización visual instantánea de los botones de color en la tarjeta
-    const cards = document.querySelectorAll('article');
-    cards.forEach(card => {
-        const btnCheck = card.querySelector(`button[onclick*="selectCardColor(${productId},"]`);
-        if (btnCheck) {
-            const buttons = card.querySelectorAll(`button[onclick*="selectCardColor(${productId},"]`);
-            buttons.forEach(btn => {
-                if (btn.textContent.trim().toLowerCase() === colorName.toLowerCase()) {
-                    btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-rose-600 text-white border-rose-600 shadow-xs";
-                } else {
-                    btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400";
-                }
-            });
-        }
-    });
+    applyFilters();
 }
 
 // =====================================================================
@@ -739,9 +745,16 @@ function selectCardColor(productId, colorName) {
 function addToCart(productId, explicitSize = null, explicitColor = null) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
-    const size = explicitSize || state.selectedSizesPerCard[productId] || getFirstAvailableSize(product);
+    
+    const rawImgIdx = sliderIndexes[productId] || 0;
+    const currentImgIdx = rawImgIdx < (product.images?.length || 1) ? rawImgIdx : 0;
+    const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
+        ? product.variantDetails[currentImgIdx].stockBySize 
+        : product.stockBySize;
+
+    const size = explicitSize || state.selectedSizesPerCard[productId] || getFirstAvailableSize(product, currentImgIdx);
     const color = explicitColor || state.selectedColorsPerCard[productId] || (product.colors && product.colors[0]) || 'Único';
-    const availableStock = product.stockBySize[size] || 0;
+    const availableStock = currentStockMap[size] || 0;
 
     if (availableStock <= 0) return showToast('Talla agotada', 'error');
 
@@ -867,6 +880,9 @@ function slideImage(productId, direction) {
 
     const currentIdx = sliderIndexes[productId];
     slider.style.transform = `translateX(-${currentIdx * (100 / totalImages)}%)`;
+
+    // Actualiza de inmediato el stock/precio y tallas de la tarjeta según la imagen activa
+    applyFilters();
 }
 
 async function fetchOfferTime() {
