@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- SDKs de Autenticación Real: Google y Facebook -->
+    <!-- SDKs Oficiales de Google y Facebook -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js#xfbml=1&version=v18.0"></script>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js"></script>
     <!-- Hoja de estilos personalizada -->
     <link rel="stylesheet" href="styles.css">
     <script>
@@ -45,7 +45,7 @@
             <span class="inline-flex items-center gap-1 bg-rose-600 text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0">
                 <i data-lucide="flame" class="w-3 h-3"></i> Liquidación Total
             </span>
-            <span class="truncate max-w-[240px] sm:max-w-none">¡Envío GRATIS por compras mayores a S/ 149!</span>
+            <span class="truncate max-w-[240px] sm:max-w-none">¡Envío GRATIS por compras mayores a S/ 149![cite: 1]</span>
         </div>
     </div>
 
@@ -153,12 +153,12 @@
         </div>
     </header>
 
-    <!-- Admin Control Banner (Visible SOLO para el Administrador) -->
+    <!-- Admin Control Banner -->
     <div id="adminControlBar" class="hidden bg-amber-500 text-slate-950 border-b border-amber-600/20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2 text-xs sm:text-sm font-extrabold">
                 <span class="bg-slate-950 text-amber-400 px-2.5 py-0.5 rounded-md uppercase text-[11px]">Modo Administrador</span>
-                <span>Puedes subir nuevas prendas, editar precios/tallas o eliminar productos del catálogo.</span>
+                <span>Puedes subir nuevas prendas, editar precios/tallas o eliminar productos del catálogo.[cite: 1]</span>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="event.stopPropagation(); openTimerModal()" class="bg-white/90 hover:bg-white text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer shadow-xs">
@@ -180,17 +180,16 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-14 relative z-10">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 
-                <!-- Left Copy -->
                 <div class="lg:col-span-7 space-y-4 text-center lg:text-left">
                     <div class="inline-flex items-center gap-2 bg-rose-600/20 border border-rose-500/40 text-rose-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
                         <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                        Cierre de Almacén • Temporada 2026
+                        Cierre de Almacén • Temporada 2026[cite: 1]
                     </div>
                     <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
                         GRAN REMATE DE STOCK <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-rose-500 to-amber-400">HASTA -70% OFF</span>
                     </h1>
                     <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto lg:mx-0">
-                        Prendas seleccionadas de fin de temporada, últimas tallas y saldos de exportación a precios de fábrica. ¡Cuando se agota una talla, no vuelve!
+                        Prendas seleccionadas de fin de temporada, últimas tallas y saldos de exportación a precios de fábrica. ¡Cuando se agota una talla, no vuelve![cite: 1]
                     </p>
                     <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
                         <a href="#catalogo" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all inline-flex items-center gap-2 text-sm sm:text-base">
@@ -205,7 +204,6 @@
                     </div>
                 </div>
 
-                <!-- Right Countdown Card -->
                 <div class="lg:col-span-5">
                     <div class="bg-slate-800/80 backdrop-blur-md border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-md mx-auto">
                         <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
@@ -237,7 +235,7 @@
                         <div class="mt-4 pt-3 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-300">
                             <span class="flex items-center gap-1.5">
                                 <i data-lucide="package-check" class="w-4 h-4 text-emerald-400"></i>
-                                <strong id="totalStockCounter" class="text-white">0</strong> prendas disponibles hoy
+                                <strong id="totalStockCounter" class="text-white">0</strong> prendas disponibles hoy[cite: 1]
                             </span>
                             <span class="text-rose-400 font-semibold">¡Se agotan rápido!</span>
                         </div>
@@ -250,15 +248,11 @@
 
     <!-- Main Catalog Section -->
     <main id="catalogo" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <!-- Interactive Filter Bar -->
         <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm mb-8 space-y-4">
-            <!-- Row 1: Category Tabs -->
             <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4 overflow-x-auto no-scrollbar">
                 <div class="flex items-center gap-2" id="categoryFilters"></div>
             </div>
 
-            <!-- Row 2: Promo Tags, Size Filter & Sorting -->
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                 <div class="md:col-span-6 flex flex-wrap items-center gap-1.5" id="promoFilters"></div>
                 <div class="md:col-span-6 flex flex-wrap sm:flex-nowrap items-center justify-start md:justify-end gap-3">
@@ -276,7 +270,6 @@
                 </div>
             </div>
 
-            <!-- Active Filters Summary & Reset -->
             <div id="activeFilterSummary" class="hidden pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                 <span class="text-slate-500">Mostrando <strong id="resultsCount" class="text-slate-900">0</strong> prendas en oferta</span>
                 <button onclick="resetAllFilters()" class="text-rose-600 hover:text-rose-700 font-bold inline-flex items-center gap-1 cursor-pointer">
@@ -285,16 +278,14 @@
             </div>
         </div>
 
-        <!-- Product Grid -->
         <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6"></div>
 
-        <!-- Empty State -->
         <div id="emptyState" class="hidden text-center py-16 px-4 bg-white rounded-2xl border border-slate-200">
             <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="search-x" class="w-8 h-8"></i>
             </div>
             <h3 class="text-lg font-bold text-slate-900 mb-1">No encontramos prendas con esos filtros</h3>
-            <p class="text-sm text-slate-500 max-w-md mx-auto mb-5">Intenta seleccionando otra talla, categoría o limpia los filtros para ver todo nuestro stock en liquidación.</p>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mb-5">Intenta seleccionando otra talla, categoría o limpia los filtros para ver todo nuestro stock en liquidación.[cite: 1]</p>
             <button onclick="resetAllFilters()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors cursor-pointer">
                 Ver Todo el Catálogo
             </button>
@@ -305,8 +296,6 @@
     <footer class="bg-slate-900 text-slate-300 py-12 mt-16 border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                
-                <!-- Columna Izquierda: Logo + Descripción + Insignias -->
                 <div class="space-y-4 max-w-xl">
                     <div class="flex items-center gap-3">
                         <div>
@@ -314,44 +303,28 @@
                                 LIZ FASHION <span class="text-brand-red">EVOLUTION</span>
                             </span>
                             <span class="block text-[10px] font-semibold tracking-widest text-slate-400 uppercase">
-                                JAEN &amp; STOCK PERÚ
+                                JAEN &amp; STOCK PERÚ[cite: 1]
                             </span>
                         </div>
                     </div>
-
                     <p class="text-sm text-slate-400 leading-relaxed">
-                        SOMOS FABRICANTES Y DISTRIBUIDORES DE ROPA AL POR MAYOR Y MENOR. STOCK DE LIQUIDACIÓN DE TEMPORADA 2026. ¡APROVECHA LOS PRECIOS DE REMATE ANTES DE QUE SE AGOTEN!
+                        SOMOS FABRICANTES Y DISTRIBUIDORES DE ROPA AL POR MAYOR Y MENOR. STOCK DE LIQUIDACIÓN DE TEMPORADA 2026. ¡APROVECHA LOS PRECIOS DE REMATE ANTES DE QUE SE AGOTEN![cite: 1]
                     </p>
-
-                    <div class="flex flex-wrap gap-4 pt-1 text-xs font-medium text-slate-300">
-                        <span class="flex items-center gap-1.5">
-                            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Pago Contraentrega
-                        </span>
-                        <span class="flex items-center gap-1.5">
-                            <i data-lucide="truck" class="w-4 h-4 text-brand-red"></i> Envíos Express 24h
-                        </span>
-                        <span class="flex items-center gap-1.5">
-                            <i data-lucide="refresh-cw" class="w-4 h-4 text-amber-400"></i> Cambios Garantizados
-                        </span>
-                    </div>
                 </div>
-
-                <!-- Columna Derecha: Contacto WhatsApp -->
                 <div class="md:text-right space-y-2 shrink-0">
                     <p class="text-sm font-semibold text-white">¿Dudas sobre alguna talla?</p>
                     <p class="text-sm text-slate-400">
-                        Atención directa por WhatsApp: 
+                        Atención directa por WhatsApp:[cite: 1] 
                         <a href="https://wa.me/51931598799" target="_blank" class="text-white font-bold hover:text-brand-red transition">
-                            +51 931598799
+                            +51 931598799[cite: 1]
                         </a>
                     </p>
                 </div>
-
             </div>
         </div>
     </footer>
 
-    <!-- MODAL 1: VISTA RÁPIDA DE PRODUCTO -->
+    <!-- MODAL 1: VISTA RÁPIDA -->
     <div id="quickViewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm transition-opacity">
         <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 relative modal-animate" onclick="event.stopPropagation()">
             <button onclick="closeQuickView()" class="absolute top-4 right-4 z-10 w-9 h-9 bg-white/90 hover:bg-slate-100 text-slate-700 rounded-full flex items-center justify-center shadow-md border border-slate-200 transition-colors cursor-pointer">
@@ -361,7 +334,7 @@
         </div>
     </div>
 
-    <!-- MODAL 2: INICIO DE SESIÓN / REGISTRO CLIENTE CON GOOGLE Y FACEBOOK REALES -->
+    <!-- MODAL 2: INICIO DE SESIÓN / REGISTRO CLIENTE (CON GOOGLE & FACEBOOK OFICIALES) -->
     <div id="authModal" onclick="closeAuthModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative modal-animate" onclick="event.stopPropagation()">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer">
@@ -376,19 +349,16 @@
                 </div>
                 <div>
                     <h3 id="authModalTitle" class="text-lg font-black text-slate-900">Iniciar Sesión</h3>
-                    <p id="authModalSubtitle" class="text-xs text-slate-500">Ingresa con tus cuentas reales o credenciales</p>
+                    <p id="authModalSubtitle" class="text-xs text-slate-500">Ingresa con tus redes o correo</p>
                 </div>
             </div>
 
-            <!-- Botones de Google y Facebook Reales -->
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                <button type="button" onclick="loginWithGoogleReal()" class="flex items-center justify-center gap-2 py-2.5 px-3 border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-700 transition cursor-pointer shadow-2xs">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c-.07-.7-.63-1.27-1.34-1.27H12v4.56h6.58c-.28 1.51-1.54 3.74-4.58 3.74-2.76 0-5-2.24-5-5s2.24-5 5-5c1.32 0 2.48.49 3.36 1.3l3.41-3.41C17.96 5.86 15.2 4.8 12 4.8 7.03 4.8 3 8.83 3 13.8s4.03 9 9 9c5.19 0 8.63-3.65 8.63-8.8 0-.6-.05-1.18-.14-1.73z"/></svg>
-                    Google
-                </button>
-                <button type="button" onclick="loginWithFacebookReal()" class="flex items-center justify-center gap-2 py-2.5 px-3 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs">
+            <!-- Contenedor Oficial de Google y Botón de Facebook Real -->
+            <div class="space-y-2.5 mb-4">
+                <div id="googleButtonContainer" class="flex justify-center w-full"></div>
+                <button type="button" onclick="loginWithFacebookReal()" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-2xs">
                     <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
-                    Facebook
+                    Continuar con Facebook
                 </button>
             </div>
 
@@ -432,23 +402,20 @@
         </div>
     </div>
 
-    <!-- MODAL 3: CREAR / EDITAR PRENDA (EXCLUSIVO ADMINISTRADOR) -->
+    <!-- MODAL 3: CREAR / EDITAR PRENDA -->
     <div id="productFormModal" onclick="closeProductFormModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 relative modal-animate my-auto" onclick="event.stopPropagation()">
             <button onclick="closeProductFormModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
-
             <h3 id="productFormTitle" class="text-lg font-black text-slate-900 mb-1">Subir Nueva Prenda</h3>
-            <p class="text-xs text-slate-500 mb-4">Completa los datos y el stock por talla para publicarlo en vivo.</p>
+            <p class="text-xs text-slate-500 mb-4">Completa los datos y el stock por talla para publicarlo en vivo.[cite: 1]</p>
             <form onsubmit="handleSaveProduct(event)" novalidate class="space-y-3 text-xs sm:text-sm">  
                 <input type="hidden" id="formProductId">
-
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nombre de la Prenda *</label>
                     <input type="text" id="formName" required placeholder="Ej. Casaca Bomber Impermeable" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Categoría</label>
@@ -471,7 +438,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label id="labelSalePrice" class="block text-xs font-bold text-slate-700 mb-1">Precio Normal (S/) *</label>
@@ -482,31 +448,25 @@
                         <input type="number" step="0.10" id="formRegularPrice" placeholder="149.90" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Imágenes de la Prenda (Sube varias fotos) *</label>
                     <input type="file" id="formImageFile" accept="image/*" multiple class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 mb-1.5">
                     <input type="text" id="formImageUrl" placeholder="O pega enlaces separados por coma https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
                 </div>
-
-                <!-- Stock por Talla y Color Autoincrementable por Imagen -->
                 <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                     <label class="block text-xs font-bold text-slate-700 mb-2">Stock y Color por cada Imagen Seleccionada:</label>
                     <div id="dynamicImageVariantsContainer" class="space-y-3">
-                        <div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.</div>
+                        <div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.[cite: 1]</div>
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Material / Tela</label>
                     <input type="text" id="formMaterial" placeholder="Ej. 100% Algodón Pima 240gr" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Descripción corta</label>
                     <textarea id="formDescription" rows="2" placeholder="Detalles del corte, acabado o promoción..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500"></textarea>
                 </div>
-
                 <button type="submit" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-3 rounded-xl shadow-md transition-colors cursor-pointer">
                     Guardar y Publicar Prenda
                 </button>
@@ -514,9 +474,8 @@
         </div>
     </div>
 
-    <!-- DRAWER: CARRITO DE COMPRAS Y WHATSAPP -->
+    <!-- DRAWER: CARRITO DE COMPRAS -->
     <div id="cartDrawerBackdrop" onclick="toggleCartDrawer(false)" class="fixed inset-0 z-50 hidden bg-slate-950/60 backdrop-blur-xs transition-opacity"></div>
-    
     <aside id="cartDrawer" class="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
         <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
             <div class="flex items-center gap-2.5">
@@ -525,23 +484,20 @@
                 </div>
                 <div>
                     <h2 class="font-extrabold text-slate-900 text-base leading-tight">Tu Bolsa de Remate</h2>
-                    <p class="text-xs text-slate-500" id="drawerItemCountText">0 prendas seleccionadas</p>
+                    <p class="text-xs text-slate-500" id="drawerItemCountText">0 prendas seleccionadas[cite: 1]</p>
                 </div>
             </div>
             <button onclick="toggleCartDrawer(false)" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
-
         <div id="cartSavingsBanner" class="hidden bg-emerald-50 border-b border-emerald-200 px-5 py-2.5 flex items-center justify-between text-xs text-emerald-800">
             <span class="flex items-center gap-1.5 font-semibold">
-                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i> ¡Ahorro total en este pedido!
+                <i data-lucide="sparkles" class="w-4 h-4 text-emerald-600"></i> ¡Ahorro total en este pedido![cite: 1]
             </span>
             <span id="cartTotalSavings" class="font-black text-sm text-emerald-700">S/ 0.00</span>
         </div>
-
         <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
-
         <div id="cartDrawerFooter" class="border-t border-slate-200 p-5 bg-slate-50 space-y-4">
             <div class="space-y-1.5 text-sm">
                 <div class="flex justify-between text-slate-500">
@@ -557,224 +513,25 @@
                     <span id="cartFinalTotal" class="text-rose-600">S/ 0.00</span>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 gap-2.5">
                 <button onclick="sendOrderToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
                     <i data-lucide="message-circle" class="w-5 h-5"></i>
-                    Pedir por WhatsApp Ahora
-                </button>
-                <button onclick="simulateCheckout()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
-                    <i data-lucide="credit-card" class="w-4 h-4"></i> Simular Reserva Rápida
+                    Pedir por WhatsApp Ahora[cite: 1]
                 </button>
             </div>
         </div>
     </aside>
 
-    <!-- TOAST NOTIFICATION CONTAINER -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
 
-    <!-- CONFIRMATION MODAL -->
-    <div id="orderSuccessModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border border-slate-200 space-y-4 modal-animate">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                <i data-lucide="check-circle-2" class="w-10 h-10"></i>
-            </div>
-            <h3 class="text-xl font-black text-slate-900">¡Stock Reservado con Éxito!</h3>
-            <p class="text-sm text-slate-600">
-                Hemos separado tus prendas de liquidación por <strong>30 minutos</strong>. Código de reserva: <span id="reservationCode" class="font-mono font-bold bg-slate-100 px-2 py-0.5 rounded text-rose-600">#RMT-8492</span>.
-            </p>
-            <div class="pt-2">
-                <button onclick="closeSuccessModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer">
-                    Seguir Viendo Ofertas
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- BOTONES FLOTANTES DE SOPORTE, VENTAS Y REDES SOCIALES -->
+    <!-- BOTONES FLOTANTES DE REDES -->
     <div class="fixed bottom-5 right-5 z-40 flex flex-col gap-3">
-        <!-- WhatsApp Ventas / Administrador -->
         <a href="https://wa.me/51931598799?text=Hola%20Liz%20Fashion%20Evolution,%20quiero%20consultar%20sobre%20los%20remates." target="_blank" rel="noopener noreferrer" class="group flex items-center justify-end gap-2.5 bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-xl shadow-green-500/30 transition-all duration-300 hover:scale-105" title="WhatsApp Ventas">
             <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">WhatsApp Ventas</span>
             <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
         </a>
-
-        <!-- TikTok Oficial -->
-        <a href="https://www.tiktok.com/@liz_fashion_evolution" target="_blank" rel="noopener noreferrer" class="group flex items-center justify-end gap-2.5 bg-slate-950 hover:bg-black text-white p-3 rounded-full shadow-xl shadow-slate-950/30 border border-slate-800 transition-all duration-300 hover:scale-105">
-            <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">TikTok Oficial</span>
-            <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
-        </a>
-
-        <!-- Facebook Perfil Personal: Liz Berru Saavedra -->
-        <a href="https://www.facebook.com/profile.php?id=100008562732674" target="_blank" rel="noopener noreferrer" class="group flex items-center justify-end gap-2.5 bg-[#1877F2] hover:bg-[#166FE5] text-white p-3 rounded-full shadow-xl shadow-blue-600/30 transition-all duration-300 hover:scale-105" title="Facebook Personal">
-            <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">Liz Berru (Personal)</span>
-            <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
-        </a>
-
-        <!-- Facebook Página: Liz Fashion Evolution - PERÚ -->
-        <a href="https://www.facebook.com/profile.php?id=61563842100806" target="_blank" rel="noopener noreferrer" class="group flex items-center justify-end gap-2.5 bg-[#1877F2] hover:bg-[#166FE5] text-white p-3 rounded-full shadow-xl shadow-blue-600/30 transition-all duration-300 hover:scale-105" title="Facebook Página Oficial">
-            <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">Liz Fashion Evolution</span>
-            <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
-        </a>
-         <!-- WhatsApp Soporte Técnico -->
-        <a href="https://wa.me/51916220856?text=Hola%20Soporte%20Técnico%20de%20Liz%20Fashion%20Evolution,%20necesito%20ayuda." target="_blank" rel="noopener noreferrer" class="group flex items-center justify-end gap-2.5 bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-full shadow-xl shadow-emerald-600/30 transition-all duration-300 hover:scale-105" title="Soporte Técnico WhatsApp">
-            <span class="hidden sm:inline-block max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold pl-1">Soporte Técnico</span>
-            <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-        </a>
     </div>
 
-    <!-- MODAL EDITAR HORA DE OFERTA FLASH -->
-    <div id="timerModal" onclick="closeTimerModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
-        <div onclick="event.stopPropagation()" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
-            <button onclick="closeTimerModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-            <div class="flex items-center gap-2.5 mb-2">
-                <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
-                    <i data-lucide="clock" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="font-black text-slate-900 text-base">Programar Fin de Oferta</h3>
-                    <p class="text-xs text-slate-500">Define hasta qué día y hora corre el reloj</p>
-                </div>
-            </div>
-            <form onsubmit="saveOfferEndTime(event)" class="space-y-4 mt-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Fecha y Hora de Término *</label>
-                    <input type="datetime-local" id="offerEndInput" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 outline-none focus:border-rose-500">
-                </div>
-                <div class="flex gap-2 pt-1">
-                    <button type="button" onclick="closeTimerModal()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer">Cancelar</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs cursor-pointer">Guardar Horario</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL DE MÓDULO DE CONFECCIÓN Y REPORTE -->
-    <div id="confeccionModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-[#FDFBF7] w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden border border-amber-200 my-8">
-            
-            <!-- Cabecera del Modal -->
-            <div class="bg-gradient-to-r from-amber-700 to-amber-900 text-white p-6 flex justify-between items-center">
-                <div>
-                    <h3 class="text-2xl font-black flex items-center gap-2"><i class="fas fa-cut"></i> Módulo de Confección y Pedidos Personalizados</h3>
-                    <p class="text-amber-200 text-xs sm:text-sm">Diseño de prendas a medida, gestión con imágenes y reporte de clientes.</p>
-                </div>
-                <button onclick="cerrarModuloConfeccion()" class="text-amber-200 hover:text-white text-3xl font-bold cursor-pointer">&times;</button>
-            </div>
-
-            <!-- Pestañas de Navegación del Modal (Visible para Admin / Clientes) -->
-            <div class="bg-amber-100/75 px-6 py-3 border-b border-amber-200 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
-                    <button onclick="cambiarTabConfeccion('catalogo')" id="tabBtnCatalogo" class="px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition">
-                        Catálogo de Confección
-                    </button>
-                    <button onclick="cambiarTabConfeccion('admin')" id="tabBtnAdmin" class="hidden px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300">
-                        <i class="fas fa-plus-circle"></i> Registrar Prenda con Imagen
-                    </button>
-                    <button onclick="cambiarTabConfeccion('reporte')" id="tabBtnReporte" class="hidden px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300">
-                        <i class="fas fa-clipboard-list"></i> Reporte de Clientes / Pedidos
-                    </button>
-                </div>
-                <span id="badgeRolConfeccion" class="text-xs font-extrabold text-amber-900 bg-amber-200 px-3 py-1 rounded-full">Vista Cliente</span>
-            </div>
-
-            <!-- Contenido de las Secciones -->
-            <div class="p-6 max-h-[65vh] overflow-y-auto">
-                
-                <!-- SECCIÓN 1: CATÁLOGO Y SELECCIÓN DE CLIENTES -->
-                <div id="seccionTabCatalogo" class="space-y-4">
-                    <h4 class="font-black text-slate-900 text-lg">Selecciona tu modelo para confección a medida:</h4>
-                    <div id="catalogoConfeccionGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        <!-- Dinámico por JS -->
-                    </div>
-                </div>
-
-                <!-- SECCIÓN 2: REGISTRO / EDICIÓN DE PRENDAS (ADMIN) -->
-                <div id="seccionTabAdmin" class="hidden space-y-4">
-                    <div class="bg-white p-6 rounded-2xl border border-amber-300 shadow-sm">
-                        <h4 class="font-black text-amber-900 text-lg mb-1 flex items-center gap-2">
-                            <i class="fas fa-image"></i> Registrar o Editar Prenda de Confección con Imagen
-                        </h4>
-                        <p class="text-xs text-slate-500 mb-4">Sube la foto desde tu dispositivo o ingresa un enlace. Define colores, tallas y precio base.</p>
-                        
-                        <form id="formAdminConfeccion" onsubmit="guardarPrendaConfeccion(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <input type="hidden" id="confPrendaId">
-                            
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Nombre / Modelo de la Prenda *</label>
-                                <input type="text" id="confModelo" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-amber-600" placeholder="Ej. Casaca Biker Exclusiva">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Precio Base (S/) *</label>
-                                <input type="number" step="0.01" id="confPrecio" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-amber-600" placeholder="149.00">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Colores Disponibles (separados por coma)</label>
-                                <input type="text" id="confColores" value="Negro, Corinto, Beige, Azul Marino" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-amber-600">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Tallas Disponibles</label>
-                                <input type="text" id="confTallas" value="S, M, L, XL" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:border-amber-600">
-                            </div>
-
-                            <div class="md:col-span-2 bg-amber-50 p-4 rounded-xl border border-amber-200">
-                                <label class="block text-xs font-bold text-amber-900 mb-1">Imagen de la Prenda (Sube archivo local o pega enlace)</label>
-                                <input type="file" id="confImagenFile" accept="image/*" class="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs mb-2 cursor-pointer">
-                                <input type="text" id="confImagenUrl" placeholder="O pega el enlace de la imagen aquí (https://...)" class="w-full p-2 bg-white border border-amber-300 rounded-xl text-xs outline-none focus:border-amber-600">
-                            </div>
-
-                            <div class="md:col-span-2 flex justify-end gap-2 pt-2">
-                                <button type="button" onclick="cambiarTabConfeccion('catalogo')" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs cursor-pointer">Cancelar</button>
-                                <button type="submit" class="px-6 py-2.5 bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl text-xs shadow-md cursor-pointer">Guardar y Publicar Prenda</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- SECCIÓN 3: REPORTE DE CLIENTES / PEDIDOS REGISTRADOS (ADMIN) -->
-                <div id="seccionTabReporte" class="hidden space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h4 class="font-black text-slate-900 text-lg">Reporte de Pedidos de Confección de Clientes</h4>
-                            <p class="text-xs text-slate-500">Historial de comprobantes y solicitudes generadas por los clientes.</p>
-                        </div>
-                        <button onclick="limpiarReporteClientes()" class="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-xl transition cursor-pointer">
-                            <i class="fas fa-trash-alt"></i> Limpiar Historial
-                        </button>
-                    </div>
-
-                    <div class="bg-white rounded-2xl border border-amber-200 overflow-hidden shadow-sm">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-xs">
-                               <thead>
-                                    <tr class="bg-amber-800 text-white font-bold">
-                                        <th class="p-3">N° Orden</th>
-                                        <th class="p-3">Fecha / Hora</th>
-                                        <th class="p-3">Modelo Solicitado</th>
-                                        <th class="p-3">Color</th>
-                                        <th class="p-3">Talla</th>
-                                        <th class="p-3">Precio</th>
-                                        <th class="p-3 text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tablaReporteClientesBody" class="divide-y divide-amber-100">
-                                    <!-- Dinámico por JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <!-- Lógica unificada -->
     <script src="script.js"></script>
 </body>
 </html>
