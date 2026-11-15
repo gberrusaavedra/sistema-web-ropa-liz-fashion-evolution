@@ -18,7 +18,7 @@ let PRODUCTS = [
             "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
             "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80"
         ],
-        stockBySize: { S: 1, M: 2, L: 0, XL: 1 },
+        stockBySize: { S: 1, M: 2, L: 0, XL: 1, XXL: 0 },
         maxInitialStock: 15,
         material: "100% Poliéster repelente al agua con forro térmico acolchado.",
         description: "Casaca ligera cortavientos ideal para media estación. Corte slim fit con cierres metálicos reforzados."
@@ -41,7 +41,7 @@ let state = {
 let tempUploadedImages = [];
 
 const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
-const SIZES = ['Todas', 'S', 'M', 'L', 'XL'];
+const SIZES = ['Todas', 'S', 'M', 'L', 'XL', 'XXL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
 // =====================================================================
@@ -179,7 +179,7 @@ async function fetchProductsFromDB() {
             PRODUCTS = dbProducts.map((p, idx) => {
                 const parsedStock = typeof p.stock_by_size === 'string' 
                     ? JSON.parse(p.stock_by_size) 
-                    : (p.stock_by_size || { S: 2, M: 3, L: 2, XL: 1 });
+                    : (p.stock_by_size || { S: 2, M: 3, L: 2, XL: 1, XXL: 0 });
                 const total = Object.values(parsedStock).reduce((a, b) => a + b, 0);
 
                 let parsedImages = [];
@@ -289,7 +289,7 @@ function renderDynamicVariantsInputs(existingVariants = null) {
     container.innerHTML = tempUploadedImages.map((imgSrc, idx) => {
         const v = existingVariants && existingVariants[idx] ? existingVariants[idx] : {
             color: idx === 0 ? 'Corinto' : idx === 1 ? 'Negro' : idx === 2 ? 'Rojo' : 'Beige',
-            stockBySize: { S: 2, M: 3, L: 2, XL: 1 },
+            stockBySize: { S: 2, M: 3, L: 2, XL: 1, XXL: 0 },
             salePrice: ''
         };
 
@@ -315,7 +315,7 @@ function renderDynamicVariantsInputs(existingVariants = null) {
                 </div>
                 <div>
                     <span class="text-[10px] font-bold text-slate-500 block mb-1">Stock por Talla (Imagen #${idx + 1}):</span>
-                    <div class="grid grid-cols-4 gap-1.5 text-center">
+                    <div class="grid grid-cols-5 gap-1 text-center">
                         <div>
                             <span class="text-[9px] text-slate-400">S</span>
                             <input type="number" min="0" class="v-stock-s w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.S ?? 2}">
@@ -331,6 +331,10 @@ function renderDynamicVariantsInputs(existingVariants = null) {
                         <div>
                             <span class="text-[9px] text-slate-400">XL</span>
                             <input type="number" min="0" class="v-stock-xl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XL ?? 1}">
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-400">XXL</span>
+                            <input type="number" min="0" class="v-stock-xxl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XXL ?? 0}">
                         </div>
                     </div>
                 </div>
@@ -359,7 +363,8 @@ function eliminarImagenPrenda(index) {
                     S: parseInt(row.querySelector('.v-stock-s').value) || 0,
                     M: parseInt(row.querySelector('.v-stock-m').value) || 0,
                     L: parseInt(row.querySelector('.v-stock-l').value) || 0,
-                    XL: parseInt(row.querySelector('.v-stock-xl').value) || 0
+                    XL: parseInt(row.querySelector('.v-stock-xl').value) || 0,
+                    XXL: parseInt(row.querySelector('.v-stock-xxl')?.value) || 0
                 }
             });
         }
@@ -436,12 +441,13 @@ async function handleSaveProduct(e) {
         const m = parseInt(row.querySelector('.v-stock-m').value) || 0;
         const l = parseInt(row.querySelector('.v-stock-l').value) || 0;
         const xl = parseInt(row.querySelector('.v-stock-xl').value) || 0;
+        const xxl = parseInt(row.querySelector('.v-stock-xxl')?.value) || 0;
 
         allColores.push(color);
         variantDetails.push({
             color,
             salePrice: priceInput ? parseFloat(priceInput) : null,
-            stockBySize: { S: s, M: m, L: l, XL: xl }
+            stockBySize: { S: s, M: m, L: l, XL: xl, XXL: xxl }
         });
     });
 
@@ -449,7 +455,7 @@ async function handleSaveProduct(e) {
         variantDetails.push({
             color: 'Corinto',
             salePrice: null,
-            stockBySize: { S: 2, M: 3, L: 2, XL: 1 }
+            stockBySize: { S: 2, M: 3, L: 2, XL: 1, XXL: 0 }
         });
         allColores = ['Corinto', 'Negro', 'Rojo'];
     }
@@ -459,8 +465,9 @@ async function handleSaveProduct(e) {
         acc.M += v.stockBySize.M;
         acc.L += v.stockBySize.L;
         acc.XL += v.stockBySize.XL;
+        acc.XXL += (v.stockBySize.XXL || 0);
         return acc;
-    }, { S: 0, M: 0, L: 0, XL: 0 });
+    }, { S: 0, M: 0, L: 0, XL: 0, XXL: 0 });
 
     const tagVal = document.getElementById('formTag').value;
     const baseSalePrice = parseFloat(document.getElementById('formSalePrice').value) || 0;
@@ -553,7 +560,7 @@ function getFirstAvailableSize(product, currentImgIdx = 0) {
     const stockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
         ? product.variantDetails[currentImgIdx].stockBySize 
         : product.stockBySize;
-    for (const sz of ['S', 'M', 'L', 'XL']) {
+    for (const sz of ['S', 'M', 'L', 'XL', 'XXL']) {
         if (stockMap[sz] > 0) return sz;
     }
     return 'M';
@@ -783,8 +790,8 @@ function renderProductGrid(productsList) {
                         <div class="flex items-center justify-between mb-1.5">
                             <span class="text-[11px] font-bold text-slate-500">Tallas en Stock:</span>
                         </div>
-                        <div class="grid grid-cols-4 gap-1.5">
-                            ${['S', 'M', 'L', 'XL'].map(sz => {
+                        <div class="grid grid-cols-5 gap-1">
+                            ${['S', 'M', 'L', 'XL', 'XXL'].map(sz => {
                                 const qty = currentStockMap[sz] || 0;
                                 const outOfStock = qty <= 0;
                                 const isSelected = selectedSize === sz && !outOfStock;
