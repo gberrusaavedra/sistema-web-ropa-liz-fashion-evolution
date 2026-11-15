@@ -291,24 +291,25 @@ async function handleSaveProduct(e) {
 
     let imagesArray = [];
 
+    // 1. Si pegaron enlaces en formato URL
     if (imageUrlInput) {
         imagesArray = imageUrlInput.split(',').map(url => url.trim()).filter(Boolean);
     }
 
-    // Procesamiento múltiple de archivos locales
+    // 2. Si seleccionaron archivos locales
     if (imageFileInput && imageFileInput.files && imageFileInput.files.length > 0) {
         const files = Array.from(imageFileInput.files);
-        const base64Promises = files.map(file => {
-            return new Promise((resolve) => {
+        for (const file of files) {
+            const base64 = await new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onload = (event) => resolve(event.target.result);
+                reader.onload = (evt) => resolve(evt.target.result);
                 reader.readAsDataURL(file);
             });
-        });
-        const uploadedBase64s = await Promise.all(base64Promises);
-        imagesArray = imagesArray.concat(uploadedBase64s);
+            imagesArray.push(base64);
+        }
     }
 
+    // 3. Fallback por defecto si no hay ninguna imagen
     if (imagesArray.length === 0) {
         imagesArray = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
     }
@@ -340,10 +341,8 @@ async function handleSaveProduct(e) {
         colores: coloresArray,
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url: imagesArray[0],
-        imagenes: imagesArray // Se guardan todas las imágenes para el slider
+        imagenes: imagesArray
     };
-    
-    // Resto de la función de guardado permanece igual...
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
     const method = id ? 'PUT' : 'POST';
