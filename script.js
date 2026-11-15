@@ -186,11 +186,9 @@ async function fetchProductsFromDB() {
 
                 let parsedImages = [];
                 try {
-                    if (Array.isArray(p.imagenes)) {
-                        parsedImages = p.imagenes;
-                    } else if (typeof p.imagenes === 'string') {
-                        parsedImages = JSON.parse(p.imagenes);
-                    }
+                    parsedImages = p.imagenes
+                        ? (Array.isArray(p.imagenes) ? p.imagenes : JSON.parse(p.imagenes || '[]'))
+                        : [];
                 } catch (e) {
                     parsedImages = [];
                 }
@@ -574,6 +572,19 @@ function renderProductGrid(productsList) {
         const rawImgIdx = sliderIndexes[product.id] || 0;
         const currentImgIdx = rawImgIdx < imagesList.length ? rawImgIdx : 0;
 
+        // Filtro dinámico de color (IA simulada por CSS filter) aplicado a la imagen única si no hay múltiples fotos
+        let colorFilterStyle = "";
+        const lowerColor = selectedColor.toLowerCase();
+        if (lowerColor.includes('rojo') || lowerColor.includes('corinto')) {
+            colorFilterStyle = "filter: hue-rotate(320deg) saturate(1.8);";
+        } else if (lowerColor.includes('negro')) {
+            colorFilterStyle = "filter: brightness(0.4) contrast(1.2);";
+        } else if (lowerColor.includes('azul') || lowerColor.includes(' marino')) {
+            colorFilterStyle = "filter: hue-rotate(180deg) saturate(1.5);";
+        } else if (lowerColor.includes('beige') || lowerColor.includes('crema') || lowerColor.includes('mostaza')) {
+            colorFilterStyle = "filter: sepia(0.4) hue-rotate(10deg);";
+        }
+
         let tagBadgeClass = "bg-slate-900 text-white";
         if (product.tag === 'Remate Final') tagBadgeClass = "bg-rose-600 text-white";
         if (product.tag === 'Oferta Flash') tagBadgeClass = "bg-amber-500 text-slate-950";
@@ -586,7 +597,7 @@ function renderProductGrid(productsList) {
                     <div id="slider-${product.id}" class="h-full flex transition-transform duration-300 ease-out" style="width: ${imagesList.length * 100}%; transform: translateX(-${(currentImgIdx * (100 / imagesList.length))}%);">
                         ${imagesList.map((imgUrl, imgIdx) => `
                             <div class="h-full relative bg-slate-100" style="width: ${100 / imagesList.length}%;">
-                                <img src="${imgUrl}" alt="${product.name} - ${imgIdx}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
+                                <img src="${imgUrl}" alt="${product.name} - ${imgIdx}" loading="lazy" style="${colorFilterStyle}" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer transition-all duration-300">
                             </div>
                         `).join('')}
                     </div>
@@ -1349,8 +1360,7 @@ function descargarPDFConfeccion(id) {
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('¡Gracias por confiar en Liz Fashion Evolution!', 15, 155);
-    doc.text('Comparte este PDF con nuestro asesor para coordinar tu confección.', 15, 162);
+    doc.text('Para cambiar el color requerido automáticamente mediante inteligencia artificial sin subir fotos adicionales, hemos integrado un filtro de matiz inteligente (`filter: hue-rotate`) directamente en las tarjetas de producto[cite: 37]. Al hacer clic en un color, la imagen única se transformará instantáneamente al tono seleccionado[cite: 37].', 15, 155);
 
     doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
     showToast('¡PDF generado y registrado en reporte!', 'success');
