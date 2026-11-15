@@ -611,24 +611,27 @@ function renderProductGrid(productsList) {
                     </div>
 
                     <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <span class="text-[11px] font-bold text-slate-500">Elige talla:</span>
-                            <button onclick="openQuickView(${product.id})" class="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer">Ver detalles</button>
-                        </div>
-                        <div class="grid grid-cols-4 gap-1.5">
-                            ${['S', 'M', 'L', 'XL'].map(sz => {
-                                const qty = product.stockBySize[sz] || 0;
-                                const outOfStock = qty <= 0;
-                                const isSelected = selectedSize === sz && !outOfStock;
-                                return `
-                                    <button type="button" ${outOfStock ? 'disabled' : `onclick="selectCardSize(${product.id}, '${sz}')"`}
-                                        class="py-1.5 rounded-lg text-xs font-extrabold border transition-all ${
-                                            outOfStock ? 'bg-slate-50 text-slate-300 border-slate-100 line-through cursor-not-allowed' :
-                                            isSelected ? 'bg-slate-900 text-white border-slate-900 cursor-pointer' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-900 cursor-pointer'
-                                        }">${sz}</button>
-                                `;
-                            }).join('')}
-                        </div>
+                       <div class="flex items-center justify-between mb-1.5">
+        <span class="text-[11px] font-bold text-slate-500">Elige talla (stock):</span>
+        <button onclick="openQuickView(${product.id})" class="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer">Ver detalles</button>
+    </div>
+    <div class="grid grid-cols-4 gap-1.5">
+        ${['S', 'M', 'L', 'XL'].map(sz => {
+            const qty = product.stockBySize[sz] || 0;
+            const outOfStock = qty <= 0;
+            const isSelected = selectedSize === sz && !outOfStock;
+            return `
+                <button type="button" ${outOfStock ? 'disabled' : `onclick="selectCardSize(${product.id}, '${sz}')"`}
+                    class="py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-extrabold border transition-all flex flex-col items-center justify-center ${
+                        outOfStock ? 'bg-slate-50 text-slate-300 border-slate-100 line-through cursor-not-allowed' :
+                        isSelected ? 'bg-slate-900 text-white border-slate-900 cursor-pointer' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-900 cursor-pointer'
+                    }">
+                    <span>${sz}</span>
+                    <span class="text-[9px] opacity-80">(${qty})</span>
+                </button>
+            `;
+        }).join('')}
+    </div>
                     </div>
 
                     <div>
