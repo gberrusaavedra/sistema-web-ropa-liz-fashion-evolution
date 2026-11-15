@@ -88,28 +88,27 @@
     width: 100%;
     height: 280px;
 }
-
 /* ==========================================================================
-   CORRECCIÓN RESPONSIVA PARA DISPOSITIVOS MÓVILES
+   CORRECCIÓN PARA QUE LAS IMÁGENES SALGAN COMPLETAS SIN RECORTES
    ========================================================================== */
-@media (max-width: 640px) {
-    /* Ajusta el espaciado interno de las tarjetas en celular */
-    #productGrid article .p-4 {
-        padding: 0.75rem;
-    }
-    
-    /* Permite que los botones de colores fluyan mejor en móvil */
-    #productGrid article .flex.flex-wrap.gap-1.5 {
-        gap: 0.25rem;
-    }
-    
-    #productGrid article .flex.flex-wrap.gap-1.5 button {
-        font-size: 10px;
-        padding: 0.25rem 0.5rem;
-    }
+#productGrid img {
+    object-fit: contain !important;
+    background-color: #f8fafc;
+    width: 100%;
+    height: 280px;
+}
 
-    /* Asegura que los botones de acción inferior no se deformen */
-    #productGrid article .pt-2.flex {
-        gap: 0.35rem;
-    }
+/* Ajuste general de las tarjetas para mantener el diseño alineado */
+#productGrid article {
+    height: auto !important;
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+}
+
+#productGrid article > div:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
