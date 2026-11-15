@@ -678,8 +678,21 @@ function selectCardSize(productId, size) {
     applyFilters();
 }
 
-function selectCardColor(productId, color) {
-    state.selectedColorsPerCard[productId] = color;
+function selectCardColor(productId, colorName) {
+    state.selectedColorsPerCard[productId] = colorName;
+    
+    // Mover automáticamente el slider de imágenes al índice correspondiente al color seleccionado
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (product && product.colors) {
+        const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
+        if (colorIndex !== -1) {
+            sliderIndexes[productId] = colorIndex;
+            const slider = document.getElementById(`slider-${productId}`);
+            if (slider) {
+                slider.style.transform = `translateX(-${colorIndex * 100}%)`;
+            }
+        }
+    }
     applyFilters();
 }
 
