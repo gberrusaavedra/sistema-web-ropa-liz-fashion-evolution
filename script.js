@@ -700,7 +700,7 @@ function selectCardSize(productId, size) {
 function selectCardColor(productId, colorName) {
     state.selectedColorsPerCard[productId] = colorName;
     
-    // Búsqueda directa del producto y actualización del índice del slider con selector seguro
+    // Relación directa entre color y fotografía mediante el índice exacto
     const product = PRODUCTS.find(p => p.id === productId);
     if (product && product.colors) {
         const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
@@ -716,7 +716,7 @@ function selectCardColor(productId, colorName) {
         }
     }
 
-    // Actualización visual directa de los botones de color en la tarjeta correspondiente
+    // Actualización visual instantánea de los botones de color en la tarjeta
     const cards = document.querySelectorAll('article');
     cards.forEach(card => {
         const btnCheck = card.querySelector(`button[onclick*="selectCardColor(${productId},"]`);
