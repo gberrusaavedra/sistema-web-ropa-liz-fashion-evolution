@@ -353,7 +353,7 @@ async function handleSaveProduct(e) {
         colores: coloresArray,
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url: imagesArray[0],
-        imagenes: imagesArray
+        imagenes: imagesArray // Se envía el arreglo completo para la columna JSONB de Neon
     };
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
@@ -1271,7 +1271,7 @@ function descargarPDFConfeccion(id) {
     const prenda = prendas.find(p => p.id == id);
     if (!prenda) return;
 
-    const colorSeleccionado = document.getElementById(`select-color-${id}')`).value;
+    const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
     const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
     const nroOrden = `CONF-${Math.floor(100000 + Math.random() * 900000)}`;
     const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
