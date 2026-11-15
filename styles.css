@@ -63,3 +63,17 @@
 #productGrid article:hover {
     transform: translateY(-2px);
 }
+/* Corrección para que la tarjeta del catálogo expanda su altura y muestre todos los elementos (tallas y colores) */
+#productGrid article {
+    height: auto !important;
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+}
+
+#productGrid article > div:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
