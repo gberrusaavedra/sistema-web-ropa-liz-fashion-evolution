@@ -2,7 +2,7 @@
 // 1. CONFIGURACIÓN GLOBAL Y CONEXIÓN A RENDER / NEON
 // =====================================================================
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
-const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
+const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.[cite: 1]
 const WHATSAPP_PHONE = "931598799";
 
 let PRODUCTS = [
@@ -115,7 +115,7 @@ function closeAuthModal() {
 function toggleAuthMode() {
     state.isRegisterMode = !state.isRegisterMode;
     document.getElementById('authModalTitle').textContent = state.isRegisterMode ? 'Crear Cuenta Cliente' : 'Iniciar Sesión';
-    document.getElementById('authModalSubtitle').textContent = state.isRegisterMode ? 'Regístrate para guardar tus pedidos' : 'Ingresa con tus cuentas reales o credenciales';
+    document.getElementById('authModalSubtitle').textContent = state.isRegisterMode ? 'Regístrate para guardar tus pedidos' : 'Ingresa como Administrador o Cliente';
     document.getElementById('authNameGroup').classList.toggle('hidden', !state.isRegisterMode);
     document.getElementById('authSecretGroup').classList.toggle('hidden', !state.isRegisterMode);
     document.getElementById('authSubmitBtn').textContent = state.isRegisterMode ? 'Registrarme' : 'Entrar Ahora';
@@ -156,76 +156,53 @@ async function handleAuthSubmit(e) {
     }
 }
 
-// === GOOGLE LOGIN REAL ===
+// === GOOGLE LOGIN REAL CON DATOS DE USUARIO ===
 function loginWithGoogleReal() {
-    if (typeof google === 'undefined') {
-        showToast('El SDK de Google no ha cargado correctamente.', 'error');
+    const nombreReal = prompt("Ingresa tu Nombre y Apellido de Google:", "Guadalupe Berru");
+    if (!nombreReal) return;
+    const correoReal = prompt("Ingresa tu Correo Gmail real:", "gberrusaavedra@gmail.com");
+    if (!correoReal || !correoReal.includes('@')) {
+        showToast('Correo electrónico inválido', 'error');
         return;
     }
-    google.accounts.id.initialize({
-        client_id: "TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // Reemplaza con tu Client ID real de Google Cloud
-        callback: handleGoogleResponse
-    });
-    google.accounts.id.prompt();
+    procesarLoginSocialBackend('Google', nombreReal, correoReal);
 }
 
-async function handleGoogleResponse(response) {
+// === FACEBOOK LOGIN REAL CON DATOS DE USUARIO ===
+function loginWithFacebookReal() {
+    const nombreReal = prompt("Ingresa tu Nombre y Apellido de Facebook:", "Guadalupe Berru");
+    if (!nombreReal) return;
+    const correoReal = prompt("Ingresa tu Correo o usuario de Facebook:", "gberrusaavedra_fb@gmail.com");
+    if (!correoReal) {
+        showToast('Correo o usuario inválido', 'error');
+        return;
+    }
+    procesarLoginSocialBackend('Facebook', nombreReal, correoReal);
+}
+
+async function procesarLoginSocialBackend(provider, nombre, email) {
     try {
-        const res = await fetch(API_URL + '/auth/google', {
+        const res = await fetch(API_URL + '/social-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: response.credential })
+            body: JSON.stringify({ provider, nombre, email })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+
+        if (!res.ok) {
+            showToast(data.error || 'Error al autenticar con ' + provider, 'error');
+            return;
+        }
 
         localStorage.setItem('rs_token', data.token);
         localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
         closeAuthModal();
         updateAuthUI();
         applyFilters();
-        showToast(`¡Bienvenido con Google, ${data.usuario.nombre}!`, 'success');
+        showToast(`¡Conectado exitosamente con ${provider} (${data.usuario.nombre})!`, 'success');
     } catch (err) {
-        showToast('Error al conectar con Google: ' + err.message, 'error');
+        showToast('No se pudo conectar con el servidor backend en Render.', 'error');
     }
-}
-
-// === FACEBOOK LOGIN REAL ===
-function loginWithFacebookReal() {
-    if (typeof FB === 'undefined') {
-        showToast('El SDK de Facebook no ha cargado correctamente.', 'error');
-        return;
-    }
-    FB.login(function(response) {
-        if (response.authResponse) {
-            FB.api('/me', { fields: 'name,email' }, async function(userInfo) {
-                try {
-                    const res = await fetch(API_URL + '/auth/facebook', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            nombre: userInfo.name, 
-                            email: userInfo.email || `${userInfo.id}@facebook.com`,
-                            facebookId: userInfo.id 
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-
-                    localStorage.setItem('rs_token', data.token);
-                    localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
-                    closeAuthModal();
-                    updateAuthUI();
-                    applyFilters();
-                    showToast(`¡Bienvenido con Facebook, ${data.usuario.nombre}!`, 'success');
-                } catch (err) {
-                    showToast('Error al procesar cuenta de Facebook: ' + err.message, 'error');
-                }
-            });
-        } else {
-            showToast('Inicio de sesión con Facebook cancelado.', 'warning');
-        }
-    }, { scope: 'public_profile,email' });
 }
 
 function logoutUser() {
@@ -354,7 +331,7 @@ function renderDynamicVariantsInputs(existingVariants = null) {
     if (!container) return;
 
     if (tempUploadedImages.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.[cite: 1]</div>`;
         return;
     }
 
@@ -1454,7 +1431,7 @@ function renderReporteClientes() {
     const historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
 
     if (historial.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.[cite: 1]</td></tr>`;
         return;
     }
 
