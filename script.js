@@ -184,18 +184,15 @@ async function fetchProductsFromDB() {
                     ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
                     : ['Corinto', 'Negro', 'Rojo', 'Beige', 'Blanco'];
 
-                // Recuperar imágenes guardadas en localStorage o Neon
                 let parsedImages = [];
-                const localImgs = localStorage.getItem(`liz_product_images_${p.id}`);
-                if (localImgs) {
-                    try { parsedImages = JSON.parse(localImgs); } catch(e) {}
-                }
-
-                if (parsedImages.length === 0) {
-                    try {
-                        if (Array.isArray(p.imagenes)) parsedImages = p.imagenes;
-                        else if (typeof p.imagenes === 'string') parsedImages = JSON.parse(p.imagenes);
-                    } catch (e) {}
+                try {
+                    if (Array.isArray(p.imagenes)) {
+                        parsedImages = p.imagenes;
+                    } else if (typeof p.imagenes === 'string') {
+                        parsedImages = JSON.parse(p.imagenes);
+                    }
+                } catch (e) {
+                    parsedImages = [];
                 }
 
                 if (parsedImages.length === 0 && p.imagen_url) {
@@ -358,7 +355,7 @@ async function handleSaveProduct(e) {
         colores: coloresArray,
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url: imagesArray[0],
-        imagenes: imagesArray
+        imagenes: imagesArray // Ahora se envía correctamente al backend actualizado
     };
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
@@ -375,13 +372,6 @@ async function handleSaveProduct(e) {
         });
 
         if (res.ok) {
-            const data = await res.json();
-            const savedId = id || (data.producto && data.producto.id);
-            if (savedId) {
-                // Guardar las múltiples imágenes en localStorage para asegurar funcionamiento inmediato
-                localStorage.setItem(`liz_product_images_${savedId}`, JSON.stringify(imagesArray));
-            }
-
             closeProductFormModal();
             showToast(id ? 'Prenda actualizada con éxito' : '¡Nueva prenda publicada!', 'success');
             await fetchProductsFromDB();
@@ -405,7 +395,6 @@ async function deleteProductById(id) {
         });
 
         if (res.ok) {
-            localStorage.removeItem(`liz_product_images_${id}`);
             showToast('Prenda eliminada del catálogo', 'warning');
             await fetchProductsFromDB();
         } else {
@@ -592,8 +581,8 @@ function renderProductGrid(productsList) {
         if (product.tag === 'Últimas Tallas') tagBadgeClass = "bg-rose-700 text-white";
 
         return `
-            <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
-                <div class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img">
+            <article class="group bg-white rounded-2xl border border-slate-200/95 shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
+                <div class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img shrink-0">
                     <div id="slider-${product.id}" class="h-full flex transition-transform duration-300 ease-out" style="width: ${imagesList.length * 100}%; transform: translateX(-${(currentImgIdx * (100 / imagesList.length))}%);">
                         ${imagesList.map((imgUrl, imgIdx) => `
                             <div class="h-full relative bg-slate-100" style="width: ${100 / imagesList.length}%;">
@@ -1355,12 +1344,12 @@ function descargarPDFConfeccion(id) {
     doc.text(`${colorSeleccionado}`, 45, 82);
 
     doc.setFont('helvetica', 'normal');
-    doc.text(`Talla:`, 15, 92);
+    doc.text('Talla:', 15, 92);
     doc.setFont('helvetica', 'bold');
     doc.text(`${tallaSeleccionada}`, 40, 92);
 
     doc.setFont('helvetica', 'normal');
-    doc.text(`Precio Unitario:`, 15, 102);
+    doc.text('Precio Unitario:', 15, 102);
     doc.setFont('helvetica', 'bold');
     doc.text(`S/ ${prenda.precio.toFixed(2)}`, 48, 102);
 
