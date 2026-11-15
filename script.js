@@ -186,9 +186,11 @@ async function fetchProductsFromDB() {
 
                 let parsedImages = [];
                 try {
-                    parsedImages = p.imagenes
-                        ? (Array.isArray(p.imagenes) ? p.imagenes : JSON.parse(p.imagenes || '[]'))
-                        : [];
+                    if (Array.isArray(p.imagenes)) {
+                        parsedImages = p.imagenes;
+                    } else if (typeof p.imagenes === 'string') {
+                        parsedImages = JSON.parse(p.imagenes);
+                    }
                 } catch (e) {
                     parsedImages = [];
                 }
@@ -572,19 +574,6 @@ function renderProductGrid(productsList) {
         const rawImgIdx = sliderIndexes[product.id] || 0;
         const currentImgIdx = rawImgIdx < imagesList.length ? rawImgIdx : 0;
 
-        // IA visual por CSS Filter para transformar el color del polo dinámicamente[cite: 37]
-        let colorFilterStyle = "";
-        const lowerColor = selectedColor.toLowerCase();
-        if (lowerColor.includes('rojo') || lowerColor.includes('corinto')) {
-            colorFilterStyle = "filter: hue-rotate(330deg) saturate(2) brightness(0.9);";
-        } else if (lowerColor.includes('negro')) {
-            colorFilterStyle = "filter: brightness(0.35) contrast(1.3);";
-        } else if (lowerColor.includes('azul') || lowerColor.includes(' marino')) {
-            colorFilterStyle = "filter: hue-rotate(190deg) saturate(1.8);";
-        } else if (lowerColor.includes('beige') || lowerColor.includes('crema') || lowerColor.includes('mostaza') || lowerColor.includes('amarillo')) {
-            colorFilterStyle = "filter: sepia(0.5) hue-rotate(15deg) brightness(1.1);";
-        }
-
         let tagBadgeClass = "bg-slate-900 text-white";
         if (product.tag === 'Remate Final') tagBadgeClass = "bg-rose-600 text-white";
         if (product.tag === 'Oferta Flash') tagBadgeClass = "bg-amber-500 text-slate-950";
@@ -597,7 +586,7 @@ function renderProductGrid(productsList) {
                     <div id="slider-${product.id}" class="h-full flex transition-transform duration-300 ease-out" style="width: ${imagesList.length * 100}%; transform: translateX(-${(currentImgIdx * (100 / imagesList.length))}%);">
                         ${imagesList.map((imgUrl, imgIdx) => `
                             <div class="h-full relative bg-slate-100" style="width: ${100 / imagesList.length}%;">
-                                <img src="${imgUrl}" alt="${product.name} - ${imgIdx}" loading="lazy" style="${colorFilterStyle}" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer transition-all duration-300">
+                                <img src="${imgUrl}" alt="${product.name} - ${imgIdx}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
                             </div>
                         `).join('')}
                     </div>
@@ -711,37 +700,37 @@ function selectCardSize(productId, size) {
 function selectCardColor(productId, colorName) {
     state.selectedColorsPerCard[productId] = colorName;
     
-    // Aplicar cambio visual inmediato en los botones de color y en el filtro de la imagen
-    const card = document.querySelector(`article:has(button[onclick*="selectCardColor(${productId},"])`);
-    if (card) {
-        const buttons = card.querySelectorAll(`button[onclick*="selectCardColor(${productId},"]`);
-        buttons.forEach(btn => {
-            if (btn.textContent.trim().toLowerCase() === colorName.toLowerCase()) {
-                btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-rose-600 text-white border-rose-600 shadow-xs";
-            } else {
-                btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400";
+    // Búsqueda directa del producto y actualización del índice del slider con selector seguro
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (product && product.colors) {
+        const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
+        if (colorIndex !== -1) {
+            const imagesList = product.images && product.images.length > 0 ? product.images : [product.image];
+            const targetIdx = colorIndex % imagesList.length;
+            sliderIndexes[productId] = targetIdx;
+            
+            const slider = document.getElementById(`slider-${productId}`);
+            if (slider) {
+                slider.style.transform = `translateX(-${targetIdx * (100 / imagesList.length)}%)`;
             }
-        });
-
-        let filterStyle = "";
-        const lower = colorName.toLowerCase();
-        if (lower.includes('rojo') || lower.includes('corinto')) {
-            filterStyle = "hue-rotate(330deg) saturate(2) brightness(0.9)";
-        } else if (lower.includes('negro')) {
-            filterStyle = "brightness(0.35) contrast(1.3)";
-        } else if (lower.includes('azul') || lower.includes('marino')) {
-            filterStyle = "hue-rotate(190deg) saturate(1.8)";
-        } else if (lower.includes('beige') || lower.includes('crema') || lower.includes('mostaza') || lower.includes('amarillo')) {
-            filterStyle = "sepia(0.5) hue-rotate(15deg) brightness(1.1)";
         }
-
-        const imgs = card.querySelectorAll('img');
-        imgs.forEach(img => {
-            img.style.filter = filterStyle;
-        });
-    } else {
-        applyFilters();
     }
+
+    // Actualización visual directa de los botones de color en la tarjeta correspondiente
+    const cards = document.querySelectorAll('article');
+    cards.forEach(card => {
+        const btnCheck = card.querySelector(`button[onclick*="selectCardColor(${productId},"]`);
+        if (btnCheck) {
+            const buttons = card.querySelectorAll(`button[onclick*="selectCardColor(${productId},"]`);
+            buttons.forEach(btn => {
+                if (btn.textContent.trim().toLowerCase() === colorName.toLowerCase()) {
+                    btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-rose-600 text-white border-rose-600 shadow-xs";
+                } else {
+                    btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400";
+                }
+            });
+        }
+    });
 }
 
 // =====================================================================
