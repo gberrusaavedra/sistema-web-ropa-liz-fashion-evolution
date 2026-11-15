@@ -1178,6 +1178,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         fileInput.addEventListener('change', handleImageFilesSelection);
     }
 
+    const confFileInput = document.getElementById('confImagenFile');
+    if (confFileInput) {
+        confFileInput.addEventListener('change', handleConfeccionFilesSelection);
+    }
+
     renderFilterControls();
     await fetchProductsFromDB();
     fetchOfferTime();
@@ -1186,6 +1191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // =====================================================================
 // MÓDULO DE PEDIDOS DE CONFECCIÓN, GESTIÓN DE IMÁGENES Y REPORTE
 // =====================================================================
+let tempConfeccionImagenes = [];
+const confSliderIndexes = {};
 
 function abrirModuloConfeccion() {
     const modal = document.getElementById('confeccionModal');
@@ -1196,6 +1203,7 @@ function abrirModuloConfeccion() {
         renderizarBannerPeriodoConfeccion();
         renderCatalogoConfeccion();
         verificarPermisosAdminConfeccionTabs();
+        lucide.createIcons();
     }
 }
 
@@ -1212,16 +1220,21 @@ function verificarPermisosAdminConfeccionTabs() {
     const btnAdmin = document.getElementById('tabBtnAdmin');
     const btnReporte = document.getElementById('tabBtnReporte');
     const badgeRol = document.getElementById('badgeRolConfeccion');
+    const btnEditarFechasCat = document.getElementById('btnEditarFechasCatalogoAdmin');
+    const panelEditarFechas = document.getElementById('panelEditarFechasCatalogo');
 
     if (isAdmin) {
         if (btnAdmin) btnAdmin.classList.remove('hidden');
         if (btnReporte) btnReporte.classList.remove('hidden');
+        if (btnEditarFechasCat) {
+            btnEditarFechasCat.classList.remove('hidden');
+            btnEditarFechasCat.classList.add('inline-flex');
+        }
         if (badgeRol) {
             badgeRol.textContent = 'Modo Administrador';
             badgeRol.className = 'text-xs font-extrabold text-amber-950 bg-amber-300 px-3 py-1 rounded-full';
         }
         
-        // Cargar fechas actuales en el form de admin
         const configFechas = obtenerConfigFechasConfeccion();
         const inputInicio = document.getElementById('confFechaInicio');
         const inputFin = document.getElementById('confFechaFin');
@@ -1230,11 +1243,68 @@ function verificarPermisosAdminConfeccionTabs() {
     } else {
         if (btnAdmin) btnAdmin.classList.add('hidden');
         if (btnReporte) btnReporte.classList.add('hidden');
+        if (btnEditarFechasCat) {
+            btnEditarFechasCat.classList.add('hidden');
+            btnEditarFechasCat.classList.remove('inline-flex');
+        }
+        if (panelEditarFechas) panelEditarFechas.classList.add('hidden');
         if (badgeRol) {
             badgeRol.textContent = 'Vista Cliente';
             badgeRol.className = 'text-xs font-extrabold text-amber-900 bg-amber-200 px-3 py-1 rounded-full';
         }
     }
+    lucide.createIcons();
+}
+
+function togglePanelEditarFechasCatalogo(forceState = null) {
+    const panel = document.getElementById('panelEditarFechasCatalogo');
+    if (!panel) return;
+    const isHidden = panel.classList.contains('hidden');
+    const show = forceState !== null ? forceState : isHidden;
+
+    if (show) {
+        const conf = obtenerConfigFechasConfeccion();
+        const qInicio = document.getElementById('quickConfFechaInicio');
+        const qFin = document.getElementById('quickConfFechaFin');
+        const qCom = document.getElementById('quickConfComunicado');
+        if (qInicio) qInicio.value = conf.inicio || '';
+        if (qFin) qFin.value = conf.fin || '';
+        if (qCom) qCom.value = conf.comunicado || '';
+        panel.classList.remove('hidden');
+    } else {
+        panel.classList.add('hidden');
+    }
+    lucide.createIcons();
+}
+
+function guardarFechasYComunicadoRapido(e) {
+    e.preventDefault();
+    const inicio = document.getElementById('quickConfFechaInicio').value;
+    const fin = document.getElementById('quickConfFechaFin').value;
+    const comunicado = document.getElementById('quickConfComunicado').value.trim();
+
+    if (!inicio || !fin) {
+        showToast('Debes completar ambas fechas', 'warning');
+        return;
+    }
+
+    const nuevaConfig = {
+        inicio,
+        fin,
+        comunicado: comunicado || '¡Bienvenidos a nuestra campaña de confección personalizada! Selecciona tu modelo favorito, color y talla dentro del plazo indicado.'
+    };
+    localStorage.setItem('liz_confeccion_fechas', JSON.stringify(nuevaConfig));
+
+    // Sincronizar también con los inputs del formulario de registro
+    const formInicio = document.getElementById('confFechaInicio');
+    const formFin = document.getElementById('confFechaFin');
+    if (formInicio) formInicio.value = inicio;
+    if (formFin) formFin.value = fin;
+
+    togglePanelEditarFechasCatalogo(false);
+    renderizarBannerPeriodoConfeccion();
+    renderCatalogoConfeccion();
+    showToast('¡Fechas y Comunicado Oficial actualizados en tiempo real!', 'success');
 }
 
 function cambiarTabConfeccion(tab) {
@@ -1250,43 +1320,61 @@ function cambiarTabConfeccion(tab) {
     secAdm.classList.add('hidden');
     secRep.classList.add('hidden');
 
-    btnCat.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
-    if (btnAdm) btnAdm.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
-    if (btnRep) btnRep.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
+    btnCat.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300 cursor-pointer";
+    if (btnAdm) btnAdm.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300 cursor-pointer";
+    if (btnRep) btnRep.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300 cursor-pointer";
 
     if (tab === 'catalogo') {
         secCat.classList.remove('hidden');
-        btnCat.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
+        btnCat.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition cursor-pointer";
         renderizarBannerPeriodoConfeccion();
         renderCatalogoConfeccion();
     } else if (tab === 'admin') {
         secAdm.classList.remove('hidden');
-        if (btnAdm) btnAdm.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
+        if (btnAdm) btnAdm.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition cursor-pointer";
+        const conf = obtenerConfigFechasConfeccion();
+        if (document.getElementById('confFechaInicio')) document.getElementById('confFechaInicio').value = conf.inicio;
+        if (document.getElementById('confFechaFin')) document.getElementById('confFechaFin').value = conf.fin;
+        renderGaleriaPreviewConfeccion();
     } else if (tab === 'reporte') {
         secRep.classList.remove('hidden');
-        if (btnRep) btnRep.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
+        if (btnRep) btnRep.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition cursor-pointer";
         renderReporteClientes();
     }
+    lucide.createIcons();
 }
 
 function obtenerConfigFechasConfeccion() {
     const defaultConfig = {
         inicio: new Date().toISOString().slice(0, 16),
-        fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16)
+        fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+        comunicado: '¡Bienvenidos a nuestra campaña de confección personalizada! Selecciona tu modelo favorito, color y talla dentro del plazo indicado.'
     };
-    return JSON.parse(localStorage.getItem('liz_confeccion_fechas')) || defaultConfig;
+    const saved = JSON.parse(localStorage.getItem('liz_confeccion_fechas'));
+    return saved ? { ...defaultConfig, ...saved } : defaultConfig;
 }
 
 function renderizarBannerPeriodoConfeccion() {
     const lblFechas = document.getElementById('lblPeriodoFechas');
     const lblEstado = document.getElementById('lblEstadoPeriodo');
     const banner = document.getElementById('confeccionPeriodoBanner');
+    const txtComunicado = document.getElementById('textoComunicadoOficial');
+    const cuadroComunicado = document.getElementById('cuadroComunicadoOficial');
     if (!lblFechas || !lblEstado) return;
 
     const conf = obtenerConfigFechasConfeccion();
     const ahora = new Date().getTime();
     const fInicio = new Date(conf.inicio).getTime();
     const fFin = new Date(conf.fin).getTime();
+
+    if (txtComunicado && cuadroComunicado) {
+        if (conf.comunicado && conf.comunicado.trim() !== '') {
+            txtComunicado.textContent = conf.comunicado;
+            cuadroComunicado.classList.remove('hidden');
+        } else {
+            cuadroComunicado.classList.add('hidden');
+        }
+    }
 
     const formatF = (dStr) => {
         const d = new Date(dStr);
@@ -1308,17 +1396,19 @@ function renderizarBannerPeriodoConfeccion() {
         lblEstado.className = 'bg-rose-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
         if (banner) banner.className = "bg-rose-50 border border-rose-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
     }
+    lucide.createIcons();
 }
 
 function obtenerPrendasConfeccion() {
-    return JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [
+    const lista = JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [
         {
             id: 1,
             modelo: 'Casaca Biker Exclusiva de Cuero Sintético',
             precio: 149.00,
             colores: ['Negro', 'Corinto', 'Marrón'],
             tallas: ['S', 'M', 'L', 'XL'],
-            imagen: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500'
+            imagen: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500',
+            imagenes: ['https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500']
         },
         {
             id: 2,
@@ -1326,9 +1416,88 @@ function obtenerPrendasConfeccion() {
             precio: 129.00,
             colores: ['Beige', 'Gris', 'Negro', 'Verde Militar'],
             tallas: ['S', 'M', 'L'],
-            imagen: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500'
+            imagen: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500',
+            imagenes: ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500']
         }
     ];
+    return lista.map(p => ({
+        ...p,
+        imagenes: Array.isArray(p.imagenes) && p.imagenes.length > 0 ? p.imagenes : (p.imagen ? [p.imagen] : [])
+    }));
+}
+
+async function handleConfeccionFilesSelection(e) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+        const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => resolve(evt.target.result);
+            reader.readAsDataURL(file);
+        });
+        tempConfeccionImagenes.push(base64);
+    }
+    e.target.value = '';
+    renderGaleriaPreviewConfeccion();
+}
+
+function agregarEnlacesConfeccion() {
+    const input = document.getElementById('confImagenUrl');
+    if (!input) return;
+    const raw = input.value.trim();
+    if (!raw) {
+        showToast('Ingresa uno o más enlaces separados por coma', 'warning');
+        return;
+    }
+    const urls = raw.split(',').map(u => u.trim()).filter(Boolean);
+    tempConfeccionImagenes.push(...urls);
+    input.value = '';
+    renderGaleriaPreviewConfeccion();
+    showToast(`${urls.length} imagen(es) agregada(s) a la galería`, 'success');
+}
+
+function eliminarImagenConfeccion(index) {
+    tempConfeccionImagenes.splice(index, 1);
+    renderGaleriaPreviewConfeccion();
+    showToast('Imagen eliminada de la vista previa', 'warning');
+}
+
+function renderGaleriaPreviewConfeccion() {
+    const container = document.getElementById('confGaleriaPreviewContainer');
+    if (!container) return;
+
+    if (tempConfeccionImagenes.length === 0) {
+        container.innerHTML = `<div class="text-[11px] text-amber-800/80 italic">No hay imágenes cargadas todavía.</div>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-extrabold text-amber-950">Galería (${tempConfeccionImagenes.length} foto${tempConfeccionImagenes.length > 1 ? 's' : ''}):</span>
+            <span class="text-[10px] text-amber-700 font-semibold">La primera imagen será la portada</span>
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+            ${tempConfeccionImagenes.map((src, idx) => `
+                <div class="relative group rounded-xl overflow-hidden border-2 ${idx === 0 ? 'border-amber-600' : 'border-amber-200'} bg-white shadow-xs aspect-square">
+                    <img src="${src}" alt="Foto ${idx + 1}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x300/1e293b/ffffff?text=Foto+${idx + 1}'">
+                    ${idx === 0 ? `<span class="absolute bottom-1 left-1 bg-amber-800/90 text-white text-[9px] font-black px-1.5 py-0.5 rounded">Portada</span>` : ''}
+                    <button type="button" onclick="eliminarImagenConfeccion(${idx})" class="absolute top-1 right-1 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-105" title="Eliminar imagen">
+                        ✕
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function resetFormAdminConfeccion() {
+    const form = document.getElementById('formAdminConfeccion');
+    if (form) form.reset();
+    const idInput = document.getElementById('confPrendaId');
+    if (idInput) idInput.value = '';
+    tempConfeccionImagenes = [];
+    renderGaleriaPreviewConfeccion();
 }
 
 function guardarPrendaConfeccion(e) {
@@ -1338,47 +1507,78 @@ function guardarPrendaConfeccion(e) {
     const precio = parseFloat(document.getElementById('confPrecio').value);
     const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
     const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
-    let imagenUrl = document.getElementById('confImagenUrl').value.trim();
-    const fileInput = document.getElementById('confImagenFile');
 
-    // Guardar también las fechas editadas por el admin
+    // Capturar si el usuario escribió URLs en el input sin presionar "+ Agregar URL"
+    const urlInput = document.getElementById('confImagenUrl');
+    if (urlInput && urlInput.value.trim()) {
+        const extraUrls = urlInput.value.split(',').map(u => u.trim()).filter(Boolean);
+        tempConfeccionImagenes.push(...extraUrls);
+        urlInput.value = '';
+    }
+
+    // Preservar comunicado actual al guardar fechas desde el formulario
+    const confActual = obtenerConfigFechasConfeccion();
     const fechaInicio = document.getElementById('confFechaInicio').value;
     const fechaFin = document.getElementById('confFechaFin').value;
     if (fechaInicio && fechaFin) {
-        localStorage.setItem('liz_confeccion_fechas', JSON.stringify({ inicio: fechaInicio, fin: fechaFin }));
+        localStorage.setItem('liz_confeccion_fechas', JSON.stringify({
+            ...confActual,
+            inicio: fechaInicio,
+            fin: fechaFin
+        }));
     }
 
-    const procesarGuardado = (imgFinal) => {
-        let prendas = obtenerPrendasConfeccion();
-        if (id) {
-            prendas = prendas.map(p => p.id == id ? { id: Number(id), modelo, precio, colores, tallas, imagen: imgFinal || p.imagen } : p);
-        } else {
-            const nueva = {
-                id: Date.now(),
-                modelo,
-                precio,
-                colores,
-                tallas,
-                imagen: imgFinal || 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500'
-            };
-            prendas.push(nueva);
-        }
-        localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
-        showToast('¡Fechas y prenda de confección guardadas con éxito!', 'success');
-        document.getElementById('formAdminConfeccion').reset();
-        document.getElementById('confPrendaId').value = '';
-        cambiarTabConfeccion('catalogo');
-    };
+    const imagenesFinales = tempConfeccionImagenes.length > 0
+        ? [...tempConfeccionImagenes]
+        : ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500'];
 
-    if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            procesarGuardado(evt.target.result);
-        };
-        reader.readAsDataURL(fileInput.files[0]);
+    let prendas = obtenerPrendasConfeccion();
+    if (id) {
+        prendas = prendas.map(p => p.id == id ? {
+            id: Number(id),
+            modelo,
+            precio,
+            colores,
+            tallas,
+            imagen: imagenesFinales[0],
+            imagenes: imagenesFinales
+        } : p);
     } else {
-        procesarGuardado(imagenUrl);
+        const nueva = {
+            id: Date.now(),
+            modelo,
+            precio,
+            colores,
+            tallas,
+            imagen: imagenesFinales[0],
+            imagenes: imagenesFinales
+        };
+        prendas.push(nueva);
     }
+
+    localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
+    showToast('¡Fechas y prenda de confección guardadas con éxito!', 'success');
+    resetFormAdminConfeccion();
+    cambiarTabConfeccion('catalogo');
+}
+
+function slideConfeccionImage(prendaId, direction) {
+    const prendas = obtenerPrendasConfeccion();
+    const p = prendas.find(item => item.id == prendaId);
+    if (!p || !p.imagenes || p.imagenes.length <= 1) return;
+
+    if (confSliderIndexes[prendaId] === undefined) confSliderIndexes[prendaId] = 0;
+    confSliderIndexes[prendaId] += direction;
+
+    if (confSliderIndexes[prendaId] >= p.imagenes.length) confSliderIndexes[prendaId] = 0;
+    if (confSliderIndexes[prendaId] < 0) confSliderIndexes[prendaId] = p.imagenes.length - 1;
+
+    renderCatalogoConfeccion();
+}
+
+function jumpConfeccionImage(prendaId, index) {
+    confSliderIndexes[prendaId] = index;
+    renderCatalogoConfeccion();
 }
 
 function renderCatalogoConfeccion() {
@@ -1387,7 +1587,6 @@ function renderCatalogoConfeccion() {
     const prendas = obtenerPrendasConfeccion();
     const { isAdmin } = getSession();
 
-    // Validar si el plazo de pedidos ha culminado o no ha iniciado
     const conf = obtenerConfigFechasConfeccion();
     const ahora = new Date().getTime();
     const fInicio = new Date(conf.inicio).getTime();
@@ -1397,11 +1596,34 @@ function renderCatalogoConfeccion() {
     grid.innerHTML = prendas.map(p => {
         const colorOpts = p.colores.map(c => `<option value="${c}">${c}</option>`).join('');
         const tallaOpts = p.tallas.map(t => `<option value="${t}">${t}</option>`).join('');
+        const imgs = p.imagenes && p.imagenes.length > 0 ? p.imagenes : [p.imagen];
+        const rawIdx = confSliderIndexes[p.id] || 0;
+        const currentIdx = rawIdx < imgs.length ? rawIdx : 0;
 
         return `
             <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
                 <div>
-                    <img src="${p.imagen}" alt="${p.modelo}" class="w-full h-44 object-cover rounded-xl mb-3 border border-slate-100" onerror="this.src='https://placehold.co/500x500/1e293b/ffffff?text=Prenda'">
+                    <!-- Carrusel interactivo con flechas y contador -->
+                    <div class="relative group/confimg mb-2">
+                        <img src="${imgs[currentIdx]}" alt="${p.modelo}" class="w-full h-48 object-cover rounded-xl border border-slate-100 transition-all" onerror="this.src='https://placehold.co/500x500/1e293b/ffffff?text=Prenda'">
+                        ${imgs.length > 1 ? `
+                            <button type="button" onclick="slideConfeccionImage(${p.id}, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-xs font-bold shadow cursor-pointer transition">❮</button>
+                            <button type="button" onclick="slideConfeccionImage(${p.id}, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-xs font-bold shadow cursor-pointer transition">❯</button>
+                            <span class="absolute bottom-2 right-2 bg-black/65 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${currentIdx + 1} / ${imgs.length}</span>
+                        ` : ''}
+                    </div>
+
+                    <!-- Miniaturas interactivas si tiene más de 1 imagen -->
+                    ${imgs.length > 1 ? `
+                        <div class="flex items-center gap-1.5 mb-2.5 overflow-x-auto pb-1">
+                            ${imgs.map((thumb, tIdx) => `
+                                <button type="button" onclick="jumpConfeccionImage(${p.id}, ${tIdx})" class="w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0 cursor-pointer transition ${tIdx === currentIdx ? 'border-amber-600 scale-105 shadow-xs' : 'border-slate-200 opacity-70 hover:opacity-100'}">
+                                    <img src="${thumb}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=${tIdx + 1}'">
+                                </button>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
                     <h5 class="font-bold text-slate-900 text-sm mb-1">${p.modelo}</h5>
                     <p class="text-amber-700 font-black text-base mb-3">S/ ${p.precio.toFixed(2)}</p>
                     
@@ -1452,8 +1674,9 @@ function editarPrendaConfeccion(id) {
     document.getElementById('confPrecio').value = p.precio;
     document.getElementById('confColores').value = p.colores.join(', ');
     document.getElementById('confTallas').value = p.tallas.join(', ');
-    document.getElementById('confImagenUrl').value = p.imagen.startsWith('data:') ? '' : p.imagen;
+    document.getElementById('confImagenUrl').value = '';
 
+    tempConfeccionImagenes = p.imagenes && p.imagenes.length > 0 ? [...p.imagenes] : (p.imagen ? [p.imagen] : []);
     cambiarTabConfeccion('admin');
 }
 
@@ -1631,7 +1854,9 @@ function descargarPDFConfeccion(id) {
     doc.text(`S/ ${prenda.precio.toFixed(2)}`, 48, 102);
 
     try {
-        doc.addImage(prenda.imagen, 'JPEG', 120, 58, 70, 70);
+        const imgs = prenda.imagenes && prenda.imagenes.length > 0 ? prenda.imagenes : [prenda.imagen];
+        const currentIdx = confSliderIndexes[prenda.id] || 0;
+        doc.addImage(imgs[currentIdx] || prenda.imagen, 'JPEG', 120, 58, 70, 70);
     } catch (err) {
         console.warn('Imagen omitida en PDF por políticas de CORS.');
     }
