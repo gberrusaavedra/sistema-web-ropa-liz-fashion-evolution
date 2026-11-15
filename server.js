@@ -132,6 +132,30 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.post('/api/social-login', async (req, res) => {
+    const { provider, nombre, email } = req.body;
+    try {
+        let result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+        let user;
+
+        if (result.rows.length === 0) {
+            const passwordRandom = Math.random().toString(36).slice(-8);
+            const insertRes = await pool.query(
+                'INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol',
+                [nombre, email, passwordRandom, provider, 'cliente']
+            );
+            user = insertRes.rows[0];
+        } else {
+            user = result.rows[0];
+        }
+
+        const token = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
+        res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // === CATÁLOGO REMATE ===
 app.get('/api/productos', async (req, res) => {
     try {
