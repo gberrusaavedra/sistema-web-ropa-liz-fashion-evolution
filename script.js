@@ -2,7 +2,7 @@
 // 1. CONFIGURACIÓN GLOBAL Y CONEXIÓN A RENDER / NEON
 // =====================================================================
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
-const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.[cite: 1]
+const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
 const WHATSAPP_PHONE = "931598799";
 
 let PRODUCTS = [
@@ -18,7 +18,7 @@ let PRODUCTS = [
             "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
             "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80"
         ],
-        stockBySize: { S: 1, M: 2, L: 0, XL: 1, XXL: 0 },
+        stockBySize: { S: 1, M: 2, L: 0, XL: 1 },
         maxInitialStock: 15,
         material: "100% Poliéster repelente al agua con forro térmico acolchado.",
         description: "Casaca ligera cortavientos ideal para media estación. Corte slim fit con cierres metálicos reforzados."
@@ -41,11 +41,11 @@ let state = {
 let tempUploadedImages = [];
 
 const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
-const SIZES = ['Todas', 'S', 'M', 'L', 'XL', 'XXL'];
+const SIZES = ['Todas', 'S', 'M', 'L', 'XL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
 // =====================================================================
-// 2. AUTENTICACIÓN Y ROLES (INCLUYE GOOGLE Y FACEBOOK REALES)
+// 2. AUTENTICACIÓN Y ROLES
 // =====================================================================
 function getSession() {
     const token = localStorage.getItem('rs_token');
@@ -156,55 +156,6 @@ async function handleAuthSubmit(e) {
     }
 }
 
-// === GOOGLE LOGIN REAL CON DATOS DE USUARIO ===
-function loginWithGoogleReal() {
-    const nombreReal = prompt("Ingresa tu Nombre y Apellido de Google:", "Guadalupe Berru");
-    if (!nombreReal) return;
-    const correoReal = prompt("Ingresa tu Correo Gmail real:", "gberrusaavedra@gmail.com");
-    if (!correoReal || !correoReal.includes('@')) {
-        showToast('Correo electrónico inválido', 'error');
-        return;
-    }
-    procesarLoginSocialBackend('Google', nombreReal, correoReal);
-}
-
-// === FACEBOOK LOGIN REAL CON DATOS DE USUARIO ===
-function loginWithFacebookReal() {
-    const nombreReal = prompt("Ingresa tu Nombre y Apellido de Facebook:", "Guadalupe Berru");
-    if (!nombreReal) return;
-    const correoReal = prompt("Ingresa tu Correo o usuario de Facebook:", "gberrusaavedra_fb@gmail.com");
-    if (!correoReal) {
-        showToast('Correo o usuario inválido', 'error');
-        return;
-    }
-    procesarLoginSocialBackend('Facebook', nombreReal, correoReal);
-}
-
-async function procesarLoginSocialBackend(provider, nombre, email) {
-    try {
-        const res = await fetch(API_URL + '/social-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ provider, nombre, email })
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-            showToast(data.error || 'Error al autenticar con ' + provider, 'error');
-            return;
-        }
-
-        localStorage.setItem('rs_token', data.token);
-        localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
-        closeAuthModal();
-        updateAuthUI();
-        applyFilters();
-        showToast(`¡Conectado exitosamente con ${provider} (${data.usuario.nombre})!`, 'success');
-    } catch (err) {
-        showToast('No se pudo conectar con el servidor backend en Render.', 'error');
-    }
-}
-
 function logoutUser() {
     if (confirm('¿Deseas cerrar tu sesión actual?')) {
         localStorage.removeItem('rs_token');
@@ -228,7 +179,7 @@ async function fetchProductsFromDB() {
             PRODUCTS = dbProducts.map((p, idx) => {
                 const parsedStock = typeof p.stock_by_size === 'string' 
                     ? JSON.parse(p.stock_by_size) 
-                    : (p.stock_by_size || { S: 2, M: 3, L: 2, XL: 1, XXL: 0 });
+                    : (p.stock_by_size || { S: 2, M: 3, L: 2, XL: 1 });
                 const total = Object.values(parsedStock).reduce((a, b) => a + b, 0);
 
                 let parsedImages = [];
@@ -331,14 +282,14 @@ function renderDynamicVariantsInputs(existingVariants = null) {
     if (!container) return;
 
     if (tempUploadedImages.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.[cite: 1]</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.</div>`;
         return;
     }
 
     container.innerHTML = tempUploadedImages.map((imgSrc, idx) => {
         const v = existingVariants && existingVariants[idx] ? existingVariants[idx] : {
             color: idx === 0 ? 'Corinto' : idx === 1 ? 'Negro' : idx === 2 ? 'Rojo' : 'Beige',
-            stockBySize: { S: 2, M: 3, L: 2, XL: 1, XXL: 0 },
+            stockBySize: { S: 2, M: 3, L: 2, XL: 1 },
             salePrice: ''
         };
 
@@ -364,7 +315,7 @@ function renderDynamicVariantsInputs(existingVariants = null) {
                 </div>
                 <div>
                     <span class="text-[10px] font-bold text-slate-500 block mb-1">Stock por Talla (Imagen #${idx + 1}):</span>
-                    <div class="grid grid-cols-5 gap-1 text-center">
+                    <div class="grid grid-cols-4 gap-1.5 text-center">
                         <div>
                             <span class="text-[9px] text-slate-400">S</span>
                             <input type="number" min="0" class="v-stock-s w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.S ?? 2}">
@@ -380,10 +331,6 @@ function renderDynamicVariantsInputs(existingVariants = null) {
                         <div>
                             <span class="text-[9px] text-slate-400">XL</span>
                             <input type="number" min="0" class="v-stock-xl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XL ?? 1}">
-                        </div>
-                        <div>
-                            <span class="text-[9px] text-slate-400">XXL</span>
-                            <input type="number" min="0" class="v-stock-xxl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XXL ?? 0}">
                         </div>
                     </div>
                 </div>
@@ -412,8 +359,7 @@ function eliminarImagenPrenda(index) {
                     S: parseInt(row.querySelector('.v-stock-s').value) || 0,
                     M: parseInt(row.querySelector('.v-stock-m').value) || 0,
                     L: parseInt(row.querySelector('.v-stock-l').value) || 0,
-                    XL: parseInt(row.querySelector('.v-stock-xl').value) || 0,
-                    XXL: parseInt(row.querySelector('.v-stock-xxl')?.value) || 0
+                    XL: parseInt(row.querySelector('.v-stock-xl').value) || 0
                 }
             });
         }
@@ -490,13 +436,12 @@ async function handleSaveProduct(e) {
         const m = parseInt(row.querySelector('.v-stock-m').value) || 0;
         const l = parseInt(row.querySelector('.v-stock-l').value) || 0;
         const xl = parseInt(row.querySelector('.v-stock-xl').value) || 0;
-        const xxl = parseInt(row.querySelector('.v-stock-xxl')?.value) || 0;
 
         allColores.push(color);
         variantDetails.push({
             color,
             salePrice: priceInput ? parseFloat(priceInput) : null,
-            stockBySize: { S: s, M: m, L: l, XL: xl, XXL: xxl }
+            stockBySize: { S: s, M: m, L: l, XL: xl }
         });
     });
 
@@ -504,7 +449,7 @@ async function handleSaveProduct(e) {
         variantDetails.push({
             color: 'Corinto',
             salePrice: null,
-            stockBySize: { S: 2, M: 3, L: 2, XL: 1, XXL: 0 }
+            stockBySize: { S: 2, M: 3, L: 2, XL: 1 }
         });
         allColores = ['Corinto', 'Negro', 'Rojo'];
     }
@@ -514,9 +459,8 @@ async function handleSaveProduct(e) {
         acc.M += v.stockBySize.M;
         acc.L += v.stockBySize.L;
         acc.XL += v.stockBySize.XL;
-        acc.XXL += (v.stockBySize.XXL || 0);
         return acc;
-    }, { S: 0, M: 0, L: 0, XL: 0, XXL: 0 });
+    }, { S: 0, M: 0, L: 0, XL: 0 });
 
     const tagVal = document.getElementById('formTag').value;
     const baseSalePrice = parseFloat(document.getElementById('formSalePrice').value) || 0;
@@ -609,7 +553,7 @@ function getFirstAvailableSize(product, currentImgIdx = 0) {
     const stockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
         ? product.variantDetails[currentImgIdx].stockBySize 
         : product.stockBySize;
-    for (const sz of ['S', 'M', 'L', 'XL', 'XXL']) {
+    for (const sz of ['S', 'M', 'L', 'XL']) {
         if (stockMap[sz] > 0) return sz;
     }
     return 'M';
@@ -839,8 +783,8 @@ function renderProductGrid(productsList) {
                         <div class="flex items-center justify-between mb-1.5">
                             <span class="text-[11px] font-bold text-slate-500">Tallas en Stock:</span>
                         </div>
-                        <div class="grid grid-cols-5 gap-1">
-                            ${['S', 'M', 'L', 'XL', 'XXL'].map(sz => {
+                        <div class="grid grid-cols-4 gap-1.5">
+                            ${['S', 'M', 'L', 'XL'].map(sz => {
                                 const qty = currentStockMap[sz] || 0;
                                 const outOfStock = qty <= 0;
                                 const isSelected = selectedSize === sz && !outOfStock;
@@ -1431,7 +1375,7 @@ function renderReporteClientes() {
     const historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
 
     if (historial.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.[cite: 1]</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.</td></tr>`;
         return;
     }
 
