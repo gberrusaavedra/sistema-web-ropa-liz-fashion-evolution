@@ -567,10 +567,10 @@ function renderProductGrid(productsList) {
 
         return `
             <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
-                <div class="relative w-full aspect-[4/5] bg-slate-100 overflow-hidden group/img">
-                    <div id="slider-${product.id}" class="absolute inset-0 w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(-${currentImgIdx * 100}%);">
+                <div class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img">
+                    <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(-${currentImgIdx * 100}%);">
                         ${imagesList.map(imgUrl => `
-                            <div class="w-full h-full shrink-0 relative">
+                            <div class="w-full h-full basis-full shrink-0 grow-0 relative">
                                 <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
                             </div>
                         `).join('')}
