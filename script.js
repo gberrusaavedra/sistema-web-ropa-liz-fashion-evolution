@@ -184,9 +184,21 @@ async function fetchProductsFromDB() {
                     ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
                     : ['Corinto', 'Negro', 'Rojo', 'Beige', 'Blanco'];
 
-                const parsedImages = p.imagenes
-                    ? (Array.isArray(p.imagenes) ? p.imagenes : JSON.parse(p.imagenes || '[]'))
-                    : [p.imagen_url];
+                let parsedImages = [];
+                try {
+                    parsedImages = p.imagenes
+                        ? (Array.isArray(p.imagenes) ? p.imagenes : JSON.parse(p.imagenes || '[]'))
+                        : [];
+                } catch (e) {
+                    parsedImages = [];
+                }
+
+                if (parsedImages.length === 0 && p.imagen_url) {
+                    parsedImages = [p.imagen_url];
+                }
+                if (parsedImages.length === 0) {
+                    parsedImages = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
+                }
 
                 return {
                     id: p.id,
@@ -196,8 +208,8 @@ async function fetchProductsFromDB() {
                     tag: p.etiqueta || 'Remate Final',
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
-                    image: p.imagen_url,
-                    images: parsedImages.length > 0 ? parsedImages : [p.imagen_url],
+                    image: parsedImages[0],
+                    images: parsedImages,
                     stockBySize: parsedStock,
                     colors: parsedColors,
                     maxInitialStock: Math.max(total + 5, 15),
@@ -553,11 +565,12 @@ function renderProductGrid(productsList) {
         const productColors = product.colors && product.colors.length ? product.colors : ['Corinto', 'Negro', 'Rojo', 'Beige'];
         const selectedColor = state.selectedColorsPerCard[product.id] || productColors[0];
         
-        const imagesList = product.images && Array.isArray(product.images) && product.images.length > 0 
+        let imagesList = product.images && Array.isArray(product.images) && product.images.length > 0 
             ? product.images 
-            : [product.image];
+            : [product.image || 'https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
 
-        const currentImgIdx = sliderIndexes[product.id] || 0;
+        const rawImgIdx = sliderIndexes[product.id] || 0;
+        const currentImgIdx = rawImgIdx < imagesList.length ? rawImgIdx : 0;
 
         let tagBadgeClass = "bg-slate-900 text-white";
         if (product.tag === 'Remate Final') tagBadgeClass = "bg-rose-600 text-white";
@@ -570,7 +583,7 @@ function renderProductGrid(productsList) {
                 <div class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img">
                     <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(-${currentImgIdx * 100}%);">
                         ${imagesList.map(imgUrl => `
-                            <div class="w-full h-full basis-full shrink-0 grow-0 relative">
+                            <div class="w-full h-full basis-full shrink-0 grow-0 relative bg-slate-100">
                                 <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
                             </div>
                         `).join('')}
@@ -689,10 +702,14 @@ function selectCardColor(productId, colorName) {
     if (product && product.colors) {
         const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
         if (colorIndex !== -1) {
-            sliderIndexes[productId] = colorIndex;
+            const imagesList = product.images && product.images.length > 0 ? product.images : [product.image];
+            // Sincronización segura usando operador módulo para evitar desbordes si hay menos fotos que colores
+            const targetIdx = colorIndex % imagesList.length;
+            sliderIndexes[productId] = targetIdx;
+            
             const slider = document.getElementById(`slider-${productId}`);
             if (slider) {
-                slider.style.transform = `translateX(-${colorIndex * 100}%)`;
+                slider.style.transform = `translateX(-${targetIdx * 100}%)`;
             }
         }
     }
