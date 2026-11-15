@@ -186,9 +186,11 @@ async function fetchProductsFromDB() {
 
                 let parsedImages = [];
                 try {
-                    parsedImages = p.imagenes
-                        ? (Array.isArray(p.imagenes) ? p.imagenes : JSON.parse(p.imagenes || '[]'))
-                        : [];
+                    if (Array.isArray(p.imagenes)) {
+                        parsedImages = p.imagenes;
+                    } else if (typeof p.imagenes === 'string') {
+                        parsedImages = JSON.parse(p.imagenes);
+                    }
                 } catch (e) {
                     parsedImages = [];
                 }
@@ -353,7 +355,7 @@ async function handleSaveProduct(e) {
         colores: coloresArray,
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url: imagesArray[0],
-        imagenes: imagesArray // Se envía el arreglo completo para la columna JSONB de Neon
+        imagenes: imagesArray
     };
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
@@ -582,9 +584,9 @@ function renderProductGrid(productsList) {
             <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
                 <div class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img">
                     <div id="slider-${product.id}" class="h-full flex transition-transform duration-300 ease-out" style="width: ${imagesList.length * 100}%; transform: translateX(-${(currentImgIdx * (100 / imagesList.length))}%);">
-                        ${imagesList.map(imgUrl => `
+                        ${imagesList.map((imgUrl, imgIdx) => `
                             <div class="h-full relative bg-slate-100" style="width: ${100 / imagesList.length}%;">
-                                <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
+                                <img src="${imgUrl}" alt="${product.name} - ${imgIdx}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
                             </div>
                         `).join('')}
                     </div>
