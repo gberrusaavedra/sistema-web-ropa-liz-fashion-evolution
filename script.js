@@ -294,19 +294,24 @@ function renderDynamicVariantsInputs(existingVariants = null) {
         };
 
         return `
-            <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2 variant-row" data-index="${idx}">
-                <div class="flex items-center gap-3">
-                    <img src="${imgSrc}" class="w-12 h-14 object-cover rounded-lg border shrink-0">
-                    <div class="flex-1 grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500">Color Imagen #${idx + 1}</label>
-                            <input type="text" class="variant-color w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.color}" placeholder="Ej. Negro">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500">Precio Opcional (S/)</label>
-                            <input type="number" step="0.10" class="variant-price w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.salePrice || ''}" placeholder="Opcional">
+            <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2 variant-row relative" data-index="${idx}">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <img src="${imgSrc}" class="w-12 h-14 object-cover rounded-lg border shrink-0">
+                        <div class="flex-1 grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">Color Imagen #${idx + 1}</label>
+                                <input type="text" class="variant-color w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.color}" placeholder="Ej. Negro">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-500">Precio Opcional (S/)</label>
+                                <input type="number" step="0.10" class="variant-price w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.salePrice || ''}" placeholder="Opcional">
+                            </div>
                         </div>
                     </div>
+                    <button type="button" onclick="eliminarImagenPrenda(${idx})" class="p-2 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg transition-colors cursor-pointer" title="Eliminar imagen vendida">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
                 </div>
                 <div>
                     <span class="text-[10px] font-bold text-slate-500 block mb-1">Stock por Talla (Imagen #${idx + 1}):</span>
@@ -332,6 +337,36 @@ function renderDynamicVariantsInputs(existingVariants = null) {
             </div>
         `;
     }).join('');
+    lucide.createIcons();
+}
+
+function eliminarImagenPrenda(index) {
+    if (tempUploadedImages.length <= 1) {
+        showToast('La prenda debe conservar al menos una imagen', 'warning');
+        return;
+    }
+    
+    tempUploadedImages.splice(index, 1);
+    
+    const variantRows = document.querySelectorAll('.variant-row');
+    let currentVariants = [];
+    variantRows.forEach((row, rIdx) => {
+        if (rIdx !== index) {
+            currentVariants.push({
+                color: row.querySelector('.variant-color').value,
+                salePrice: row.querySelector('.variant-price').value,
+                stockBySize: {
+                    S: parseInt(row.querySelector('.v-stock-s').value) || 0,
+                    M: parseInt(row.querySelector('.v-stock-m').value) || 0,
+                    L: parseInt(row.querySelector('.v-stock-l').value) || 0,
+                    XL: parseInt(row.querySelector('.v-stock-xl').value) || 0
+                }
+            });
+        }
+    });
+
+    renderDynamicVariantsInputs(currentVariants.length > 0 ? currentVariants : null);
+    showToast('Imagen eliminada de la lista', 'warning');
 }
 
 function openProductFormModal(product = null) {
