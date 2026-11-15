@@ -156,6 +156,23 @@ async function handleAuthSubmit(e) {
     }
 }
 
+
+function loginWithSocial(provider) {
+    const demoUser = {
+        id: Date.now(),
+        nombre: provider === 'Google' ? 'Usuario Google' : 'Usuario Facebook',
+        email: `usuario_${provider.toLowerCase()}@lizfashion.com`,
+        rol: 'cliente'
+    };
+    
+    localStorage.setItem('rs_token', 'social_token_' + Date.now());
+    localStorage.setItem('rs_usuario', JSON.stringify(demoUser));
+    closeAuthModal();
+    updateAuthUI();
+    applyFilters();
+    showToast(`¡Bienvenido a LIZ FASHION EVOLUTION con ${provider}!`, 'success');
+}
+
 function logoutUser() {
     if (confirm('¿Deseas cerrar tu sesión actual?')) {
         localStorage.removeItem('rs_token');
@@ -287,10 +304,18 @@ function renderDynamicVariantsInputs(existingVariants = null) {
     }
 
     container.innerHTML = tempUploadedImages.map((imgSrc, idx) => {
-        const v = existingVariants && existingVariants[idx] ? existingVariants[idx] : {
-            color: idx === 0 ? 'Corinto' : idx === 1 ? 'Negro' : idx === 2 ? 'Rojo' : 'Beige',
-            stockBySize: { S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
-            salePrice: ''
+        const existingVar = existingVariants && existingVariants[idx] ? existingVariants[idx] : null;
+        
+        const v = {
+            color: existingVar ? (existingVar.color || '') : (idx === 0 ? 'Corinto' : idx === 1 ? 'Negro' : idx === 2 ? 'Rojo' : 'Beige'),
+            salePrice: existingVar ? (existingVar.salePrice ?? '') : '',
+            stockBySize: {
+                S: existingVar?.stockBySize?.S ?? 0,
+                M: existingVar?.stockBySize?.M ?? 0,
+                L: existingVar?.stockBySize?.L ?? 0,
+                XL: existingVar?.stockBySize?.XL ?? 0,
+                XXL: existingVar?.stockBySize?.XXL ?? 0
+            }
         };
 
         return `
@@ -305,7 +330,7 @@ function renderDynamicVariantsInputs(existingVariants = null) {
                             </div>
                             <div>
                                 <label class="text-[10px] font-bold text-slate-500">Precio Opcional (S/)</label>
-                                <input type="number" step="0.10" class="variant-price w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.salePrice || ''}" placeholder="Opcional">
+                                <input type="number" step="0.10" class="variant-price w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.salePrice}" placeholder="Opcional">
                             </div>
                         </div>
                     </div>
@@ -318,23 +343,23 @@ function renderDynamicVariantsInputs(existingVariants = null) {
                     <div class="grid grid-cols-5 gap-1 text-center">
                         <div>
                             <span class="text-[9px] text-slate-400">S</span>
-                            <input type="number" min="0" class="v-stock-s w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.S ?? 2}">
+                            <input type="number" min="0" class="v-stock-s w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.S}">
                         </div>
                         <div>
                             <span class="text-[9px] text-slate-400">M</span>
-                            <input type="number" min="0" class="v-stock-m w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.M ?? 3}">
+                            <input type="number" min="0" class="v-stock-m w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.M}">
                         </div>
                         <div>
                             <span class="text-[9px] text-slate-400">L</span>
-                            <input type="number" min="0" class="v-stock-l w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.L ?? 2}">
+                            <input type="number" min="0" class="v-stock-l w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.L}">
                         </div>
                         <div>
                             <span class="text-[9px] text-slate-400">XL</span>
-                            <input type="number" min="0" class="v-stock-xl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XL ?? 1}">
+                            <input type="number" min="0" class="v-stock-xl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XL}">
                         </div>
                         <div>
                             <span class="text-[9px] text-slate-400">XXL</span>
-                            <input type="number" min="0" class="v-stock-xxl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XXL ?? 0}">
+                            <input type="number" min="0" class="v-stock-xxl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XXL}">
                         </div>
                     </div>
                 </div>
@@ -1168,385 +1193,6 @@ function abrirModuloConfeccion() {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         cambiarTabConfeccion('catalogo');
-        renderCatalogoConfeccion();
-        verificarPermisosAdminConfeccionTabs();
-    }
-}
-
-function cerrarModuloConfeccion() {
-    const modal = document.getElementById('confeccionModal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-}
-
-function verificarPermisosAdminConfeccionTabs() {
-    const { isAdmin } = getSession();
-    const btnAdmin = document.getElementById('tabBtnAdmin');
-    const btnReporte = document.getElementById('tabBtnReporte');
-    const badgeRol = document.getElementById('badgeRolConfeccion');
-
-    if (isAdmin) {
-        if (btnAdmin) btnAdmin.classList.remove('hidden');
-        if (btnReporte) btnReporte.classList.remove('hidden');
-        if (badgeRol) {
-            badgeRol.textContent = 'Modo Administrador';
-            badgeRol.className = 'text-xs font-extrabold text-amber-950 bg-amber-300 px-3 py-1 rounded-full';
-        }
-    } else {
-        if (btnAdmin) btnAdmin.classList.add('hidden');
-        if (btnReporte) btnReporte.classList.add('hidden');
-        if (badgeRol) {
-            badgeRol.textContent = 'Vista Cliente';
-            badgeRol.className = 'text-xs font-extrabold text-amber-900 bg-amber-200 px-3 py-1 rounded-full';
-        }
-    }
-}
-
-function cambiarTabConfeccion(tab) {
-    const secCat = document.getElementById('seccionTabCatalogo');
-    const secAdm = document.getElementById('seccionTabAdmin');
-    const secRep = document.getElementById('seccionTabReporte');
-
-    const btnCat = document.getElementById('tabBtnCatalogo');
-    const btnAdm = document.getElementById('tabBtnAdmin');
-    const btnRep = document.getElementById('tabBtnReporte');
-
-    secCat.classList.add('hidden');
-    secAdm.classList.add('hidden');
-    secRep.classList.add('hidden');
-
-    btnCat.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
-    if (btnAdm) btnAdm.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
-    if (btnRep) btnRep.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300";
-
-    if (tab === 'catalogo') {
-        secCat.classList.remove('hidden');
-        btnCat.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
-        renderCatalogoConfeccion();
-    } else if (tab === 'admin') {
-        secAdm.classList.remove('hidden');
-        if (btnAdm) btnAdm.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
-    } else if (tab === 'reporte') {
-        secRep.classList.remove('hidden');
-        if (btnRep) btnRep.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition";
-        renderReporteClientes();
-    }
-}
-
-function obtenerPrendasConfeccion() {
-    return JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [
-        {
-            id: 1,
-            modelo: 'Casaca Biker Exclusiva de Cuero Sintético',
-            precio: 149.00,
-            colores: ['Negro', 'Corinto', 'Marrón'],
-            tallas: ['S', 'M', 'L', 'XL'],
-            imagen: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500'
-        },
-        {
-            id: 2,
-            modelo: 'Conjunto Urbano Oversize con Capucha',
-            precio: 129.00,
-            colores: ['Beige', 'Gris', 'Negro', 'Verde Militar'],
-            tallas: ['S', 'M', 'L'],
-            imagen: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500'
-        }
-    ];
-}
-
-function guardarPrendaConfeccion(e) {
-    e.preventDefault();
-    const id = document.getElementById('confPrendaId').value;
-    const modelo = document.getElementById('confModelo').value.trim();
-    const precio = parseFloat(document.getElementById('confPrecio').value);
-    const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
-    const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
-    let imagenUrl = document.getElementById('confImagenUrl').value.trim();
-    const fileInput = document.getElementById('confImagenFile');
-
-    const procesarGuardado = (imgFinal) => {
-        let prendas = obtenerPrendasConfeccion();
-        if (id) {
-            prendas = prendas.map(p => p.id == id ? { id: Number(id), modelo, precio, colores, tallas, imagen: imgFinal || p.imagen } : p);
-        } else {
-            const nueva = {
-                id: Date.now(),
-                modelo,
-                precio,
-                colores,
-                tallas,
-                imagen: imgFinal || 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500'
-            };
-            prendas.push(nueva);
-        }
-        localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
-        showToast('¡Prenda de confección guardada con éxito!', 'success');
-        document.getElementById('formAdminConfeccion').reset();
-        document.getElementById('confPrendaId').value = '';
-        cambiarTabConfeccion('catalogo');
-    };
-
-    if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            procesarGuardado(evt.target.result);
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-    } else {
-        procesarGuardado(imagenUrl);
-    }
-}
-
-function renderCatalogoConfeccion() {
-    const grid = document.getElementById('catalogoConfeccionGrid');
-    if (!grid) return;
-    const prendas = obtenerPrendasConfeccion();
-    const { isAdmin } = getSession();
-
-    grid.innerHTML = prendas.map(p => {
-        const colorOpts = p.colores.map(c => `<option value="${c}">${c}</option>`).join('');
-        const tallaOpts = p.tallas.map(t => `<option value="${t}">${t}</option>`).join('');
-
-        return `
-            <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-                <div>
-                    <img src="${p.imagen}" alt="${p.modelo}" class="w-full h-44 object-cover rounded-xl mb-3 border border-slate-100" onerror="this.src='https://placehold.co/500x500/1e293b/ffffff?text=Prenda'">
-                    <h5 class="font-bold text-slate-900 text-sm mb-1">${p.modelo}</h5>
-                    <p class="text-amber-700 font-black text-base mb-3">S/ ${p.precio.toFixed(2)}</p>
-                    
-                    <div class="space-y-2 mb-3">
-                        <div>
-                            <label class="text-[11px] font-bold text-slate-600 block">Color:</label>
-                            <select id="select-color-${p.id}" class="w-full p-2 text-xs bg-slate-50 border rounded-xl outline-none">${colorOpts}</select>
-                        </div>
-                        <div>
-                            <label class="text-[11px] font-bold text-slate-600 block">Talla:</label>
-                            <select id="select-talla-${p.id}" class="w-full p-2 text-xs bg-slate-50 border rounded-xl outline-none">${tallaOpts}</select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="space-y-2">
-                    <button onclick="descargarPDFConfeccion(${p.id})" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
-                        <i class="fas fa-file-pdf"></i> Descargar Orden PDF
-                    </button>
-                    <button onclick="consultarConfeccionWhatsApp(${p.id})" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
-                        <i class="fab fa-whatsapp"></i> Separar por WhatsApp
-                    </button>
-                    ${isAdmin ? `
-                    <div class="flex gap-1.5 pt-1">
-                        <button onclick="editarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg cursor-pointer">Editar</button>
-                        <button onclick="eliminarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer">Eliminar</button>
-                    </div>` : ''}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-function editarPrendaConfeccion(id) {
-    const prendas = obtenerPrendasConfeccion();
-    const p = prendas.find(item => item.id == id);
-    if (!p) return;
-
-    document.getElementById('confPrendaId').value = p.id;
-    document.getElementById('confModelo').value = p.modelo;
-    document.getElementById('confPrecio').value = p.precio;
-    document.getElementById('confColores').value = p.colores.join(', ');
-    document.getElementById('confTallas').value = p.tallas.join(', ');
-    document.getElementById('confImagenUrl').value = p.imagen.startsWith('data:') ? '' : p.imagen;
-
-    cambiarTabConfeccion('admin');
-}
-
-function eliminarPrendaConfeccion(id) {
-    if (confirm('¿Deseas eliminar esta prenda de confección?')) {
-        let prendas = obtenerPrendasConfeccion();
-        prendas = prendas.filter(p => p.id != id);
-        localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
-        renderCatalogoConfeccion();
-        showToast('Prenda eliminada', 'warning');
-    }
-}
-
-function registrarPedidoClienteEnReporte(pedido) {
-    let historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
-    historial.unshift(pedido);
-    localStorage.setItem('liz_reporte_pedidos_confeccion', JSON.stringify(historial));
-}
-
-function renderReporteClientes() {
-    const tbody = document.getElementById('tablaReporteClientesBody');
-    if (!tbody) return;
-    const historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
-
-    if (historial.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = historial.map((ped, idx) => `
-        <tr class="hover:bg-amber-50/60 transition">
-            <td class="p-3 font-mono font-bold text-amber-900">${ped.orden}</td>
-            <td class="p-3 text-slate-600">${ped.fecha}</td>
-            <td class="p-3 font-bold text-slate-800">${ped.modelo}</td>
-            <td class="p-3 text-slate-600">${ped.color}</td>
-            <td class="p-3 font-bold">${ped.talla}</td>
-            <td class="p-3 font-black text-rose-600">S/ ${ped.precio.toFixed(2)}</td>
-            <td class="p-3 text-center">
-                <button onclick="eliminarItemReporte(${idx})" class="p-1.5 bg-rose-100 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg transition" title="Eliminar registro">
-                    <i class="fas fa-trash-alt text-xs"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-
-function limpiarReporteClientes() {
-    if (confirm('¿Estás seguro de vaciar el reporte de pedidos de clientes?')) {
-        localStorage.removeItem('liz_reporte_pedidos_confeccion');
-        renderReporteClientes();
-        showToast('Reporte limpiado', 'warning');
-    }
-}
-
-function eliminarItemReporte(index) {
-    let historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
-    historial.splice(index, 1);
-    localStorage.setItem('liz_reporte_pedidos_confeccion', JSON.stringify(historial));
-    renderReporteClientes();
-    showToast('Registro eliminado del reporte', 'warning');
-}
-
-function consultarConfeccionWhatsApp(id) {
-    const prendas = obtenerPrendasConfeccion();
-    const prenda = prendas.find(p => p.id == id);
-    if (!prenda) return;
-
-    const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
-    const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
-    const nroOrden = `CONF-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    registrarPedidoClienteEnReporte({
-        orden: nroOrden,
-        fecha: `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`,
-        modelo: prenda.modelo,
-        color: colorSeleccionado,
-        talla: tallaSeleccionada,
-        precio: prenda.precio
-    });
-
-    const mensaje = `Hola *LIZ FASHION EVOLUTION*, quiero separar / ordenar la siguiente prenda de confección:\n\n` +
-                    `🧾 *N° Orden:* ${nroOrden}\n` +
-                    `🧥 *Modelo:* ${prenda.modelo}\n` +
-                    `🎨 *Color:* ${colorSeleccionado}\n` +
-                    `📏 *Talla:* ${tallaSeleccionada}\n` +
-                    `💰 *Precio:* S/ ${prenda.precio.toFixed(2)}\n\n` +
-                    `Quedo a la espera de la confirmación para coordinar el pago.`;
-
-    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(mensaje)}`, '_blank');
-    showToast('¡Solicitud enviada a WhatsApp y registrada!', 'success');
-}
-
-function descargarPDFConfeccion(id) {
-    const prendas = obtenerPrendasConfeccion();
-    const prenda = prendas.find(p => p.id == id);
-    if (!prenda) return;
-
-    const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
-    const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
-    const nroOrden = `CONF-${Math.floor(100000 + Math.random() * 900000)}`;
-    const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
-
-    registrarPedidoClienteEnReporte({
-        orden: nroOrden,
-        fecha: fechaActual,
-        modelo: prenda.modelo,
-        color: colorSeleccionado,
-        talla: tallaSeleccionada,
-        precio: prenda.precio
-    });
-
-    if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
-        alert('Librería jsPDF no detectada.');
-        return;
-    }
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.setFillColor(180, 83, 9);
-    doc.rect(0, 0, 210, 35, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('LIZ FASHION EVOLUTION', 15, 22);
-    
-    doc.setFontSize(10);
-    doc.text('COMPROBANTE DE PEDIDO DE CONFECCIÓN', 125, 22);
-
-    doc.setTextColor(50, 50, 50);
-    doc.setFontSize(10);
-    doc.text(`Fecha: ${fechaActual}`, 15, 45);
-    doc.text(`N° de Orden: ${nroOrden}`, 135, 45);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.line(15, 50, 195, 50);
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Detalles de la Prenda Solicitada:', 15, 60);
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Modelo:`, 15, 72);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${prenda.modelo}`, 40, 72);
-
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Color Elegido:`, 15, 82);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${colorSeleccionado}`, 45, 82);
-
-    doc.setFont('helvetica', 'normal');
-    doc.text('Talla:', 15, 92);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${tallaSeleccionada}`, 40, 92);
-
-    doc.setFont('helvetica', 'normal');
-    doc.text('Precio Unitario:', 15, 102);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`S/ ${prenda.precio.toFixed(2)}`, 48, 102);
-
-    try {
-        doc.addImage(prenda.imagen, 'JPEG', 120, 58, 70, 70);
-    } catch (err) {
-        console.warn('Imagen omitida en PDF por políticas de CORS.');
-    }
-
-    doc.setDrawColor(200, 200, 200);
-    doc.line(15, 145, 195, 145);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text('¡Gracias por confiar en Liz Fashion Evolution!', 15, 155);
-    doc.text('Comparte este PDF con nuestro asesor para coordinar tu confección.', 15, 162);
-
-    doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
-    showToast('¡PDF generado y registrado en reporte!', 'success');
-}
-// =====================================================================
-// MÓDULO DE PEDIDOS DE CONFECCIÓN, GESTIÓN DE IMÁGENES Y REPORTE
-// =====================================================================
-
-function abrirModuloConfeccion() {
-    const modal = document.getElementById('confeccionModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        cambiarTabConfeccion('catalogo');
         renderizarBannerPeriodoConfeccion();
         renderCatalogoConfeccion();
         verificarPermisosAdminConfeccionTabs();
@@ -1658,7 +1304,7 @@ function renderizarBannerPeriodoConfeccion() {
         lblEstado.className = 'bg-emerald-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
         if (banner) banner.className = "bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
     } else {
-        lblEstado.textContent = '🔴 PLAZO CULMINADO';
+        lblEstado.textContent = '🔴 PLAZO CULMINADO (CERRADO)';
         lblEstado.className = 'bg-rose-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
         if (banner) banner.className = "bg-rose-50 border border-rose-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
     }
@@ -1741,7 +1387,7 @@ function renderCatalogoConfeccion() {
     const prendas = obtenerPrendasConfeccion();
     const { isAdmin } = getSession();
 
-    // Validar si el plazo de pedidos ha culminado
+    // Validar si el plazo de pedidos ha culminado o no ha iniciado
     const conf = obtenerConfigFechasConfeccion();
     const ahora = new Date().getTime();
     const fInicio = new Date(conf.inicio).getTime();
@@ -1774,7 +1420,7 @@ function renderCatalogoConfeccion() {
                 <div class="space-y-2">
                     ${plazoVencido && !isAdmin ? `
                         <div class="bg-rose-100 text-rose-700 font-bold text-xs p-2.5 rounded-xl text-center border border-rose-200">
-                            ⛔ Plazo de pedidos finalizado
+                            ⛔ Plazo de pedidos culminado
                         </div>
                     ` : `
                         <button onclick="descargarPDFConfeccion(${p.id})" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
@@ -1794,4 +1440,210 @@ function renderCatalogoConfeccion() {
             </div>
         `;
     }).join('');
+}
+
+function editarPrendaConfeccion(id) {
+    const prendas = obtenerPrendasConfeccion();
+    const p = prendas.find(item => item.id == id);
+    if (!p) return;
+
+    document.getElementById('confPrendaId').value = p.id;
+    document.getElementById('confModelo').value = p.modelo;
+    document.getElementById('confPrecio').value = p.precio;
+    document.getElementById('confColores').value = p.colores.join(', ');
+    document.getElementById('confTallas').value = p.tallas.join(', ');
+    document.getElementById('confImagenUrl').value = p.imagen.startsWith('data:') ? '' : p.imagen;
+
+    cambiarTabConfeccion('admin');
+}
+
+function eliminarPrendaConfeccion(id) {
+    if (confirm('¿Deseas eliminar esta prenda de confección?')) {
+        let prendas = obtenerPrendasConfeccion();
+        prendas = prendas.filter(p => p.id != id);
+        localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
+        renderCatalogoConfeccion();
+        showToast('Prenda eliminada', 'warning');
+    }
+}
+
+function registrarPedidoClienteEnReporte(pedido) {
+    let historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
+    historial.unshift(pedido);
+    localStorage.setItem('liz_reporte_pedidos_confeccion', JSON.stringify(historial));
+}
+
+function renderReporteClientes() {
+    const tbody = document.getElementById('tablaReporteClientesBody');
+    if (!tbody) return;
+    const historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
+
+    if (historial.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = historial.map((ped, idx) => `
+        <tr class="hover:bg-amber-50/60 transition">
+            <td class="p-3 font-mono font-bold text-amber-900">${ped.orden}</td>
+            <td class="p-3 text-slate-600">${ped.fecha}</td>
+            <td class="p-3 font-bold text-slate-800">${ped.modelo}</td>
+            <td class="p-3 text-slate-600">${ped.color}</td>
+            <td class="p-3 font-bold">${ped.talla}</td>
+            <td class="p-3 font-black text-rose-600">S/ ${ped.precio.toFixed(2)}</td>
+            <td class="p-3 text-center">
+                <button onclick="eliminarItemReporte(${idx})" class="p-1.5 bg-rose-100 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg transition" title="Eliminar registro">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function limpiarReporteClientes() {
+    if (confirm('¿Estás seguro de vaciar el reporte de pedidos de clientes?')) {
+        localStorage.removeItem('liz_reporte_pedidos_confeccion');
+        renderReporteClientes();
+        showToast('Reporte limpiado', 'warning');
+    }
+}
+
+function eliminarItemReporte(index) {
+    let historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
+    historial.splice(index, 1);
+    localStorage.setItem('liz_reporte_pedidos_confeccion', JSON.stringify(historial));
+    renderReporteClientes();
+    showToast('Registro eliminado del reporte', 'warning');
+}
+
+function consultarConfeccionWhatsApp(id) {
+    const conf = obtenerConfigFechasConfeccion();
+    const ahora = new Date().getTime();
+    if (ahora > new Date(conf.fin).getTime() || ahora < new Date(conf.inicio).getTime()) {
+        showToast('El plazo para realizar pedidos de confección ha finalizado.', 'error');
+        return;
+    }
+
+    const prendas = obtenerPrendasConfeccion();
+    const prenda = prendas.find(p => p.id == id);
+    if (!prenda) return;
+
+    const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
+    const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
+    const nroOrden = `CONF-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    registrarPedidoClienteEnReporte({
+        orden: nroOrden,
+        fecha: `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`,
+        modelo: prenda.modelo,
+        color: colorSeleccionado,
+        talla: tallaSeleccionada,
+        precio: prenda.precio
+    });
+
+    const mensaje = `Hola *LIZ FASHION EVOLUTION*, quiero separar / ordenar la siguiente prenda de confección:\n\n` +
+                    `🧾 *N° Orden:* ${nroOrden}\n` +
+                    `🧥 *Modelo:* ${prenda.modelo}\n` +
+                    `🎨 *Color:* ${colorSeleccionado}\n` +
+                    `📏 *Talla:* ${tallaSeleccionada}\n` +
+                    `💰 *Precio:* S/ ${prenda.precio.toFixed(2)}\n\n` +
+                    `Quedo a la espera de la confirmación para coordinar el pago.`;
+
+    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    showToast('¡Solicitud enviada a WhatsApp y registrada!', 'success');
+}
+
+function descargarPDFConfeccion(id) {
+    const conf = obtenerConfigFechasConfeccion();
+    const ahora = new Date().getTime();
+    if (ahora > new Date(conf.fin).getTime() || ahora < new Date(conf.inicio).getTime()) {
+        showToast('El plazo para generar órdenes de confección ha finalizado.', 'error');
+        return;
+    }
+
+    const prendas = obtenerPrendasConfeccion();
+    const prenda = prendas.find(p => p.id == id);
+    if (!prenda) return;
+
+    const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
+    const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
+    const nroOrden = `CONF-${Math.floor(100000 + Math.random() * 900000)}`;
+    const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
+
+    registrarPedidoClienteEnReporte({
+        orden: nroOrden,
+        fecha: fechaActual,
+        modelo: prenda.modelo,
+        color: colorSeleccionado,
+        talla: tallaSeleccionada,
+        precio: prenda.precio
+    });
+
+    if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+        alert('Librería jsPDF no detectada.');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFillColor(180, 83, 9);
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LIZ FASHION EVOLUTION', 15, 22);
+    
+    doc.setFontSize(10);
+    doc.text('COMPROBANTE DE PEDIDO DE CONFECCIÓN', 125, 22);
+
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
+    doc.text(`Fecha: ${fechaActual}`, 15, 45);
+    doc.text(`N° de Orden: ${nroOrden}`, 135, 45);
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 50, 195, 50);
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalles de la Prenda Solicitada:', 15, 60);
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Modelo:`, 15, 72);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${prenda.modelo}`, 40, 72);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Color Elegido:`, 15, 82);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${colorSeleccionado}`, 45, 82);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('Talla:', 15, 92);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${tallaSeleccionada}`, 40, 92);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text('Precio Unitario:', 15, 102);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`S/ ${prenda.precio.toFixed(2)}`, 48, 102);
+
+    try {
+        doc.addImage(prenda.imagen, 'JPEG', 120, 58, 70, 70);
+    } catch (err) {
+        console.warn('Imagen omitida en PDF por políticas de CORS.');
+    }
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 145, 195, 145);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('¡Gracias por confiar en Liz Fashion Evolution!', 15, 155);
+    doc.text('Comparte este PDF con nuestro asesor para coordinar tu confección.', 15, 162);
+
+    doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
+    showToast('¡PDF generado y registrado en reporte!', 'success');
 }
