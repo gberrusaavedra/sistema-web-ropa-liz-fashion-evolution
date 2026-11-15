@@ -38,6 +38,8 @@ let state = {
     isRegisterMode: false
 };
 
+let tempUploadedImages = [];
+
 const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
 const SIZES = ['Todas', 'S', 'M', 'L', 'XL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
@@ -180,10 +182,6 @@ async function fetchProductsFromDB() {
                     : (p.stock_by_size || { S: 2, M: 3, L: 2, XL: 1 });
                 const total = Object.values(parsedStock).reduce((a, b) => a + b, 0);
 
-                const parsedColors = p.colores
-                    ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
-                    : ['Corinto', 'Negro', 'Rojo', 'Beige', 'Blanco'];
-
                 let parsedImages = [];
                 try {
                     if (Array.isArray(p.imagenes)) {
@@ -202,6 +200,19 @@ async function fetchProductsFromDB() {
                     parsedImages = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
                 }
 
+                let parsedVariants = [];
+                try {
+                    if (p.variant_details) {
+                        parsedVariants = typeof p.variant_details === 'string' ? JSON.parse(p.variant_details) : p.variant_details;
+                    }
+                } catch (e) {
+                    parsedVariants = [];
+                }
+
+                const parsedColors = p.colores
+                    ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
+                    : ['Corinto', 'Negro', 'Rojo', 'Beige'];
+
                 return {
                     id: p.id,
                     code: `LIZ-${String(p.id).padStart(4, '0')}`,
@@ -212,6 +223,7 @@ async function fetchProductsFromDB() {
                     salePrice: Number(p.precio_remate),
                     image: parsedImages[0],
                     images: parsedImages,
+                    variantDetails: parsedVariants,
                     stockBySize: parsedStock,
                     colors: parsedColors,
                     maxInitialStock: Math.max(total + 5, 15),
@@ -248,6 +260,80 @@ function toggleOfferFields() {
     if (saleLabel) saleLabel.textContent = isNormal ? 'Precio Normal (S/) *' : 'Precio Remate (S/) *';
 }
 
+async function handleImageFilesSelection(e) {
+    const files = Array.from(e.target.files);
+    tempUploadedImages = [];
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => resolve(evt.target.result);
+            reader.readAsDataURL(file);
+        });
+        tempUploadedImages.push(base64);
+    }
+
+    renderDynamicVariantsInputs();
+}
+
+function renderDynamicVariantsInputs(existingVariants = null) {
+    const container = document.getElementById('dynamicImageVariantsContainer');
+    if (!container) return;
+
+    if (tempUploadedImages.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.</div>`;
+        return;
+    }
+
+    container.innerHTML = tempUploadedImages.map((imgSrc, idx) => {
+        const v = existingVariants && existingVariants[idx] ? existingVariants[idx] : {
+            color: idx === 0 ? 'Corinto' : idx === 1 ? 'Negro' : idx === 2 ? 'Rojo' : 'Beige',
+            stockBySize: { S: 2, M: 3, L: 2, XL: 1 },
+            salePrice: ''
+        };
+
+        return `
+            <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2 variant-row" data-index="${idx}">
+                <div class="flex items-center gap-3">
+                    <img src="${imgSrc}" class="w-12 h-14 object-cover rounded-lg border shrink-0">
+                    <div class="flex-1 grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500">Color Imagen #${idx + 1}</label>
+                            <input type="text" class="variant-color w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.color}" placeholder="Ej. Negro">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500">Precio Opcional (S/)</label>
+                            <input type="number" step="0.10" class="variant-price w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold" value="${v.salePrice || ''}" placeholder="Opcional">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-[10px] font-bold text-slate-500 block mb-1">Stock por Talla (Imagen #${idx + 1}):</span>
+                    <div class="grid grid-cols-4 gap-1.5 text-center">
+                        <div>
+                            <span class="text-[9px] text-slate-400">S</span>
+                            <input type="number" min="0" class="v-stock-s w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.S ?? 2}">
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-400">M</span>
+                            <input type="number" min="0" class="v-stock-m w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.M ?? 3}">
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-400">L</span>
+                            <input type="number" min="0" class="v-stock-l w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.L ?? 2}">
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-slate-400">XL</span>
+                            <input type="number" min="0" class="v-stock-xl w-full px-1 py-1 bg-slate-50 border rounded text-center text-xs font-bold" value="${v.stockBySize.XL ?? 1}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function openProductFormModal(product = null) {
     const modal = document.getElementById('productFormModal');
     if (!modal) return;
@@ -258,25 +344,17 @@ function openProductFormModal(product = null) {
     document.getElementById('formTag').value = product ? product.tag : 'Normal';
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
-    
-    document.getElementById('stockS').value = product && product.stockBySize ? (product.stockBySize.S || 0) : 2;
-    document.getElementById('stockM').value = product && product.stockBySize ? (product.stockBySize.M || 0) : 3;
-    document.getElementById('stockL').value = product && product.stockBySize ? (product.stockBySize.L || 0) : 2;
-    document.getElementById('stockXL').value = product && product.stockBySize ? (product.stockBySize.XL || 0) : 1;
-    
-    const colorsInput = document.getElementById('formColors');
-    if (colorsInput) {
-        colorsInput.value = product && product.colors ? product.colors.join(', ') : 'Corinto, Negro, Rojo, Beige';
-    }
-    
     document.getElementById('formDescription').value = product ? product.description : '';
-    document.getElementById('formImageUrl').value = product && product.images ? product.images.join(', ') : (product ? product.image : '');
+    document.getElementById('formMaterial').value = product ? product.material : '';
+    
+    tempUploadedImages = product && product.images ? [...product.images] : (product ? [product.image] : []);
+    renderDynamicVariantsInputs(product ? product.variantDetails : null);
 
+    document.getElementById('formImageUrl').value = product && product.images ? product.images.join(', ') : '';
     const fileInput = document.getElementById('formImageFile');
     if (fileInput) fileInput.value = '';
 
     toggleOfferFields();
-
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
@@ -303,59 +381,69 @@ async function handleSaveProduct(e) {
     const { token } = getSession();
     const id = document.getElementById('formProductId').value;
     
-    const imageFileInput = document.getElementById('formImageFile');
     const imageUrlInput = document.getElementById('formImageUrl').value.trim();
-
-    let imagesArray = [];
-
-    if (imageUrlInput) {
-        imagesArray = imageUrlInput.split(',').map(url => url.trim()).filter(Boolean);
+    if (imageUrlInput && tempUploadedImages.length === 0) {
+        tempUploadedImages = imageUrlInput.split(',').map(u => u.trim()).filter(Boolean);
     }
 
-    if (imageFileInput && imageFileInput.files && imageFileInput.files.length > 0) {
-        const files = Array.from(imageFileInput.files);
-        for (const file of files) {
-            const base64 = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (evt) => resolve(evt.target.result);
-                reader.readAsDataURL(file);
-            });
-            imagesArray.push(base64);
-        }
+    if (tempUploadedImages.length === 0) {
+        tempUploadedImages = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
     }
 
-    if (imagesArray.length === 0) {
-        imagesArray = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
+    const variantRows = document.querySelectorAll('.variant-row');
+    let variantDetails = [];
+    let allColores = [];
+
+    variantRows.forEach((row) => {
+        const color = row.querySelector('.variant-color').value.trim() || 'Único';
+        const priceInput = row.querySelector('.variant-price').value;
+        const s = parseInt(row.querySelector('.v-stock-s').value) || 0;
+        const m = parseInt(row.querySelector('.v-stock-m').value) || 0;
+        const l = parseInt(row.querySelector('.v-stock-l').value) || 0;
+        const xl = parseInt(row.querySelector('.v-stock-xl').value) || 0;
+
+        allColores.push(color);
+        variantDetails.push({
+            color,
+            salePrice: priceInput ? parseFloat(priceInput) : null,
+            stockBySize: { S: s, M: m, L: l, XL: xl }
+        });
+    });
+
+    if (variantDetails.length === 0) {
+        variantDetails.push({
+            color: 'Corinto',
+            salePrice: null,
+            stockBySize: { S: 2, M: 3, L: 2, XL: 1 }
+        });
+        allColores = ['Corinto', 'Negro', 'Rojo'];
     }
 
-    const stock_by_size = {
-        S: parseInt(document.getElementById('stockS').value) || 0,
-        M: parseInt(document.getElementById('stockM').value) || 0,
-        L: parseInt(document.getElementById('stockL').value) || 0,
-        XL: parseInt(document.getElementById('stockXL').value) || 0
-    };
+    const aggregatedStock = variantDetails.reduce((acc, v) => {
+        acc.S += v.stockBySize.S;
+        acc.M += v.stockBySize.M;
+        acc.L += v.stockBySize.L;
+        acc.XL += v.stockBySize.XL;
+        return acc;
+    }, { S: 0, M: 0, L: 0, XL: 0 });
 
     const tagVal = document.getElementById('formTag').value;
-    const salePriceVal = parseFloat(document.getElementById('formSalePrice').value);
-    const regularPriceVal = tagVal === 'Normal'
-        ? salePriceVal
-        : (parseFloat(document.getElementById('formRegularPrice').value) || salePriceVal);
-
-    const colorsInput = document.getElementById('formColors');
-    const coloresArray = colorsInput ? colorsInput.value.split(',').map(c => c.trim()).filter(Boolean) : ['Corinto', 'Negro', 'Rojo'];
+    const baseSalePrice = parseFloat(document.getElementById('formSalePrice').value) || 0;
+    const regularPriceVal = tagVal === 'Normal' ? baseSalePrice : (parseFloat(document.getElementById('formRegularPrice').value) || baseSalePrice);
 
     const payload = {
         titulo: document.getElementById('formName').value.trim(),
         categoria: document.getElementById('formCategory').value,
         etiqueta: tagVal,
-        precio_remate: salePriceVal,
+        precio_remate: baseSalePrice,
         precio_original: regularPriceVal,
-        stock_by_size,
+        stock_by_size: aggregatedStock,
+        variant_details: variantDetails,
         material: document.getElementById('formMaterial').value.trim(),
-        colores: coloresArray,
+        colores: [...new Set(allColores)],
         descripcion: document.getElementById('formDescription').value.trim(),
-        imagen_url: imagesArray[0],
-        imagenes: imagesArray
+        imagen_url: tempUploadedImages[0],
+        imagenes: tempUploadedImages
     };
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
@@ -373,7 +461,7 @@ async function handleSaveProduct(e) {
 
         if (res.ok) {
             closeProductFormModal();
-            showToast(id ? 'Prenda actualizada con éxito' : '¡Nueva prenda publicada!', 'success');
+            showToast(id ? 'Prenda actualizada con éxito' : '¡Nueva prenda publicada con stock por imagen!', 'success');
             await fetchProductsFromDB();
         } else {
             const err = await res.json();
@@ -577,13 +665,12 @@ function renderProductGrid(productsList) {
 
         const currentImgIdx = rawImgIdx < imagesList.length ? rawImgIdx : 0;
 
-        // Selección dinámica de stock y precio según la variante de la imagen actual
         const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
             ? product.variantDetails[currentImgIdx].stockBySize 
             : product.stockBySize;
 
-        const currentSalePrice = (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].salePrice !== undefined)
-            ? product.variantDetails[currentImgIdx].salePrice
+        const currentSalePrice = (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].salePrice !== undefined && product.variantDetails[currentImgIdx].salePrice !== null && product.variantDetails[currentImgIdx].salePrice !== '')
+            ? Number(product.variantDetails[currentImgIdx].salePrice)
             : product.salePrice;
 
         const discountPct = getDiscountPercent(product.regularPrice, currentSalePrice);
@@ -592,8 +679,13 @@ function renderProductGrid(productsList) {
         const selectedSize = state.selectedSizesPerCard[product.id] || getFirstAvailableSize(product, currentImgIdx);
         const isLowStock = totalStock <= 4;
         const productCode = product.code || `LIZ-${String(product.id).padStart(4, '0')}`;
-        const productColors = product.colors && product.colors.length ? product.colors : ['Corinto', 'Negro', 'Rojo', 'Beige'];
-        const selectedColor = state.selectedColorsPerCard[product.id] || productColors[0];
+        
+        let activeColor = 'Único';
+        if (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].color) {
+            activeColor = product.variantDetails[currentImgIdx].color;
+        } else if (product.colors && product.colors[currentImgIdx]) {
+            activeColor = product.colors[currentImgIdx];
+        }
 
         let tagBadgeClass = "bg-slate-900 text-white";
         if (product.tag === 'Remate Final') tagBadgeClass = "bg-rose-600 text-white";
@@ -674,16 +766,9 @@ function renderProductGrid(productsList) {
                     </div>
 
                     <div>
-                        <span class="block text-[11px] font-bold text-slate-500 mb-1.5">Colores Disponibles:</span>
-                        <div class="flex flex-wrap gap-1.5">
-                            ${productColors.map(col => `
-                                <button type="button" onclick="selectCardColor(${product.id}, '${col.replace(/'/g, "\\'")}')"
-                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                                        selectedColor === col
-                                            ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400'
-                                    }">${col}</button>
-                            `).join('')}
+                        <span class="block text-[11px] font-bold text-slate-500 mb-1">Color Activo (Según Imagen):</span>
+                        <div class="inline-block px-3 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black">
+                            🎨 ${activeColor}
                         </div>
                     </div>
 
@@ -718,31 +803,10 @@ function selectCardSize(productId, size) {
     applyFilters();
 }
 
-function selectCardColor(productId, colorName) {
-    state.selectedColorsPerCard[productId] = colorName;
-    
-    const product = PRODUCTS.find(p => p.id === productId);
-    if (product && product.colors) {
-        const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
-        if (colorIndex !== -1) {
-            const imagesList = product.images && product.images.length > 0 ? product.images : [product.image];
-            const targetIdx = colorIndex % imagesList.length;
-            sliderIndexes[productId] = targetIdx;
-            
-            const slider = document.getElementById(`slider-${productId}`);
-            if (slider) {
-                slider.style.transform = `translateX(-${targetIdx * (100 / imagesList.length)}%)`;
-            }
-        }
-    }
-
-    applyFilters();
-}
-
 // =====================================================================
 // 6. CARRITO, WHATSAPP Y UTILIDADES
 // =====================================================================
-function addToCart(productId, explicitSize = null, explicitColor = null) {
+function addToCart(productId, explicitSize = null) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
     
@@ -753,9 +817,15 @@ function addToCart(productId, explicitSize = null, explicitColor = null) {
         : product.stockBySize;
 
     const size = explicitSize || state.selectedSizesPerCard[productId] || getFirstAvailableSize(product, currentImgIdx);
-    const color = explicitColor || state.selectedColorsPerCard[productId] || (product.colors && product.colors[0]) || 'Único';
-    const availableStock = currentStockMap[size] || 0;
+    
+    let color = 'Único';
+    if (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].color) {
+        color = product.variantDetails[currentImgIdx].color;
+    } else if (product.colors && product.colors[currentImgIdx]) {
+        color = product.colors[currentImgIdx];
+    }
 
+    const availableStock = currentStockMap[size] || 0;
     if (availableStock <= 0) return showToast('Talla agotada', 'error');
 
     const existing = state.cart.find(i => i.productId === productId && i.size === size && i.color === color);
@@ -841,7 +911,13 @@ function inquireSingleProductWhatsApp(productId) {
     const p = PRODUCTS.find(prod => prod.id === productId);
     const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
     const sz = state.selectedSizesPerCard[productId] || 'M';
-    const col = state.selectedColorsPerCard[productId] || (p.colors && p.colors[0]) || 'Único';
+    const rawImgIdx = sliderIndexes[productId] || 0;
+    let col = 'Único';
+    if (p.variantDetails && p.variantDetails[rawImgIdx] && p.variantDetails[rawImgIdx].color) {
+        col = p.variantDetails[rawImgIdx].color;
+    } else if (p.colors && p.colors[rawImgIdx]) {
+        col = p.colors[rawImgIdx];
+    }
     const msg = `Hola *LIZ FASHION EVOLUTION*, quiero separar/consultar:\n• *Código Producto:* ${prodCode}\n• *Prenda:* ${p.name}\n• *Color:* ${col}\n• *Talla:* ${sz}\n• *Precio:* ${formatPrice(p.salePrice)}\n¿Sigue disponible?`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
 }
@@ -881,7 +957,6 @@ function slideImage(productId, direction) {
     const currentIdx = sliderIndexes[productId];
     slider.style.transform = `translateX(-${currentIdx * (100 / totalImages)}%)`;
 
-    // Actualiza de inmediato el stock/precio y tallas de la tarjeta según la imagen activa
     applyFilters();
 }
 
@@ -1000,6 +1075,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             subtitle.textContent = "Debes iniciar sesión o registrarte para acceder a la web";
             subtitle.classList.add('text-rose-600', 'font-bold');
         }
+    }
+
+    const fileInput = document.getElementById('formImageFile');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleImageFilesSelection);
     }
 
     renderFilterControls();

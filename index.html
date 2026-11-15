@@ -462,43 +462,17 @@
                     </div>
                 </div>
 
-                <!-- Stock por Talla -->
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <label class="block text-xs font-bold text-slate-700 mb-2">Stock Disponible por Talla:</label>
-                    <div class="grid grid-cols-4 gap-2 text-center">
-                        <div>
-                            <span class="text-[11px] font-bold text-slate-500">Talla S</span>
-                            <input type="number" min="0" id="stockS" value="2" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
-                        </div>
-                        <div>
-                            <span class="text-[11px] font-bold text-slate-500">Talla M</span>
-                            <input type="number" min="0" id="stockM" value="3" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
-                        </div>
-                        <div>
-                            <span class="text-[11px] font-bold text-slate-500">Talla L</span>
-                            <input type="number" min="0" id="stockL" value="2" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
-                        </div>
-                        <div>
-                            <span class="text-[11px] font-bold text-slate-500">Talla XL</span>
-                            <input type="number" min="0" id="stockXL" value="1" class="w-full mt-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-center font-bold">
-                        </div>
-                    </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Imágenes de la Prenda (Sube varias fotos) *</label>
+                    <input type="file" id="formImageFile" accept="image/*" multiple class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 mb-1.5">
+                    <input type="text" id="formImageUrl" placeholder="O pega enlaces separados por coma https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
                 </div>
 
-                <!-- Colores Disponibles -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Colores Disponibles (separados por coma)</label>
-                    <input type="text" id="formColors" placeholder="Ej. Corinto, Negro, Rojo, Beige" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Porcentaje Vendido (0% - 99%) *</label>
-                    <div class="flex items-center gap-3">
-                        <input type="range" id="formSoldRange" min="0" max="99" value="35" oninput="document.getElementById('formSoldPercent').value = this.value" class="flex-1 accent-rose-600 cursor-pointer">
-                        <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-                            <input type="number" id="formSoldPercent" min="0" max="99" value="35" oninput="document.getElementById('formSoldRange').value = this.value" class="w-12 text-center font-bold text-slate-900 bg-transparent outline-none">
-                            <span class="text-xs font-bold text-slate-500">%</span>
-                        </div>
+                <!-- Stock por Talla y Color Autoincrementable por Imagen -->
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <label class="block text-xs font-bold text-slate-700 mb-2">Stock y Color por cada Imagen Seleccionada:</label>
+                    <div id="dynamicImageVariantsContainer" class="space-y-3">
+                        <div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.</div>
                     </div>
                 </div>
 
@@ -510,12 +484,6 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Descripción corta</label>
                     <textarea id="formDescription" rows="2" placeholder="Detalles del corte, acabado o promoción..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500"></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Imagen (Subir foto o pegar URL) *</label>
-                    <input type="file" id="formImageFile" accept="image/*" multiple class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 mb-1.5">
-                    <input type="text" id="formImageUrl" placeholder="O pega enlace https://..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500">
                 </div>
 
                 <button type="submit" class="w-full bg-slate-900 hover:bg-rose-600 text-white font-bold py-3 rounded-xl shadow-md transition-colors cursor-pointer">
