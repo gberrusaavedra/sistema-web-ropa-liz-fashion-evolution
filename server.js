@@ -16,7 +16,7 @@ const pool = new Pool({
 });
 
 const SECRET_KEY = process.env.JWT_SECRET || 'Teddy12@12';
-const googleClient = new OAuth2Client('TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
 
 async function initDB() {
     await pool.query(`
@@ -141,7 +141,7 @@ app.post('/api/auth/google', async (req, res) => {
     try {
         const ticket = await googleClient.verifyIdToken({
             idToken: token,
-            audience: 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+            audience: process.env.GOOGLE_CLIENT_ID,
         });
         const payload = ticket.getPayload();
         const { name, email } = payload;
@@ -209,16 +209,8 @@ app.post('/api/productos', soloAdmin, async (req, res) => {
             `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
             [
-                titulo, 
-                categoria, 
-                etiqueta, 
-                precio_remate, 
-                precio_original, 
-                JSON.stringify(stock_by_size), 
-                porcentaje_vendido || 35, 
-                material, 
-                descripcion, 
-                imagen_url, 
+                titulo, categoria, etiqueta, precio_remate, precio_original, 
+                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
                 JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
                 JSON.stringify(imagenes || [imagen_url]),
                 JSON.stringify(variant_details || [])
@@ -237,39 +229,14 @@ app.put('/api/productos/:id', soloAdmin, async (req, res) => {
         const result = await pool.query(
             `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, stock_by_size=$6, porcentaje_vendido=$7, material=$8, descripcion=$9, imagen_url=$10, colores=$11, imagenes=$12, variant_details=$13 WHERE id=$14 RETURNING *`,
             [
-                titulo, 
-                categoria, 
-                etiqueta, 
-                precio_remate, 
-                precio_original, 
-                JSON.stringify(stock_by_size), 
-                porcentaje_vendido || 35, 
-                material, 
-                descripcion, 
-                imagen_url, 
+                titulo, categoria, etiqueta, precio_remate, precio_original, 
+                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
                 JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
                 JSON.stringify(imagenes || [imagen_url]),
-                JSON.stringify(variant_details || []),
-                id
+                JSON.stringify(variant_details || []), id
             ]
         );
         res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
-    const { offer_end_time } = req.body;
-    if (!offer_end_time) return res.status(400).json({ error: 'Fecha inválida' });
-    try {
-        await pool.query(
-            `INSERT INTO configuracion_tienda (clave, valor)
-             VALUES ('offer_end_time', $1)
-             ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
-            [String(offer_end_time)]
-        );
-        res.json({ mensaje: 'Horario guardado en Neon', offer_end_time: Number(offer_end_time) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -293,7 +260,21 @@ app.get('/api/oferta-tiempo', async (req, res) => {
     }
 });
 
-// === MODELOS PARA FABRICACIÓN ===
+app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
+    const { offer_end_time } = req.body;
+    if (!offer_end_time) return res.status(400).json({ error: 'Fecha inválida' });
+    try {
+        await pool.query(
+            `INSERT INTO configuracion_tienda (clave, valor) VALUES ('offer_end_time', $1)
+             ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
+            [String(offer_end_time)]
+        );
+        res.json({ mensaje: 'Horario guardado en Neon', offer_end_time: Number(offer_end_time) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/fabricacion/modelos', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM modelos_fabricacion ORDER BY id DESC');
@@ -330,13 +311,7 @@ app.put('/api/fabricacion/modelos/:id/fecha', soloAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { fecha_limite } = req.body;
-        if (!fecha_limite) {
-            return res.status(400).json({ error: 'Debe indicar la nueva fecha límite' });
-        }
-        const result = await pool.query(
-            'UPDATE modelos_fabricacion SET fecha_limite = $1 WHERE id = $2 RETURNING *',
-            [Number(fecha_limite), id]
-        );
+        const result = await pool.query('UPDATE modelos_fabricacion SET fecha_limite = $1 WHERE id = $2 RETURNING *', [Number(fecha_limite), id]);
         res.json({ mensaje: 'Fecha límite actualizada', modelo: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -354,9 +329,6 @@ app.get('/api/fabricacion/pedidos', soloAdmin, async (req, res) => {
 
 app.post('/api/fabricacion/pedidos', async (req, res) => {
     const { cliente_nombre, cliente_telefono, notas, items, total } = req.body;
-    if (!cliente_nombre || !cliente_telefono || !items || items.length === 0) {
-        return res.status(400).json({ error: 'Completa tus datos y agrega al menos una prenda al pedido.' });
-    }
     const codigo = 'FAB-' + Math.floor(100000 + Math.random() * 900000);
     try {
         const result = await pool.query(
@@ -373,10 +345,7 @@ app.post('/api/fabricacion/pedidos', async (req, res) => {
 app.put('/api/fabricacion/pedidos/:id/estado', soloAdmin, async (req, res) => {
     const { estado } = req.body;
     try {
-        const result = await pool.query(
-            'UPDATE pedidos_fabricacion SET estado = $1 WHERE id = $2 RETURNING *',
-            [estado, req.params.id]
-        );
+        const result = await pool.query('UPDATE pedidos_fabricacion SET estado = $1 WHERE id = $2 RETURNING *', [estado, req.params.id]);
         res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
