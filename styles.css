@@ -58,18 +58,14 @@
 /* Efecto de elevación en tarjetas de producto */
 #productGrid article {
     will-change: transform, box-shadow;
-}
-
-#productGrid article:hover {
-    transform: translateY(-2px);
-}
-
-/* Corrección para que la tarjeta del catálogo expanda su altura y muestre todos los elementos (tallas y colores) */
-#productGrid article {
     height: auto !important;
     min-height: 620px;
     display: flex;
     flex-direction: column;
+}
+
+#productGrid article:hover {
+    transform: translateY(-2px);
 }
 
 #productGrid article > div:last-child {
@@ -80,30 +76,37 @@
 }
 
 /* ==========================================================================
-   CORRECCIÓN PARA QUE LAS IMÁGENES SALGAN COMPLETAS SIN RECORTES
+   CORRECCIÓN DEFINITIVA: IMÁGENES COMPLETAS SIN RECORTES (MÓVIL Y PC)
    ========================================================================== */
-#productGrid img {
-    object-fit: contain !important;
-    background-color: #f8fafc;
-    width: 100%;
-    height: 280px;
-}
-/* ==========================================================================
-   CORRECCIÓN DEFINITIVA DE IMÁGENES EN CATÁLOGO (MÓVIL Y PC)
-   ========================================================================== */
-#productGrid img {
-    width: 100%;
-    height: 280px;
-    object-fit: cover !important;
-    object-position: top center !important;
-    background-color: #f8fafc;
+#productGrid article .relative.w-full {
+    height: auto !important;
+    aspect-ratio: 4 / 5 !important;
 }
 
-/* Ajuste específico para celulares para evitar recortes en la parte superior */
+#productGrid img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    background-color: #f8fafc !important;
+}
+
+/* Ajuste responsivo para celulares */
 @media (max-width: 640px) {
-    #productGrid img {
-        height: 240px;
-        object-fit: cover !important;
-        object-position: top center !important;
+    #productGrid article .relative.w-full {
+        aspect-ratio: 3 / 4 !important;
+    }
+    
+    #productGrid article .p-4 {
+        padding: 0.75rem;
+    }
+    
+    #productGrid article .flex.flex-wrap.gap-1.5 {
+        gap: 0.25rem;
+    }
+    
+    #productGrid article .flex.flex-wrap.gap-1.5 button {
+        font-size: 10px;
+        padding: 0.25rem 0.5rem;
     }
 }
