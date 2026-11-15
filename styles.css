@@ -58,17 +58,14 @@
 /* Efecto de elevación en tarjetas de producto */
 #productGrid article {
     will-change: transform, box-shadow;
-}
-
-#productGrid article:hover {
-    transform: translateY(-2px);
-}
-/* Corrección para que la tarjeta del catálogo expanda su altura y muestre todos los elementos (tallas y colores) */
-#productGrid article {
     height: auto !important;
     min-height: 620px;
     display: flex;
     flex-direction: column;
+}
+
+#productGrid article:hover {
+    transform: translateY(-2px);
 }
 
 #productGrid article > div:last-child {
@@ -77,8 +74,9 @@
     flex-direction: column;
     justify-content: space-between;
 }
+
 /* ==========================================================================
-   CORRECCIÓN RESPONSIVA PARA DISPOSITIVOS MÓVILES
+   CORRECCIÓN RESPONSIVA PARA DISPOSITIVOS MÓVILES (iOS, ANDROID, TABLETS)
    ========================================================================== */
 @media (max-width: 640px) {
     /* Ajusta el espaciado interno de las tarjetas en celular */
@@ -99,5 +97,12 @@
     /* Asegura que los botones de acción inferior no se deformen */
     #productGrid article .pt-2.flex {
         gap: 0.35rem;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    /* Ajustes específicos para tablets */
+    #productGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
