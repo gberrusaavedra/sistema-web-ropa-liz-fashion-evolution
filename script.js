@@ -289,7 +289,7 @@ function renderDynamicVariantsInputs(existingVariants = null) {
     container.innerHTML = tempUploadedImages.map((imgSrc, idx) => {
         const v = existingVariants && existingVariants[idx] ? existingVariants[idx] : {
             color: idx === 0 ? 'Corinto' : idx === 1 ? 'Negro' : idx === 2 ? 'Rojo' : 'Beige',
-            stockBySize: { S: 2, M: 3, L: 2, XL: 1, XXL: 0 },
+            stockBySize: { S: 0, M: 0, L: 0, XL: 0, XXL: 0 },
             salePrice: ''
         };
 
