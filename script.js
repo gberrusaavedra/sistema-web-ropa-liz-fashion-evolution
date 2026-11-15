@@ -572,7 +572,7 @@ function renderProductGrid(productsList) {
         const rawImgIdx = sliderIndexes[product.id] || 0;
         const currentImgIdx = rawImgIdx < imagesList.length ? rawImgIdx : 0;
 
-        // Cálculo de filtro dinámico según el color seleccionado
+        // IA visual por CSS Filter para transformar el color del polo dinámicamente[cite: 37]
         let colorFilterStyle = "";
         const lowerColor = selectedColor.toLowerCase();
         if (lowerColor.includes('rojo') || lowerColor.includes('corinto')) {
@@ -711,7 +711,7 @@ function selectCardSize(productId, size) {
 function selectCardColor(productId, colorName) {
     state.selectedColorsPerCard[productId] = colorName;
     
-    // Actualización instantánea y fluida de los estilos de filtro y botones en la tarjeta
+    // Aplicar cambio visual inmediato en los botones de color y en el filtro de la imagen
     const card = document.querySelector(`article:has(button[onclick*="selectCardColor(${productId},"])`);
     if (card) {
         const buttons = card.querySelectorAll(`button[onclick*="selectCardColor(${productId},"]`);
@@ -1182,7 +1182,7 @@ function renderCatalogoConfeccion() {
                     ${isAdmin ? `
                     <div class="flex gap-1.5 pt-1">
                         <button onclick="editarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg cursor-pointer">Editar</button>
-                        <button onclick="elimnarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer">Eliminar</button>
+                        <button onclick="eliminarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer">Eliminar</button>
                     </div>` : ''}
                 </div>
             </div>
