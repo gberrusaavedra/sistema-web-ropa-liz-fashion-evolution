@@ -581,9 +581,9 @@ function renderProductGrid(productsList) {
         return `
             <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
                 <div class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img">
-                    <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(-${currentImgIdx * 100}%);">
+                    <div id="slider-${product.id}" class="h-full flex transition-transform duration-300 ease-out" style="width: ${imagesList.length * 100}%; transform: translateX(-${(currentImgIdx * (100 / imagesList.length))}%);">
                         ${imagesList.map(imgUrl => `
-                            <div class="w-full h-full basis-full shrink-0 grow-0 relative bg-slate-100">
+                            <div class="h-full relative bg-slate-100" style="width: ${100 / imagesList.length}%;">
                                 <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center cursor-pointer">
                             </div>
                         `).join('')}
@@ -703,13 +703,13 @@ function selectCardColor(productId, colorName) {
         const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
         if (colorIndex !== -1) {
             const imagesList = product.images && product.images.length > 0 ? product.images : [product.image];
-            // Mapeo seguro con operador módulo para cambiar la imagen exactamente según el color seleccionado
             const targetIdx = colorIndex % imagesList.length;
             sliderIndexes[productId] = targetIdx;
             
             const slider = document.getElementById(`slider-${productId}`);
             if (slider) {
-                slider.style.transform = `translateX(-${targetIdx * 100}%)`;
+                // Desplazamiento porcentual exacto basado en el número total de imágenes del slider
+                slider.style.transform = `translateX(-${targetIdx * (100 / imagesList.length)}%)`;
             }
         }
     }
@@ -849,7 +849,8 @@ function slideImage(productId, direction) {
     if (sliderIndexes[productId] >= totalImages) sliderIndexes[productId] = 0;
     if (sliderIndexes[productId] < 0) sliderIndexes[productId] = totalImages - 1;
 
-    slider.style.transform = `translateX(-${sliderIndexes[productId] * 100}%)`;
+    const currentIdx = sliderIndexes[productId];
+    slider.style.transform = `translateX(-${currentIdx * (100 / totalImages)}%)`;
 }
 
 async function fetchOfferTime() {
