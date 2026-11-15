@@ -1232,7 +1232,7 @@ function verificarPermisosAdminConfeccionTabs() {
         }
         if (badgeRol) {
             badgeRol.textContent = 'Modo Administrador';
-            badgeRol.className = 'text-xs font-extrabold text-slate-950 bg-amber-400 px-3 py-1 rounded-full shadow-2xs';
+            badgeRol.className = 'text-xs font-extrabold text-amber-950 bg-amber-300 px-3 py-1 rounded-full';
         }
         
         const configFechas = obtenerConfigFechasConfeccion();
@@ -1250,7 +1250,7 @@ function verificarPermisosAdminConfeccionTabs() {
         if (panelEditarFechas) panelEditarFechas.classList.add('hidden');
         if (badgeRol) {
             badgeRol.textContent = 'Vista Cliente';
-            badgeRol.className = 'text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full';
+            badgeRol.className = 'text-xs font-extrabold text-amber-900 bg-amber-200 px-3 py-1 rounded-full';
         }
     }
     lucide.createIcons();
@@ -1295,6 +1295,7 @@ function guardarFechasYComunicadoRapido(e) {
     };
     localStorage.setItem('liz_confeccion_fechas', JSON.stringify(nuevaConfig));
 
+    // Sincronizar también con los inputs del formulario de registro
     const formInicio = document.getElementById('confFechaInicio');
     const formFin = document.getElementById('confFechaFin');
     if (formInicio) formInicio.value = inicio;
@@ -1319,28 +1320,25 @@ function cambiarTabConfeccion(tab) {
     secAdm.classList.add('hidden');
     secRep.classList.add('hidden');
 
-    const inactiveTabClass = "px-4 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200/80 transition border border-slate-200 cursor-pointer";
-    const activeTabClass = "px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition cursor-pointer";
-
-    btnCat.className = inactiveTabClass;
-    if (btnAdm) btnAdm.className = inactiveTabClass;
-    if (btnRep) btnRep.className = inactiveTabClass;
+    btnCat.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300 cursor-pointer";
+    if (btnAdm) btnAdm.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300 cursor-pointer";
+    if (btnRep) btnRep.className = "px-4 py-2 bg-white text-amber-900 font-bold text-xs rounded-xl shadow hover:bg-amber-50 transition border border-amber-300 cursor-pointer";
 
     if (tab === 'catalogo') {
         secCat.classList.remove('hidden');
-        btnCat.className = activeTabClass;
+        btnCat.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition cursor-pointer";
         renderizarBannerPeriodoConfeccion();
         renderCatalogoConfeccion();
     } else if (tab === 'admin') {
         secAdm.classList.remove('hidden');
-        if (btnAdm) btnAdm.className = activeTabClass;
+        if (btnAdm) btnAdm.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition cursor-pointer";
         const conf = obtenerConfigFechasConfeccion();
         if (document.getElementById('confFechaInicio')) document.getElementById('confFechaInicio').value = conf.inicio;
         if (document.getElementById('confFechaFin')) document.getElementById('confFechaFin').value = conf.fin;
         renderGaleriaPreviewConfeccion();
     } else if (tab === 'reporte') {
         secRep.classList.remove('hidden');
-        if (btnRep) btnRep.className = activeTabClass;
+        if (btnRep) btnRep.className = "px-4 py-2 bg-amber-800 text-white font-bold text-xs rounded-xl shadow transition cursor-pointer";
         renderReporteClientes();
     }
     lucide.createIcons();
@@ -1387,18 +1385,82 @@ function renderizarBannerPeriodoConfeccion() {
 
     if (ahora < fInicio) {
         lblEstado.textContent = '⏳ PRÓXIMAMENTE';
-        lblEstado.className = 'bg-amber-500 text-slate-950 font-black px-3 py-1.5 rounded-xl uppercase text-[11px] tracking-wider shadow-2xs';
-        if (banner) banner.className = "bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
+        lblEstado.className = 'bg-amber-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
+        if (banner) banner.className = "bg-amber-100 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
     } else if (ahora >= fInicio && ahora <= fFin) {
         lblEstado.textContent = '🟢 PEDIDOS ABIERTOS';
-        lblEstado.className = 'bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl uppercase text-[11px] tracking-wider shadow-2xs';
-        if (banner) banner.className = "bg-emerald-50/60 border border-emerald-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
+        lblEstado.className = 'bg-emerald-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
+        if (banner) banner.className = "bg-emerald-50 border border-emerald-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
     } else {
         lblEstado.textContent = '🔴 PLAZO CULMINADO (CERRADO)';
-        lblEstado.className = 'bg-rose-600 text-white font-black px-3 py-1.5 rounded-xl uppercase text-[11px] tracking-wider shadow-2xs';
-        if (banner) banner.className = "bg-rose-50/70 border border-rose-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
+        lblEstado.className = 'bg-rose-600 text-white font-black px-3 py-1 rounded-xl uppercase text-[11px] tracking-wider';
+        if (banner) banner.className = "bg-rose-50 border border-rose-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm";
     }
     lucide.createIcons();
+}
+
+function obtenerPrendasConfeccion() {
+    const lista = JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [
+        {
+            id: 1,
+            modelo: 'Casaca Biker Exclusiva de Cuero Sintético',
+            precio: 149.00,
+            colores: ['Negro', 'Corinto', 'Marrón'],
+            tallas: ['S', 'M', 'L', 'XL'],
+            imagen: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500',
+            imagenes: ['https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500']
+        },
+        {
+            id: 2,
+            modelo: 'Conjunto Urbano Oversize con Capucha',
+            precio: 129.00,
+            colores: ['Beige', 'Gris', 'Negro', 'Verde Militar'],
+            tallas: ['S', 'M', 'L'],
+            imagen: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500',
+            imagenes: ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500']
+        }
+    ];
+    return lista.map(p => ({
+        ...p,
+        imagenes: Array.isArray(p.imagenes) && p.imagenes.length > 0 ? p.imagenes : (p.imagen ? [p.imagen] : [])
+    }));
+}
+
+async function handleConfeccionFilesSelection(e) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+        const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => resolve(evt.target.result);
+            reader.readAsDataURL(file);
+        });
+        tempConfeccionImagenes.push(base64);
+    }
+    e.target.value = '';
+    renderGaleriaPreviewConfeccion();
+}
+
+function agregarEnlacesConfeccion() {
+    const input = document.getElementById('confImagenUrl');
+    if (!input) return;
+    const raw = input.value.trim();
+    if (!raw) {
+        showToast('Ingresa uno o más enlaces separados por coma', 'warning');
+        return;
+    }
+    const urls = raw.split(',').map(u => u.trim()).filter(Boolean);
+    tempConfeccionImagenes.push(...urls);
+    input.value = '';
+    renderGaleriaPreviewConfeccion();
+    showToast(`${urls.length} imagen(es) agregada(s) a la galería`, 'success');
+}
+
+function eliminarImagenConfeccion(index) {
+    tempConfeccionImagenes.splice(index, 1);
+    renderGaleriaPreviewConfeccion();
+    showToast('Imagen eliminada de la vista previa', 'warning');
 }
 
 function renderGaleriaPreviewConfeccion() {
@@ -1406,20 +1468,20 @@ function renderGaleriaPreviewConfeccion() {
     if (!container) return;
 
     if (tempConfeccionImagenes.length === 0) {
-        container.innerHTML = `<div class="text-[11px] text-slate-400 italic">No hay imágenes cargadas todavía.</div>`;
+        container.innerHTML = `<div class="text-[11px] text-amber-800/80 italic">No hay imágenes cargadas todavía.</div>`;
         return;
     }
 
     container.innerHTML = `
         <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[11px] font-extrabold text-slate-800">Galería (${tempConfeccionImagenes.length} foto${tempConfeccionImagenes.length > 1 ? 's' : ''}):</span>
-            <span class="text-[10px] text-rose-600 font-bold">La primera imagen será la portada</span>
+            <span class="text-[11px] font-extrabold text-amber-950">Galería (${tempConfeccionImagenes.length} foto${tempConfeccionImagenes.length > 1 ? 's' : ''}):</span>
+            <span class="text-[10px] text-amber-700 font-semibold">La primera imagen será la portada</span>
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
             ${tempConfeccionImagenes.map((src, idx) => `
-                <div class="relative group rounded-xl overflow-hidden border-2 ${idx === 0 ? 'border-rose-600' : 'border-slate-200'} bg-white shadow-xs aspect-square">
+                <div class="relative group rounded-xl overflow-hidden border-2 ${idx === 0 ? 'border-amber-600' : 'border-amber-200'} bg-white shadow-xs aspect-square">
                     <img src="${src}" alt="Foto ${idx + 1}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x300/1e293b/ffffff?text=Foto+${idx + 1}'">
-                    ${idx === 0 ? `<span class="absolute bottom-1 left-1 bg-slate-900/90 text-white text-[9px] font-black px-1.5 py-0.5 rounded">Portada</span>` : ''}
+                    ${idx === 0 ? `<span class="absolute bottom-1 left-1 bg-amber-800/90 text-white text-[9px] font-black px-1.5 py-0.5 rounded">Portada</span>` : ''}
                     <button type="button" onclick="eliminarImagenConfeccion(${idx})" class="absolute top-1 right-1 w-6 h-6 bg-rose-600 hover:bg-rose-700 text-white rounded-full flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-105" title="Eliminar imagen">
                         ✕
                     </button>
@@ -1427,6 +1489,96 @@ function renderGaleriaPreviewConfeccion() {
             `).join('')}
         </div>
     `;
+}
+
+function resetFormAdminConfeccion() {
+    const form = document.getElementById('formAdminConfeccion');
+    if (form) form.reset();
+    const idInput = document.getElementById('confPrendaId');
+    if (idInput) idInput.value = '';
+    tempConfeccionImagenes = [];
+    renderGaleriaPreviewConfeccion();
+}
+
+function guardarPrendaConfeccion(e) {
+    e.preventDefault();
+    const id = document.getElementById('confPrendaId').value;
+    const modelo = document.getElementById('confModelo').value.trim();
+    const precio = parseFloat(document.getElementById('confPrecio').value);
+    const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
+    const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
+
+    // Capturar si el usuario escribió URLs en el input sin presionar "+ Agregar URL"
+    const urlInput = document.getElementById('confImagenUrl');
+    if (urlInput && urlInput.value.trim()) {
+        const extraUrls = urlInput.value.split(',').map(u => u.trim()).filter(Boolean);
+        tempConfeccionImagenes.push(...extraUrls);
+        urlInput.value = '';
+    }
+
+    // Preservar comunicado actual al guardar fechas desde el formulario
+    const confActual = obtenerConfigFechasConfeccion();
+    const fechaInicio = document.getElementById('confFechaInicio').value;
+    const fechaFin = document.getElementById('confFechaFin').value;
+    if (fechaInicio && fechaFin) {
+        localStorage.setItem('liz_confeccion_fechas', JSON.stringify({
+            ...confActual,
+            inicio: fechaInicio,
+            fin: fechaFin
+        }));
+    }
+
+    const imagenesFinales = tempConfeccionImagenes.length > 0
+        ? [...tempConfeccionImagenes]
+        : ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500'];
+
+    let prendas = obtenerPrendasConfeccion();
+    if (id) {
+        prendas = prendas.map(p => p.id == id ? {
+            id: Number(id),
+            modelo,
+            precio,
+            colores,
+            tallas,
+            imagen: imagenesFinales[0],
+            imagenes: imagenesFinales
+        } : p);
+    } else {
+        const nueva = {
+            id: Date.now(),
+            modelo,
+            precio,
+            colores,
+            tallas,
+            imagen: imagenesFinales[0],
+            imagenes: imagenesFinales
+        };
+        prendas.push(nueva);
+    }
+
+    localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
+    showToast('¡Fechas y prenda de confección guardadas con éxito!', 'success');
+    resetFormAdminConfeccion();
+    cambiarTabConfeccion('catalogo');
+}
+
+function slideConfeccionImage(prendaId, direction) {
+    const prendas = obtenerPrendasConfeccion();
+    const p = prendas.find(item => item.id == prendaId);
+    if (!p || !p.imagenes || p.imagenes.length <= 1) return;
+
+    if (confSliderIndexes[prendaId] === undefined) confSliderIndexes[prendaId] = 0;
+    confSliderIndexes[prendaId] += direction;
+
+    if (confSliderIndexes[prendaId] >= p.imagenes.length) confSliderIndexes[prendaId] = 0;
+    if (confSliderIndexes[prendaId] < 0) confSliderIndexes[prendaId] = p.imagenes.length - 1;
+
+    renderCatalogoConfeccion();
+}
+
+function jumpConfeccionImage(prendaId, index) {
+    confSliderIndexes[prendaId] = index;
+    renderCatalogoConfeccion();
 }
 
 function renderCatalogoConfeccion() {
@@ -1449,15 +1601,15 @@ function renderCatalogoConfeccion() {
         const currentIdx = rawIdx < imgs.length ? rawIdx : 0;
 
         return `
-            <div class="bg-white border border-slate-200 hover:border-rose-200 rounded-2xl p-4 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between">
+            <div class="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
                 <div>
                     <!-- Carrusel interactivo con flechas y contador -->
                     <div class="relative group/confimg mb-2">
                         <img src="${imgs[currentIdx]}" alt="${p.modelo}" class="w-full h-48 object-cover rounded-xl border border-slate-100 transition-all" onerror="this.src='https://placehold.co/500x500/1e293b/ffffff?text=Prenda'">
                         ${imgs.length > 1 ? `
-                            <button type="button" onclick="slideConfeccionImage(${p.id}, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-slate-900/70 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold shadow cursor-pointer transition">❮</button>
-                            <button type="button" onclick="slideConfeccionImage(${p.id}, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-slate-900/70 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold shadow cursor-pointer transition">❯</button>
-                            <span class="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${currentIdx + 1} / ${imgs.length}</span>
+                            <button type="button" onclick="slideConfeccionImage(${p.id}, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-xs font-bold shadow cursor-pointer transition">❮</button>
+                            <button type="button" onclick="slideConfeccionImage(${p.id}, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-xs font-bold shadow cursor-pointer transition">❯</button>
+                            <span class="absolute bottom-2 right-2 bg-black/65 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${currentIdx + 1} / ${imgs.length}</span>
                         ` : ''}
                     </div>
 
@@ -1465,7 +1617,7 @@ function renderCatalogoConfeccion() {
                     ${imgs.length > 1 ? `
                         <div class="flex items-center gap-1.5 mb-2.5 overflow-x-auto pb-1">
                             ${imgs.map((thumb, tIdx) => `
-                                <button type="button" onclick="jumpConfeccionImage(${p.id}, ${tIdx})" class="w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0 cursor-pointer transition ${tIdx === currentIdx ? 'border-rose-600 scale-105 shadow-xs' : 'border-slate-200 opacity-70 hover:opacity-100'}">
+                                <button type="button" onclick="jumpConfeccionImage(${p.id}, ${tIdx})" class="w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0 cursor-pointer transition ${tIdx === currentIdx ? 'border-amber-600 scale-105 shadow-xs' : 'border-slate-200 opacity-70 hover:opacity-100'}">
                                     <img src="${thumb}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=${tIdx + 1}'">
                                 </button>
                             `).join('')}
@@ -1473,38 +1625,38 @@ function renderCatalogoConfeccion() {
                     ` : ''}
 
                     <h5 class="font-bold text-slate-900 text-sm mb-1">${p.modelo}</h5>
-                    <p class="text-rose-600 font-black text-lg mb-3">S/ ${p.precio.toFixed(2)}</p>
+                    <p class="text-amber-700 font-black text-base mb-3">S/ ${p.precio.toFixed(2)}</p>
                     
                     <div class="space-y-2 mb-3">
                         <div>
-                            <label class="text-[11px] font-bold text-slate-600 block mb-0.5">Color:</label>
-                            <select id="select-color-${p.id}" ${plazoVencido && !isAdmin ? 'disabled' : ''} class="w-full p-2 text-xs bg-slate-50 border border-slate-200 focus:border-rose-500 rounded-xl outline-none font-semibold text-slate-800">${colorOpts}</select>
+                            <label class="text-[11px] font-bold text-slate-600 block">Color:</label>
+                            <select id="select-color-${p.id}" ${plazoVencido && !isAdmin ? 'disabled' : ''} class="w-full p-2 text-xs bg-slate-50 border rounded-xl outline-none">${colorOpts}</select>
                         </div>
                         <div>
-                            <label class="text-[11px] font-bold text-slate-600 block mb-0.5">Talla:</label>
-                            <select id="select-talla-${p.id}" ${plazoVencido && !isAdmin ? 'disabled' : ''} class="w-full p-2 text-xs bg-slate-50 border border-slate-200 focus:border-rose-500 rounded-xl outline-none font-semibold text-slate-800">${tallaOpts}</select>
+                            <label class="text-[11px] font-bold text-slate-600 block">Talla:</label>
+                            <select id="select-talla-${p.id}" ${plazoVencido && !isAdmin ? 'disabled' : ''} class="w-full p-2 text-xs bg-slate-50 border rounded-xl outline-none">${tallaOpts}</select>
                         </div>
                     </div>
                 </div>
                 
                 <div class="space-y-2">
                     ${plazoVencido && !isAdmin ? `
-                        <div class="bg-rose-50 text-rose-700 font-bold text-xs p-2.5 rounded-xl text-center border border-rose-200">
+                        <div class="bg-rose-100 text-rose-700 font-bold text-xs p-2.5 rounded-xl text-center border border-rose-200">
                             ⛔ Plazo de pedidos culminado
                         </div>
                     ` : `
-                        <button onclick="descargarPDFConfeccion(${p.id})" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
-                            <i class="fas fa-file-pdf text-rose-400"></i> Descargar Orden PDF
+                        <button onclick="descargarPDFConfeccion(${p.id})" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <i class="fas fa-file-pdf"></i> Descargar Orden PDF
                         </button>
-                        <button onclick="consultarConfeccionWhatsApp(${p.id})" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <button onclick="consultarConfeccionWhatsApp(${p.id})" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
                             <i class="fab fa-whatsapp"></i> Separar por WhatsApp
                         </button>
                     `}
 
                     ${isAdmin ? `
-                    <div class="flex gap-1.5 pt-2 border-t border-slate-100 mt-2">
-                        <button onclick="editarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-amber-100 hover:bg-amber-500 text-amber-900 hover:text-white text-xs font-bold rounded-lg transition cursor-pointer">Editar</button>
-                        <button onclick="eliminarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-100 hover:bg-rose-600 text-rose-700 hover:text-white text-xs font-bold rounded-lg transition cursor-pointer">Eliminar</button>
+                    <div class="flex gap-1.5 pt-1 border-t border-amber-100 mt-2">
+                        <button onclick="editarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg cursor-pointer">Editar</button>
+                        <button onclick="eliminarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer">Eliminar</button>
                     </div>` : ''}
                 </div>
             </div>
