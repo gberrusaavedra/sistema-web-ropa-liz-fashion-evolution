@@ -572,17 +572,17 @@ function renderProductGrid(productsList) {
         const rawImgIdx = sliderIndexes[product.id] || 0;
         const currentImgIdx = rawImgIdx < imagesList.length ? rawImgIdx : 0;
 
-        // Filtro dinámico de color (IA simulada por CSS filter) aplicado a la imagen única si no hay múltiples fotos
+        // Cálculo de filtro dinámico según el color seleccionado
         let colorFilterStyle = "";
         const lowerColor = selectedColor.toLowerCase();
         if (lowerColor.includes('rojo') || lowerColor.includes('corinto')) {
-            colorFilterStyle = "filter: hue-rotate(320deg) saturate(1.8);";
+            colorFilterStyle = "filter: hue-rotate(330deg) saturate(2) brightness(0.9);";
         } else if (lowerColor.includes('negro')) {
-            colorFilterStyle = "filter: brightness(0.4) contrast(1.2);";
+            colorFilterStyle = "filter: brightness(0.35) contrast(1.3);";
         } else if (lowerColor.includes('azul') || lowerColor.includes(' marino')) {
-            colorFilterStyle = "filter: hue-rotate(180deg) saturate(1.5);";
-        } else if (lowerColor.includes('beige') || lowerColor.includes('crema') || lowerColor.includes('mostaza')) {
-            colorFilterStyle = "filter: sepia(0.4) hue-rotate(10deg);";
+            colorFilterStyle = "filter: hue-rotate(190deg) saturate(1.8);";
+        } else if (lowerColor.includes('beige') || lowerColor.includes('crema') || lowerColor.includes('mostaza') || lowerColor.includes('amarillo')) {
+            colorFilterStyle = "filter: sepia(0.5) hue-rotate(15deg) brightness(1.1);";
         }
 
         let tagBadgeClass = "bg-slate-900 text-white";
@@ -711,22 +711,37 @@ function selectCardSize(productId, size) {
 function selectCardColor(productId, colorName) {
     state.selectedColorsPerCard[productId] = colorName;
     
-    const product = PRODUCTS.find(p => p.id === productId);
-    if (product && product.colors) {
-        const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
-        if (colorIndex !== -1) {
-            const imagesList = product.images && product.images.length > 0 ? product.images : [product.image];
-            const targetIdx = colorIndex % imagesList.length;
-            sliderIndexes[productId] = targetIdx;
-            
-            const slider = document.getElementById(`slider-${productId}`);
-            if (slider) {
-                slider.style.transform = `translateX(-${targetIdx * (100 / imagesList.length)}%)`;
+    // Actualización instantánea y fluida de los estilos de filtro y botones en la tarjeta
+    const card = document.querySelector(`article:has(button[onclick*="selectCardColor(${productId},"])`);
+    if (card) {
+        const buttons = card.querySelectorAll(`button[onclick*="selectCardColor(${productId},"]`);
+        buttons.forEach(btn => {
+            if (btn.textContent.trim().toLowerCase() === colorName.toLowerCase()) {
+                btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-rose-600 text-white border-rose-600 shadow-xs";
+            } else {
+                btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400";
             }
+        });
+
+        let filterStyle = "";
+        const lower = colorName.toLowerCase();
+        if (lower.includes('rojo') || lower.includes('corinto')) {
+            filterStyle = "hue-rotate(330deg) saturate(2) brightness(0.9)";
+        } else if (lower.includes('negro')) {
+            filterStyle = "brightness(0.35) contrast(1.3)";
+        } else if (lower.includes('azul') || lower.includes('marino')) {
+            filterStyle = "hue-rotate(190deg) saturate(1.8)";
+        } else if (lower.includes('beige') || lower.includes('crema') || lower.includes('mostaza') || lower.includes('amarillo')) {
+            filterStyle = "sepia(0.5) hue-rotate(15deg) brightness(1.1)";
         }
+
+        const imgs = card.querySelectorAll('img');
+        imgs.forEach(img => {
+            img.style.filter = filterStyle;
+        });
+    } else {
+        applyFilters();
     }
-    
-    applyFilters();
 }
 
 // =====================================================================
@@ -1167,7 +1182,7 @@ function renderCatalogoConfeccion() {
                     ${isAdmin ? `
                     <div class="flex gap-1.5 pt-1">
                         <button onclick="editarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg cursor-pointer">Editar</button>
-                        <button onclick="eliminarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer">Eliminar</button>
+                        <button onclick="elimnarPrendaConfeccion(${p.id})" class="flex-1 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg cursor-pointer">Eliminar</button>
                     </div>` : ''}
                 </div>
             </div>
@@ -1360,7 +1375,8 @@ function descargarPDFConfeccion(id) {
     
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text('Para cambiar el color requerido automáticamente mediante inteligencia artificial sin subir fotos adicionales, hemos integrado un filtro de matiz inteligente (`filter: hue-rotate`) directamente en las tarjetas de producto[cite: 37]. Al hacer clic en un color, la imagen única se transformará instantáneamente al tono seleccionado[cite: 37].', 15, 155);
+    doc.text('¡Gracias por confiar en Liz Fashion Evolution!', 15, 155);
+    doc.text('Comparte este PDF con nuestro asesor para coordinar tu confección.', 15, 162);
 
     doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
     showToast('¡PDF generado y registrado en reporte!', 'success');
