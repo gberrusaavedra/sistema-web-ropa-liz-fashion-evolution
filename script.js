@@ -1352,4 +1352,4 @@ function descargarPDFConfeccion(id) {
 
     doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
     showToast('¡PDF generado y registrado en reporte!', 'success');
-}
+} l
