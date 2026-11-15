@@ -557,7 +557,6 @@ function renderProductGrid(productsList) {
             ? product.images 
             : [product.image];
 
-        // Obtener índice de la imagen actual basada en el slider guardado
         const currentImgIdx = sliderIndexes[product.id] || 0;
 
         let tagBadgeClass = "bg-slate-900 text-white";
@@ -568,7 +567,7 @@ function renderProductGrid(productsList) {
 
         return `
             <article class="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
-                <div class="relative aspect-[4/5] bg-slate-100 overflow-hidden group/img">
+                <div class="relative w-full h-72 sm:h-80 bg-slate-100 overflow-hidden group/img">
                     <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(-${currentImgIdx * 100}%);">
                         ${imagesList.map(imgUrl => `
                             <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center shrink-0 cursor-pointer">
@@ -684,7 +683,6 @@ function selectCardSize(productId, size) {
 function selectCardColor(productId, colorName) {
     state.selectedColorsPerCard[productId] = colorName;
     
-    // Sincronización exacta de índice: Busca el orden en el que se subieron los colores
     const product = PRODUCTS.find(p => p.id === productId);
     if (product && product.colors) {
         const colorIndex = product.colors.findIndex(c => c.toLowerCase() === colorName.toLowerCase());
@@ -697,7 +695,6 @@ function selectCardColor(productId, colorName) {
         }
     }
     
-    // Renderizado fluido manteniendo los filtros actuales
     applyFilters();
 }
 
