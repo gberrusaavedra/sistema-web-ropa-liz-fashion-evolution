@@ -2,7 +2,7 @@
 // 1. CONFIGURACIÓN GLOBAL Y CONEXIÓN A RENDER / NEON
 // =====================================================================
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
-const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
+const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.[cite: 1]
 const WHATSAPP_PHONE = "931598799";
 
 let PRODUCTS = [
@@ -156,6 +156,34 @@ async function handleAuthSubmit(e) {
     }
 }
 
+async function socialLogin(provider) {
+    const nombreSimulado = provider === 'google' ? 'Usuario Google' : 'Usuario Facebook';
+    const emailSimulado = `${provider}_user_${Math.floor(Math.random() * 10000)}@rematestyle.com`;
+    
+    try {
+        const res = await fetch(API_URL + '/social-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider, nombre: nombreSimulado, email: emailSimulado })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            showToast(data.error || 'Error en autenticación social', 'error');
+            return;
+        }
+
+        localStorage.setItem('rs_token', data.token);
+        localStorage.setItem('rs_usuario', JSON.stringify(data.usuario));
+        closeAuthModal();
+        updateAuthUI();
+        applyFilters();
+        showToast(`¡Conectado exitosamente con ${provider.toUpperCase()}!`, 'success');
+    } catch (err) {
+        showToast('No se pudo conectar con el servidor para autenticación social.', 'error');
+    }
+}
+
 function logoutUser() {
     if (confirm('¿Deseas cerrar tu sesión actual?')) {
         localStorage.removeItem('rs_token');
@@ -282,7 +310,7 @@ function renderDynamicVariantsInputs(existingVariants = null) {
     if (!container) return;
 
     if (tempUploadedImages.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 italic">Sube o selecciona imágenes para configurar el stock y color de cada una.[cite: 1]</div>`;
         return;
     }
 
@@ -913,7 +941,7 @@ function renderCart() {
     if (!container) return;
     const totalItems = state.cart.reduce((sum, i) => sum + i.qty, 0);
     document.getElementById('headerCartBadge').textContent = totalItems;
-    document.getElementById('drawerItemCountText').textContent = `${totalItems} prendas seleccionadas`;
+    document.getElementById('drawerItemCountText').textContent = `${totalItems} prendas seleccionadas[cite: 1]`;
 
     if (state.cart.length === 0) {
         document.getElementById('cartDrawerFooter').classList.add('hidden');
@@ -1382,7 +1410,7 @@ function renderReporteClientes() {
     const historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
 
     if (historial.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.[cite: 1]</td></tr>`;
         return;
     }
 
