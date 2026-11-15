@@ -14,6 +14,10 @@ let PRODUCTS = [
         regularPrice: 189.90,
         salePrice: 56.90,
         image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
+        images: [
+            "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
+            "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80"
+        ],
         stockBySize: { S: 1, M: 2, L: 0, XL: 1 },
         maxInitialStock: 15,
         material: "100% Poliéster repelente al agua con forro térmico acolchado.",
@@ -97,7 +101,6 @@ function openAuthModal() {
 
 function closeAuthModal() {
     const { user } = getSession();
-    // Si no hay usuario logueado, no permitimos cerrar el modal
     if (!user) {
         showToast('Debes iniciar sesión para continuar', 'warning');
         return;
@@ -291,12 +294,10 @@ async function handleSaveProduct(e) {
 
     let imagesArray = [];
 
-    // 1. Si pegaron enlaces en formato URL
     if (imageUrlInput) {
         imagesArray = imageUrlInput.split(',').map(url => url.trim()).filter(Boolean);
     }
 
-    // 2. Si seleccionaron archivos locales
     if (imageFileInput && imageFileInput.files && imageFileInput.files.length > 0) {
         const files = Array.from(imageFileInput.files);
         for (const file of files) {
@@ -309,7 +310,6 @@ async function handleSaveProduct(e) {
         }
     }
 
-    // 3. Fallback por defecto si no hay ninguna imagen
     if (imagesArray.length === 0) {
         imagesArray = ['https://placehold.co/600x750/1e293b/ffffff?text=Prenda'];
     }
@@ -568,7 +568,7 @@ function renderProductGrid(productsList) {
                 <div class="relative aspect-[4/5] bg-slate-100 overflow-hidden group/img">
                     <div id="slider-${product.id}" class="w-full h-full flex transition-transform duration-300 ease-out" style="transform: translateX(0%);">
                         ${imagesList.map(imgUrl => `
-                            <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center shrink-0 cursor-pointer" onclick="openQuickView(${product.id})">
+                            <img src="${imgUrl}" alt="${product.name}" loading="lazy" onerror="this.src='https://placehold.co/600x750/1e293b/ffffff?text=${encodeURIComponent(product.name)}'" class="w-full h-full object-cover object-center shrink-0 cursor-pointer">
                         `).join('')}
                     </div>
 
@@ -592,7 +592,7 @@ function renderProductGrid(productsList) {
                             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${product.category}</span>
                             <span class="text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md">CÓD: ${productCode}</span>
                         </div>
-                        <h3 onclick="openQuickView(${product.id})" class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2 hover:text-rose-600 cursor-pointer">${product.name}</h3>
+                        <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2">${product.name}</h3>
                     </div>
                    ${product.description ? `<p class="text-xs text-slate-600 mt-1 mb-2">${product.description}</p>` : ''}
                     <div class="flex items-baseline gap-2">
@@ -611,31 +611,30 @@ function renderProductGrid(productsList) {
                     </div>
 
                     <div>
-                       <div class="flex items-center justify-between mb-1.5">
-        <span class="text-[11px] font-bold text-slate-500">Elige talla (stock):</span>
-        <button onclick="openQuickView(${product.id})" class="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer">Ver detalles</button>
-    </div>
-    <div class="grid grid-cols-4 gap-1.5">
-        ${['S', 'M', 'L', 'XL'].map(sz => {
-            const qty = product.stockBySize[sz] || 0;
-            const outOfStock = qty <= 0;
-            const isSelected = selectedSize === sz && !outOfStock;
-            return `
-                <button type="button" ${outOfStock ? 'disabled' : `onclick="selectCardSize(${product.id}, '${sz}')"`}
-                    class="py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-extrabold border transition-all flex flex-col items-center justify-center ${
-                        outOfStock ? 'bg-slate-50 text-slate-300 border-slate-100 line-through cursor-not-allowed' :
-                        isSelected ? 'bg-slate-900 text-white border-slate-900 cursor-pointer' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-900 cursor-pointer'
-                    }">
-                    <span>${sz}</span>
-                    <span class="text-[9px] opacity-80">(${qty})</span>
-                </button>
-            `;
-        }).join('')}
-    </div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-bold text-slate-500">Tallas en Stock:</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            ${['S', 'M', 'L', 'XL'].map(sz => {
+                                const qty = product.stockBySize[sz] || 0;
+                                const outOfStock = qty <= 0;
+                                const isSelected = selectedSize === sz && !outOfStock;
+                                return `
+                                    <button type="button" ${outOfStock ? 'disabled' : `onclick="selectCardSize(${product.id}, '${sz}')"`}
+                                        class="py-1.5 px-1 rounded-lg text-[10px] sm:text-xs font-extrabold border transition-all flex flex-col items-center justify-center ${
+                                            outOfStock ? 'bg-slate-50 text-slate-300 border-slate-100 line-through cursor-not-allowed' :
+                                            isSelected ? 'bg-slate-900 text-white border-slate-900 cursor-pointer' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-900 cursor-pointer'
+                                        }">
+                                        <span>${sz}</span>
+                                        <span class="text-[9px] opacity-80">(${qty})</span>
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
 
                     <div>
-                        <span class="block text-[11px] font-bold text-slate-500 mb-1.5">Elige color:</span>
+                        <span class="block text-[11px] font-bold text-slate-500 mb-1.5">Colores Disponibles:</span>
                         <div class="flex flex-wrap gap-1.5">
                             ${productColors.map(col => `
                                 <button type="button" onclick="selectCardColor(${product.id}, '${col.replace(/'/g, "\\'")}')"
@@ -819,9 +818,6 @@ function slideImage(productId, direction) {
     slider.style.transform = `translateX(-${sliderIndexes[productId] * 100}%)`;
 }
 
-// =====================================================================
-// CONTROL Y EDICIÓN DEL RELOJ DE OFERTA FLASH DESDE EL PANEL ADMIN
-// =====================================================================
 async function fetchOfferTime() {
     let targetTime = localStorage.getItem('liz_offer_end');
     
@@ -929,7 +925,6 @@ async function saveOfferEndTime(e) {
 document.addEventListener('DOMContentLoaded', async () => {
     updateAuthUI();
     
-    // Validar si el usuario ha iniciado sesión; si no, abrir el modal de login obligatoriamente
     const { user } = getSession();
     if (!user) {
         openAuthModal();
