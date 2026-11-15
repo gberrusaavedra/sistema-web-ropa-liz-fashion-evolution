@@ -680,11 +680,13 @@ function renderProductGrid(productsList) {
         const isLowStock = totalStock <= 4;
         const productCode = product.code || `LIZ-${String(product.id).padStart(4, '0')}`;
         
-        let activeColor = 'Único';
-        if (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].color) {
-            activeColor = product.variantDetails[currentImgIdx].color;
-        } else if (product.colors && product.colors[currentImgIdx]) {
-            activeColor = product.colors[currentImgIdx];
+        let allColorsList = [];
+        if (product.variantDetails && product.variantDetails.length > 0) {
+            allColorsList = product.variantDetails.map((v, idx) => ({ name: v.color || 'Único', index: idx }));
+        } else if (product.colors && product.colors.length > 0) {
+            allColorsList = product.colors.map((c, idx) => ({ name: c, index: idx }));
+        } else {
+            allColorsList = [{ name: 'Único', index: 0 }];
         }
 
         let tagBadgeClass = "bg-slate-900 text-white";
@@ -766,9 +768,21 @@ function renderProductGrid(productsList) {
                     </div>
 
                     <div>
-                        <span class="block text-[11px] font-bold text-slate-500 mb-1">Color Activo (Según Imagen):</span>
-                        <div class="inline-block px-3 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black">
-                            🎨 ${activeColor}
+                        <span class="block text-[11px] font-bold text-slate-500 mb-1.5">Colores Disponibles / Activos:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${allColorsList.map(cObj => {
+                                const isActive = currentImgIdx === cObj.index;
+                                return `
+                                    <button type="button" onclick="jumpToColorImage(${product.id}, ${cObj.index})" 
+                                        class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                            isActive 
+                                                ? 'bg-rose-600 text-white border-rose-600 shadow-xs ring-1 ring-rose-400' 
+                                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400 hover:text-rose-600'
+                                        }">
+                                        🎨 <span>${cObj.name}</span>
+                                    </button>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
 
@@ -800,6 +814,20 @@ function renderProductGrid(productsList) {
 
 function selectCardSize(productId, size) {
     state.selectedSizesPerCard[productId] = size;
+    applyFilters();
+}
+
+function jumpToColorImage(productId, imgIndex) {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+    const imagesList = product.images && product.images.length > 0 ? product.images : [product.image];
+    if (imgIndex < 0 || imgIndex >= imagesList.length) return;
+
+    sliderIndexes[productId] = imgIndex;
+    const slider = document.getElementById(`slider-${productId}`);
+    if (slider) {
+        slider.style.transform = `translateX(-${imgIndex * (100 / imagesList.length)}%)`;
+    }
     applyFilters();
 }
 
