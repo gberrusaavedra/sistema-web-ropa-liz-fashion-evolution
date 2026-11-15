@@ -306,12 +306,10 @@ async function handleSaveProduct(e) {
 
     let imagesArray = [];
 
-    // Permitir múltiples enlaces separados por comas
     if (imageUrlInput) {
         imagesArray = imageUrlInput.split(',').map(url => url.trim()).filter(Boolean);
     }
 
-    // Procesar múltiples archivos locales seleccionados en el input file
     if (imageFileInput && imageFileInput.files && imageFileInput.files.length > 0) {
         const files = Array.from(imageFileInput.files);
         for (const file of files) {
@@ -355,7 +353,7 @@ async function handleSaveProduct(e) {
         colores: coloresArray,
         descripcion: document.getElementById('formDescription').value.trim(),
         imagen_url: imagesArray[0],
-        imagenes: imagesArray // Array JSONB guardado directamente en Neon
+        imagenes: imagesArray
     };
 
     const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
