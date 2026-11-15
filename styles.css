@@ -89,26 +89,21 @@
     height: 280px;
 }
 /* ==========================================================================
-   CORRECCIÓN PARA QUE LAS IMÁGENES SALGAN COMPLETAS SIN RECORTES
+   CORRECCIÓN DEFINITIVA DE IMÁGENES EN CATÁLOGO (MÓVIL Y PC)
    ========================================================================== */
 #productGrid img {
-    object-fit: contain !important;
-    background-color: #f8fafc;
     width: 100%;
     height: 280px;
+    object-fit: cover !important;
+    object-position: top center !important;
+    background-color: #f8fafc;
 }
 
-/* Ajuste general de las tarjetas para mantener el diseño alineado */
-#productGrid article {
-    height: auto !important;
-    min-height: 620px;
-    display: flex;
-    flex-direction: column;
-}
-
-#productGrid article > div:last-child {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+/* Ajuste específico para celulares para evitar recortes en la parte superior */
+@media (max-width: 640px) {
+    #productGrid img {
+        height: 240px;
+        object-fit: cover !important;
+        object-position: top center !important;
+    }
 }
