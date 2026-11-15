@@ -1271,7 +1271,7 @@ function descargarPDFConfeccion(id) {
     const prenda = prendas.find(p => p.id == id);
     if (!prenda) return;
 
-    const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
+    const colorSeleccionado = document.getElementById(`select-color-${id}')`).value;
     const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
     const nroOrden = `CONF-${Math.floor(100000 + Math.random() * 900000)}`;
     const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
