@@ -2208,3 +2208,73 @@ async function cambiarEstadoPago(id, estado) {
         showToast('Error de conexión al actualizar estado', 'error');
     }
 }
+// =====================================================================
+// HISTORIAL DE PAGOS Y ESTADO PARA EL CLIENTE
+// =====================================================================
+async function openClientPaymentsModal() {
+    const { user } = getSession();
+    if (!user) {
+        showToast('Debes iniciar sesión para ver tus pagos', 'warning');
+        openAuthModal();
+        return;
+    }
+
+    const modal = document.getElementById('clientPaymentsModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        await renderTablaClientPayments(user.nombre);
+    }
+}
+
+function closeClientPaymentsModal() {
+    const modal = document.getElementById('clientPaymentsModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function renderTablaClientPayments(nombreUsuario) {
+    const tbody = document.getElementById('tablaClientPaymentsBody');
+    if (!tbody) return;
+
+    try {
+        const res = await fetch(`${API_URL}/pagos`);
+        if (!res.ok) throw new Error('Error al cargar pagos');
+        const todosLosPagos = await res.json();
+
+        const pagosCliente = todosLosPagos.filter(p => p.cliente === nombreUsuario || p.cliente === 'Cliente Invitado');
+
+        if (pagosCliente.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No tienes pagos registrados con Yape o Plin todavía.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = pagosCliente.map(p => {
+            let estadoBadge = 'bg-amber-100 text-amber-800';
+            if (p.estado === 'Aprobado') estadoBadge = 'bg-emerald-100 text-emerald-700 font-black';
+            if (p.estado === 'Rechazado') estadoBadge = 'bg-rose-100 text-rose-700 font-black';
+
+            return `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-mono font-bold">${p.orden}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.metodo === 'Yape' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${p.metodo}</span></td>
+                    <td class="p-3 font-black text-rose-600">S/ ${Number(p.total).toFixed(2)}</td>
+                    <td class="p-3 text-center">
+                        <a href="${p.imagen_voucher}" target="_blank" class="inline-block">
+                            <img src="${p.imagen_voucher}" class="w-10 h-10 object-cover rounded-lg border hover:scale-110 transition shadow-xs" title="Ver mi voucher">
+                        </a>
+                    </td>
+                    <td class="p-3 text-center">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] ${estadoBadge}">${p.estado}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-rose-500">Error al cargar tus pagos.</td></tr>`;
+    }
+}
+
+
