@@ -1968,6 +1968,7 @@ function descargarPDFConfeccion(id) {
     doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
     showToast('¡PDF generado y registrado en reporte!', 'success');
 }
+
 // =====================================================================
 // MÓDULO DE PAGOS YAPE Y PLIN (VALIDACIÓN, DUPLICADOS Y ADMINISTRADOR)
 // =====================================================================
@@ -2113,6 +2114,11 @@ async function abrirAdminVouchersModal() {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     await renderTablaAdminVouchers();
+}
+
+// Alias requerido exactamente por el botón de administración en el HTML
+async function openAdminVouchersModal() {
+    await abrirAdminVouchersModal();
 }
 
 function closeAdminVouchersModal() {
