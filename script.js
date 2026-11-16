@@ -2022,7 +2022,6 @@ function closeVoucherModal() {
     }
 }
 
-// Generar hash SHA-256 de la imagen para evitar que suban dos veces el mismo voucher
 async function generarHashImagen(base64Str) {
     const msgBuffer = new TextEncoder().encode(base64Str);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -2092,7 +2091,6 @@ async function handleSubirVoucher(e) {
         closeVoucherModal();
         toggleCartDrawer(false);
 
-        // Mensaje automático para WhatsApp indicando que se hizo el pago y se envía el comprobante
         let msg = `🛍️ *NUEVO PAGO POR ${selectedPaymentMethod.toUpperCase()}* 🛍️\n`;
         msg += `🧾 *Orden:* ${ordenCode}\n`;
         msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n`;
@@ -2109,7 +2107,6 @@ async function handleSubirVoucher(e) {
     }
 }
 
-// Funciones exclusivas del Administrador para ver y aprobar/rechazar vouchers
 async function abrirAdminVouchersModal() {
     const modal = document.getElementById('adminVouchersModal');
     if (!modal) return;
