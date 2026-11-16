@@ -2187,7 +2187,7 @@ async function cambiarEstadoPago(id, estado) {
             showToast(`Pago marcado como ${estado}`, 'success');
             await renderTablaAdminVouchers();
 
-            // Notificar por WhatsApp al cliente de forma automática
+            // Notificar por WhatsApp al cliente de forma automática al aprobar o rechazar
             let iconoEstado = estado === 'Aprobado' ? '✅ ¡PAGO APROBADO!' : '❌ ¡PAGO RECHAZADO / OBSERVADO!';
             let mensajeWhatsApp = `Hola *${pagoActualizado.cliente}*,\n\n` +
                                   `Te saludamos de *LIZ FASHION EVOLUTION*.\n` +
