@@ -40,7 +40,7 @@ let state = {
 
 let tempUploadedImages = [];
 
-const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Blusas', 'Poleras','Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
+const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Blusas', 'Polo Manga Larga','Polos Bordados', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
 const SIZES = ['Todas', 'S', 'M', 'L', 'XL', 'XXL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
