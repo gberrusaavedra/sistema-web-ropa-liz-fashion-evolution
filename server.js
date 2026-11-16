@@ -81,6 +81,18 @@ async function initDB() {
             precio NUMERIC(10, 2) NOT NULL,
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS pagos_yape_plin (
+            id SERIAL PRIMARY KEY,
+            orden VARCHAR(50) NOT NULL,
+            cliente VARCHAR(150),
+            total NUMERIC(10, 2) NOT NULL,
+            metodo VARCHAR(20) NOT NULL,
+            imagen_voucher TEXT NOT NULL,
+            hash_imagen VARCHAR(64) UNIQUE NOT NULL,
+            estado VARCHAR(20) DEFAULT 'Pendiente',
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     `);
 
     await pool.query(`
@@ -219,6 +231,48 @@ app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
             [String(offer_end_time)]
         );
         res.json({ mensaje: 'Horario guardado en Neon', offer_end_time: Number(offer_end_time) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// =====================================================================
+// MÓDULO DE PAGO YAPE Y PLIN (VALIDACIÓN DE VOUCHERS)
+// =====================================================================
+app.get('/api/pagos', soloAdmin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM pagos_yape_plin ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/pagos', async (req, res) => {
+    const { orden, cliente, total, metodo, imagen_voucher, hash_imagen } = req.body;
+    try {
+        const check = await pool.query('SELECT id FROM pagos_yape_plin WHERE hash_imagen = $1', [hash_imagen]);
+        if (check.rows.length > 0) {
+            return res.status(400).json({ error: 'Este comprobante de pago ya fue utilizado anteriormente. No se permite subir dos veces la misma captura.' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO pagos_yape_plin (orden, cliente, total, metodo, imagen_voucher, hash_imagen)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [orden, cliente || 'Cliente Web', total, metodo, imagen_voucher, hash_imagen]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(400).json({ error: 'El comprobante ya está registrado en el sistema.' });
+    }
+});
+
+app.put('/api/pagos/:id/estado', soloAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { estado } = req.body;
+    try {
+        const result = await pool.query('UPDATE pagos_yape_plin SET estado = $1 WHERE id = $2 RETURNING *', [estado, id]);
+        res.json(result.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
