@@ -46,24 +46,24 @@
         </div>
     </div>
 
-    <!-- Sticky Header -->
+   <!-- Sticky Header -->
     <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 sm:h-20 gap-3 sm:gap-6">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-auto py-2.5 sm:h-20 gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
                 
                 <!-- Logo -->
                 <a href="#" class="flex items-center gap-2 shrink-0 group">
-                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-rose-600/20 group-hover:scale-105 transition-transform"></div>
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-rose-600/20 group-hover:scale-105 transition-transform"></div>
                     <div class="flex flex-col">
-                        <span class="font-black text-base sm:text-lg tracking-tight text-slate-900 leading-none">
+                        <span class="font-black text-sm sm:text-lg tracking-tight text-slate-900 leading-none">
                             LIZ FASHION<span class="text-rose-600"> EVOLUTION</span>
                         </span>
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Outlet & Stock Perú</span>
+                        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-slate-400">Outlet & Stock Perú</span>
                     </div>
                 </a>
 
                 <!-- Search Bar (Desktop & Tablet) -->
-                <div class="hidden md:flex flex-1 max-w-xl relative">
+                <div class="hidden md:flex flex-1 max-w-xl relative mx-4">
                     <div class="relative w-full">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
                         <input 
@@ -80,20 +80,21 @@
                 </div>
 
                 <!-- Right Actions: Currency, Account & Cart -->
-                <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-1.5 sm:gap-3 overflow-x-auto no-scrollbar py-1">
                     <!-- Currency Selector -->
-                    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-                        <button onclick="setCurrency('PEN')" id="btnCurrencyPEN" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer">
-                            S/ PEN
+                    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+                        <button onclick="setCurrency('PEN')" id="btnCurrencyPEN" class="px-2 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all bg-white text-slate-900 shadow-sm cursor-pointer">
+                            S/
                         </button>
-                        <button onclick="setCurrency('USD')" id="btnCurrencyUSD" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer">
-                            $ USD
+                        <button onclick="setCurrency('USD')" id="btnCurrencyUSD" class="px-2 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all text-slate-500 hover:text-slate-800 cursor-pointer">
+                            $
                         </button>
                     </div>
 
-                    <!-- Botón para ver Mis Pagos Yape/Plin (Cliente) -->
-                    <button onclick="openClientPaymentsModal()" class="hidden sm:flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-2 rounded-xl font-bold text-xs transition cursor-pointer border border-slate-200">
-                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-purple-600"></i> Mis Pagos Yape/Plin
+                    <!-- Botón Mis Pagos Yape/Plin (Visible en PC y Celular) -->
+                    <button onclick="openClientPaymentsModal()" class="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 px-2.5 py-1.5 sm:py-2 rounded-xl font-bold text-[11px] sm:text-xs transition cursor-pointer border border-purple-200 shrink-0" title="Mis Pagos Yape/Plin">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-purple-600"></i> 
+                        <span class="hidden xs:inline">Mis Pagos</span>
                     </button>
 
                     <!-- Account / Admin Button -->
