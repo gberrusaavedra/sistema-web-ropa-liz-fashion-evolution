@@ -2239,24 +2239,13 @@ function closeClientPaymentsModal() {
 async function renderTablaClientPayments(nombreUsuario) {
     const tbody = document.getElementById('tablaClientPaymentsBody');
     if (!tbody) return;
-    const { token } = getSession();
 
     try {
-        // Consultamos la ruta general de pagos con el token de sesión
-        const res = await fetch(`${API_URL}/pagos`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await fetch(`${API_URL}/pagos/cliente/${encodeURIComponent(nombreUsuario)}`);
         if (!res.ok) throw new Error('Error al cargar pagos');
-        const todosLosPagos = await res.json();
+        const pagosCliente = await res.json();
 
-        // Si es admin mostramos todo, si es cliente filtramos por su nombre
-        const { isAdmin } = getSession();
-        const pagosCliente = isAdmin ? todosLosPagos : todosLosPagos.filter(p => 
-            p.cliente && p.cliente.toLowerCase().includes(nombreUsuario.toLowerCase()) || 
-            p.cliente === 'Cliente Invitado'
-        );
-
-        if (pagosCliente.length === 0) {
+        if (!Array.isArray(pagosCliente) || pagosCliente.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No tienes pagos registrados con Yape o Plin todavía.</td></tr>`;
             return;
         }
