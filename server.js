@@ -1,529 +1,70 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const { OAuth2Client } = require('google-auth-library');
-require('dotenv').config();
+async function guardarPrendaConfeccion(e) {
+    e.preventDefault();
+    const { token } = getSession();
+    const id = document.getElementById('confPrendaId').value;
+    const modelo = document.getElementById('confModelo').value.trim();
+    const precio = parseFloat(document.getElementById('confPrecio').value);
+    const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
+    const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
-
-const SECRET_KEY = process.env.JWT_SECRET || 'Teddy12@12';
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com');
-
-async function initDB() {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            email VARCHAR(150) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            palabra_secreta VARCHAR(100) NOT NULL,
-            rol VARCHAR(20) DEFAULT 'cliente' CHECK (rol IN ('admin', 'cliente')),
-            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS productos (
-            id SERIAL PRIMARY KEY,
-            titulo VARCHAR(150) NOT NULL,
-            categoria VARCHAR(50) NOT NULL,
-            etiqueta VARCHAR(50) DEFAULT 'Remate Final',
-            precio_remate NUMERIC(10, 2) NOT NULL,
-            precio_original NUMERIC(10, 2) NOT NULL,
-            stock_by_size JSONB NOT NULL,
-            porcentaje_vendido INTEGER DEFAULT 35,
-            material TEXT,
-            descripcion TEXT,
-            imagen_url TEXT NOT NULL,
-            colores JSONB DEFAULT '["Corinto", "Negro", "Rojo", "Beige"]'::jsonb,
-            imagenes JSONB DEFAULT '[]'::jsonb,
-            variant_details JSONB DEFAULT '[]'::jsonb,
-            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        ALTER TABLE productos
-        ADD COLUMN IF NOT EXISTS porcentaje_vendido INTEGER DEFAULT 35,
-        ADD COLUMN IF NOT EXISTS colores JSONB DEFAULT '["Corinto", "Negro", "Rojo", "Beige"]'::jsonb,
-        ADD COLUMN IF NOT EXISTS imagenes JSONB DEFAULT '[]'::jsonb,
-        ADD COLUMN IF NOT EXISTS variant_details JSONB DEFAULT '[]'::jsonb;
-
-        CREATE TABLE IF NOT EXISTS configuracion_tienda (
-            clave VARCHAR(50) PRIMARY KEY,
-            valor TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS modelos_fabricacion (
-            id SERIAL PRIMARY KEY,
-            titulo VARCHAR(150) NOT NULL,
-            categoria VARCHAR(80) NOT NULL,
-            precio NUMERIC(10, 2) NOT NULL,
-            colores JSONB NOT NULL,
-            tallas JSONB NOT NULL,
-            imagen_url TEXT NOT NULL,
-            fecha_limite BIGINT NOT NULL,
-            descripcion TEXT,
-            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS pedidos_fabricacion (
-            id SERIAL PRIMARY KEY,
-            codigo_pedido VARCHAR(30) NOT NULL,
-            cliente_nombre VARCHAR(120) NOT NULL,
-            cliente_telefono VARCHAR(30) NOT NULL,
-            notas TEXT,
-            items JSONB NOT NULL,
-            total NUMERIC(10, 2) NOT NULL,
-            estado VARCHAR(30) DEFAULT 'Pendiente',
-            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS prendas_confeccion (
-            id SERIAL PRIMARY KEY,
-            modelo VARCHAR(255) NOT NULL,
-            precio NUMERIC(10, 2) NOT NULL,
-            colores JSONB NOT NULL DEFAULT '[]'::jsonb,
-            tallas JSONB NOT NULL DEFAULT '[]'::jsonb,
-            imagen TEXT,
-            imagenes JSONB NOT NULL DEFAULT '[]'::jsonb,
-            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS config_confeccion (
-            id INTEGER PRIMARY KEY DEFAULT 1,
-            fecha_inicio VARCHAR(50) NOT NULL,
-            fecha_fin VARCHAR(50) NOT NULL,
-            comunicado TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS pedidos_confeccion (
-            id SERIAL PRIMARY KEY,
-            orden VARCHAR(50) NOT NULL,
-            fecha VARCHAR(100) NOT NULL,
-            modelo VARCHAR(255) NOT NULL,
-            color VARCHAR(100) NOT NULL,
-            talla VARCHAR(50) NOT NULL,
-            precio NUMERIC(10, 2) NOT NULL,
-            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
-
-    await pool.query(`
-        INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol)
-        VALUES ('Liz Admin', 'admin@rematestyle.com', 'admin1234', 'piura2026', 'admin')
-        ON CONFLICT (email) DO NOTHING;
-
-        INSERT INTO config_confeccion (id, fecha_inicio, fecha_fin, comunicado)
-        VALUES (
-            1,
-            TO_CHAR(NOW(), 'YYYY-MM-DD"T"HH24:MI'),
-            TO_CHAR(NOW() + INTERVAL '7 days', 'YYYY-MM-DD"T"HH24:MI'),
-            '¡Bienvenidos a nuestra campaña de confección personalizada! Selecciona tu modelo favorito, color y talla dentro del plazo indicado.'
-        )
-        ON CONFLICT (id) DO NOTHING;
-    `);
-}
-initDB().catch(console.error);
-
-function soloAdmin(req, res, next) {
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Token requerido' });
-
-    jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err || user.rol !== 'admin') return res.status(403).json({ error: 'Acceso exclusivo para Administrador' });
-        req.user = user;
-        next();
-    });
-}
-
-app.get('/', (req, res) => res.send('API REMATE STYLE activa'));
-
-app.post('/api/registro', async (req, res) => {
-    const { nombre, email, password, palabra_secreta } = req.body;
-    try {
-        const result = await pool.query(
-            'INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol',
-            [nombre, email, password, palabra_secreta, 'cliente']
-        );
-        const user = result.rows[0];
-        const token = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
-        res.json({ token, usuario: user });
-    } catch (err) {
-        res.status(400).json({ error: 'El correo ya está registrado.' });
+    const urlInput = document.getElementById('confImagenUrl');
+    if (urlInput && urlInput.value.trim()) {
+        const extraUrls = urlInput.value.split(',').map(u => u.trim()).filter(Boolean);
+        tempConfeccionImagenes.push(...extraUrls);
+        urlInput.value = '';
     }
-});
 
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
+    const confActual = obtenerConfigFechasConfeccion();
+    const fechaInicio = document.getElementById('confFechaInicio').value;
+    const fechaFin = document.getElementById('confFechaFin').value;
+
+    const imagenesFinales = tempConfeccionImagenes.length > 0
+        ? [...tempConfeccionImagenes]
+        : ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500'];
+
     try {
-        const result = await pool.query('SELECT * FROM usuarios WHERE email = $1 AND password = $2', [email, password]);
-        if (result.rows.length === 0) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' });
+        if (fechaInicio && fechaFin) {
+            await fetch(`${API_URL}/confeccion/config`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin,
+                    comunicado: confActual.comunicado
+                })
+            });
+        }
 
-        const user = result.rows[0];
-        const token = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
-        res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+        const url = id ? `${API_URL}/confeccion/prendas/${id}` : `${API_URL}/confeccion/prendas`;
+        const method = id ? 'PUT' : 'POST';
 
-// === AUTENTICACIÓN GOOGLE REAL ===
-app.post('/api/auth/google', async (req, res) => {
-    const { token } = req.body;
-    try {
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                modelo,
+                precio,
+                colores,
+                tallas,
+                imagen: imagenesFinales[0],
+                imagenes: imagenesFinales
+            })
         });
-        const payload = ticket.getPayload();
-        const { name, email } = payload;
 
-        let result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-        let user;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Error HTTP ${res.status}`);
 
-        if (result.rows.length === 0) {
-            const passwordRandom = Math.random().toString(36).slice(-8);
-            const insertRes = await pool.query(
-                'INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol',
-                [name, email, passwordRandom, 'google_oauth', 'cliente']
-            );
-            user = insertRes.rows[0];
-        } else {
-            user = result.rows[0];
-        }
-
-        const jwtToken = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
-        res.json({ token: jwtToken, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
+        await sincronizarDatosConfeccionDB();
+        showToast('¡Fechas y prenda de confección guardadas en Neon!', 'success');
+        resetFormAdminConfeccion();
+        cambiarTabConfeccion('catalogo');
     } catch (err) {
-        res.status(400).json({ error: 'Token de Google inválido.' });
+        showToast('Error al guardar: ' + err.message, 'error');
     }
-});
-
-// === AUTENTICACIÓN FACEBOOK REAL ===
-app.post('/api/auth/facebook', async (req, res) => {
-    const { nombre, email } = req.body;
-    try {
-        let result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-        let user;
-
-        if (result.rows.length === 0) {
-            const passwordRandom = Math.random().toString(36).slice(-8);
-            const insertRes = await pool.query(
-                'INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol',
-                [nombre, email, passwordRandom, 'facebook_oauth', 'cliente']
-            );
-            user = insertRes.rows[0];
-        } else {
-            user = result.rows[0];
-        }
-
-        const jwtToken = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
-        res.json({ token: jwtToken, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// === CATÁLOGO REMATE ===
-app.get('/api/productos', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM productos ORDER BY id DESC');
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/productos', soloAdmin, async (req, res) => {
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
-    try {
-        const result = await pool.query(
-            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
-            [
-                titulo, categoria, etiqueta, precio_remate, precio_original, 
-                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
-                JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
-                JSON.stringify(imagenes || [imagen_url]),
-                JSON.stringify(variant_details || [])
-            ]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/productos/:id', soloAdmin, async (req, res) => {
-    const { id } = req.params;
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
-    try {
-        const result = await pool.query(
-            `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, stock_by_size=$6, porcentaje_vendido=$7, material=$8, descripcion=$9, imagen_url=$10, colores=$11, imagenes=$12, variant_details=$13 WHERE id=$14 RETURNING *`,
-            [
-                titulo, categoria, etiqueta, precio_remate, precio_original, 
-                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
-                JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
-                JSON.stringify(imagenes || [imagen_url]),
-                JSON.stringify(variant_details || []), id
-            ]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/productos/:id', soloAdmin, async (req, res) => {
-    try {
-        await pool.query('DELETE FROM productos WHERE id = $1', [req.params.id]);
-        res.json({ mensaje: 'Prenda eliminada correctamente' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/oferta-tiempo', async (req, res) => {
-    try {
-        const result = await pool.query("SELECT valor FROM configuracion_tienda WHERE clave = 'offer_end_time'");
-        res.json({ offer_end_time: result.rows.length > 0 ? Number(result.rows[0].valor) : null });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
-    const { offer_end_time } = req.body;
-    if (!offer_end_time) return res.status(400).json({ error: 'Fecha inválida' });
-    try {
-        await pool.query(
-            `INSERT INTO configuracion_tienda (clave, valor) VALUES ('offer_end_time', $1)
-             ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
-            [String(offer_end_time)]
-        );
-        res.json({ mensaje: 'Horario guardado en Neon', offer_end_time: Number(offer_end_time) });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/fabricacion/modelos', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM modelos_fabricacion ORDER BY id DESC');
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/fabricacion/modelos', soloAdmin, async (req, res) => {
-    const { titulo, categoria, precio, colores, tallas, imagen_url, fecha_limite, descripcion } = req.body;
-    try {
-        const result = await pool.query(
-            `INSERT INTO modelos_fabricacion (titulo, categoria, precio, colores, tallas, imagen_url, fecha_limite, descripcion)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-            [titulo, categoria, precio, JSON.stringify(colores), JSON.stringify(tallas), imagen_url, fecha_limite, descripcion || '']
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/fabricacion/modelos/:id', soloAdmin, async (req, res) => {
-    try {
-        await pool.query('DELETE FROM modelos_fabricacion WHERE id = $1', [req.params.id]);
-        res.json({ mensaje: 'Modelo eliminado' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/fabricacion/modelos/:id/fecha', soloAdmin, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { fecha_limite } = req.body;
-        const result = await pool.query('UPDATE modelos_fabricacion SET fecha_limite = $1 WHERE id = $2 RETURNING *', [Number(fecha_limite), id]);
-        res.json({ mensaje: 'Fecha límite actualizada', modelo: result.rows[0] });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/fabricacion/pedidos', soloAdmin, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM pedidos_fabricacion ORDER BY id DESC');
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/fabricacion/pedidos', async (req, res) => {
-    const { cliente_nombre, cliente_telefono, notas, items, total } = req.body;
-    const codigo = 'FAB-' + Math.floor(100000 + Math.random() * 900000);
-    try {
-        const result = await pool.query(
-            `INSERT INTO pedidos_fabricacion (codigo_pedido, cliente_nombre, cliente_telefono, notas, items, total)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [codigo, cliente_nombre, cliente_telefono, notas || '', JSON.stringify(items), total]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/fabricacion/pedidos/:id/estado', soloAdmin, async (req, res) => {
-    const { estado } = req.body;
-    try {
-        const result = await pool.query('UPDATE pedidos_fabricacion SET estado = $1 WHERE id = $2 RETURNING *', [estado, req.params.id]);
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// =====================================================================
-// MÓDULO DE CONFECCIÓN PERSONALIZADA (CONECTADO A NEON)
-// =====================================================================
-app.get('/api/confeccion/config', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM config_confeccion WHERE id = 1');
-        res.json(result.rows[0] || null);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/confeccion/config', soloAdmin, async (req, res) => {
-    const { fecha_inicio, fecha_fin, comunicado } = req.body;
-    try {
-        const result = await pool.query(
-            `INSERT INTO config_confeccion (id, fecha_inicio, fecha_fin, comunicado)
-             VALUES (1, $1, $2, $3)
-             ON CONFLICT (id) DO UPDATE SET
-                fecha_inicio = EXCLUDED.fecha_inicio,
-                fecha_fin = EXCLUDED.fecha_fin,
-                comunicado = EXCLUDED.comunicado
-             RETURNING *`,
-            [fecha_inicio, fecha_fin, comunicado]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/confeccion/prendas', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM prendas_confeccion ORDER BY id DESC');
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/confeccion/prendas', soloAdmin, async (req, res) => {
-    const { modelo, precio, colores, tallas, imagen, imagenes } = req.body;
-    try {
-        const result = await pool.query(
-            `INSERT INTO prendas_confeccion (modelo, precio, colores, tallas, imagen, imagenes)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [
-                modelo,
-                precio,
-                JSON.stringify(colores || []),
-                JSON.stringify(tallas || []),
-                imagen || (imagenes && imagenes[0]) || '',
-                JSON.stringify(imagenes || [])
-            ]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/confeccion/prendas/:id', soloAdmin, async (req, res) => {
-    const { id } = req.params;
-    const { modelo, precio, colores, tallas, imagen, imagenes } = req.body;
-    try {
-        const result = await pool.query(
-            `UPDATE prendas_confeccion
-             SET modelo=$1, precio=$2, colores=$3, tallas=$4, imagen=$5, imagenes=$6
-             WHERE id=$7 RETURNING *`,
-            [
-                modelo,
-                precio,
-                JSON.stringify(colores || []),
-                JSON.stringify(tallas || []),
-                imagen || (imagenes && imagenes[0]) || '',
-                JSON.stringify(imagenes || []),
-                id
-            ]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/confeccion/prendas/:id', soloAdmin, async (req, res) => {
-    try {
-        await pool.query('DELETE FROM prendas_confeccion WHERE id = $1', [req.params.id]);
-        res.json({ mensaje: 'Prenda de confección eliminada' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.get('/api/confeccion/pedidos', soloAdmin, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM pedidos_confeccion ORDER BY id DESC');
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/confeccion/pedidos', async (req, res) => {
-    const { orden, fecha, modelo, color, talla, precio } = req.body;
-    try {
-        const result = await pool.query(
-            `INSERT INTO pedidos_confeccion (orden, fecha, modelo, color, talla, precio)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [orden, fecha, modelo, color, talla, precio]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/confeccion/pedidos/:id', soloAdmin, async (req, res) => {
-    try {
-        await pool.query('DELETE FROM pedidos_confeccion WHERE id = $1', [req.params.id]);
-        res.json({ mensaje: 'Pedido eliminado' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/confeccion/pedidos', soloAdmin, async (req, res) => {
-    try {
-        await pool.query('DELETE FROM pedidos_confeccion');
-        res.json({ mensaje: 'Historial de pedidos limpiado' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+}
