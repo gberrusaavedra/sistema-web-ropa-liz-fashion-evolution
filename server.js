@@ -237,7 +237,7 @@ app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
 });
 
 // =====================================================================
-// MÓDULO DE PAGO YAPE Y PLIN (VALIDACIÓN DE VOUCHERS)
+// MÓDULO DE PAGO YAPE Y PLIN (VALIDACIÓN DE VOUCHERS Y DUPLICADOS)
 // =====================================================================
 app.get('/api/pagos', soloAdmin, async (req, res) => {
     try {
