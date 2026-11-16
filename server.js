@@ -239,6 +239,19 @@ app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
 // =====================================================================
 // MÓDULO DE PAGO YAPE Y PLIN (VALIDACIÓN DE VOUCHERS Y DUPLICADOS)
 // =====================================================================
+
+// Ruta pública para que los clientes consulten sus propios pagos
+app.get('/api/pagos/cliente/:nombre', async (req, res) => {
+    const { nombre } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM pagos_yape_plin WHERE cliente ILIKE $1 ORDER BY id DESC', [nombre]);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Ruta exclusiva para el administrador (ver todos los pagos)
 app.get('/api/pagos', soloAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM pagos_yape_plin ORDER BY id DESC');
