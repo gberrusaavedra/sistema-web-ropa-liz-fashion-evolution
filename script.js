@@ -2275,3 +2275,63 @@ async function renderTablaClientPayments(nombreUsuario) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-rose-500">Error al cargar tus pagos.</td></tr>`;
     }
 }
+// =====================================================================
+// MODAL POST-AGREGAR (PAGAR O SEGUIR COMPRANDO)
+// =====================================================================
+function openPostAddModal(product) {
+    const modal = document.getElementById('postAddModal');
+    const desc = document.getElementById('postAddProductDesc');
+    if (desc) desc.textContent = `Has agregado "${product.name}" a tu bolsa de compras.`;
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+    lucide.createIcons();
+}
+
+function closePostAddModal() {
+    const modal = document.getElementById('postAddModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function goToCheckoutFromModal() {
+    closePostAddModal();
+    toggleCartDrawer(true);
+}
+
+function addToCart(productId, explicitSize = null) {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+    
+    const rawImgIdx = sliderIndexes[productId] || 0;
+    const currentImgIdx = rawImgIdx < (product.images?.length || 1) ? rawImgIdx : 0;
+    const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
+        ? product.variantDetails[currentImgIdx].stockBySize 
+        : product.stockBySize;
+
+    const size = explicitSize || state.selectedSizesPerCard[productId] || getFirstAvailableSize(product, currentImgIdx);
+    
+    let color = 'Único';
+    if (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].color) {
+        color = product.variantDetails[currentImgIdx].color;
+    } else if (product.colors && product.colors[currentImgIdx]) {
+        color = product.colors[currentImgIdx];
+    }
+
+    const availableStock = currentStockMap[size] || 0;
+    if (availableStock <= 0) return showToast('Talla agotada', 'error');
+
+    const existing = state.cart.find(i => i.productId === productId && i.size === size && i.color === color);
+    if (existing) {
+        existing.qty += 1;
+    } else {
+        state.cart.push({ productId, size, color, qty: 1 });
+    }
+    renderCart();
+    
+    // Muestra el modal con los botones de Pagar o Seguir Comprando
+    openPostAddModal(product);
+}

@@ -956,7 +956,24 @@
             </div>
         </div>
     </div>
-
+<!-- MODAL POST-AGREGAR AL CARRITO (PAGAR O SEGUIR COMPRANDO) -->
+<div id="postAddModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-200 space-y-4 modal-animate" onclick="event.stopPropagation()">
+        <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto">
+            <i data-lucide="shopping-bag" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-900">¡Prenda agregada a la bolsa!</h3>
+        <p id="postAddProductDesc" class="text-xs text-slate-600">¿Qué deseas hacer ahora?</p>
+        <div class="space-y-2 pt-2">
+            <button onclick="goToCheckoutFromModal()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2 text-xs">
+                <i data-lucide="credit-card" class="w-4 h-4"></i> Pagar / Ver Bolsa
+            </button>
+            <button onclick="closePostAddModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition cursor-pointer text-xs">
+                Seguir Comprando
+            </button>
+        </div>
+    </div>
+</div>
     <!-- Lógica unificada -->
     <script src="script.js"></script>
 </body>
