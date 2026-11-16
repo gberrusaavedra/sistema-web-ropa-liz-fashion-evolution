@@ -2116,7 +2116,6 @@ async function abrirAdminVouchersModal() {
     await renderTablaAdminVouchers();
 }
 
-// Alias requerido exactamente por el botón de administración en el HTML
 async function openAdminVouchersModal() {
     await abrirAdminVouchersModal();
 }
@@ -2182,11 +2181,30 @@ async function cambiarEstadoPago(id, estado) {
             },
             body: JSON.stringify({ estado })
         });
+
         if (res.ok) {
+            const pagoActualizado = await res.json();
             showToast(`Pago marcado como ${estado}`, 'success');
             await renderTablaAdminVouchers();
+
+            // Notificar por WhatsApp al cliente de forma automática
+            let iconoEstado = estado === 'Aprobado' ? '✅ ¡PAGO APROBADO!' : '❌ ¡PAGO RECHAZADO / OBSERVADO!';
+            let mensajeWhatsApp = `Hola *${pagoActualizado.cliente}*,\n\n` +
+                                  `Te saludamos de *LIZ FASHION EVOLUTION*.\n` +
+                                  `📌 *Estado de tu orden (${pagoActualizado.orden}):* ${iconoEstado}\n` +
+                                  `💳 *Método:* ${pagoActualizado.metodo} (S/ ${Number(pagoActualizado.total).toFixed(2)})\n\n`;
+
+            if (estado === 'Aprobado') {
+                mensajeWhatsApp += `¡Tu comprobante ha sido validado con éxito! Estamos procediendo con el despacho de tu pedido. ¡Gracias por tu compra! 🎉`;
+            } else {
+                mensajeWhatsApp += `Lamentablemente tu comprobante no pudo ser validado (imagen borrosa o monto incorrecto). Por favor, comunícate con nosotros para solucionarlo.`;
+            }
+
+            window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+        } else {
+            showToast('Error al actualizar estado', 'error');
         }
     } catch (err) {
-        showToast('Error al actualizar estado', 'error');
+        showToast('Error de conexión al actualizar estado', 'error');
     }
 }
