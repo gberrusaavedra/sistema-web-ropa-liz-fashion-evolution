@@ -1189,17 +1189,68 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // =====================================================================
-// MÓDULO DE PEDIDOS DE CONFECCIÓN, GESTIÓN DE IMÁGENES Y REPORTE
+// MÓDULO DE PEDIDOS DE CONFECCIÓN, GESTIÓN DE IMÁGENES Y REPORTE (NEON DB)
 // =====================================================================
 let tempConfeccionImagenes = [];
 const confSliderIndexes = {};
+let confeccionPrendasCache = [];
+let confeccionConfigCache = {
+    inicio: new Date().toISOString().slice(0, 16),
+    fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+    comunicado: '¡Bienvenidos a nuestra campaña de confección personalizada! Selecciona tu modelo favorito, color y talla dentro del plazo indicado.'
+};
+let confeccionPedidosCache = [];
 
-function abrirModuloConfeccion() {
+async function sincronizarDatosConfeccionDB() {
+    try {
+        const [resConfig, resPrendas] = await Promise.all([
+            fetch(`${API_URL}/confeccion/config`),
+            fetch(`${API_URL}/confeccion/prendas`)
+        ]);
+
+        if (resConfig.ok) {
+            const cfg = await resConfig.json();
+            if (cfg && cfg.fecha_inicio && cfg.fecha_fin) {
+                confeccionConfigCache = {
+                    inicio: cfg.fecha_inicio,
+                    fin: cfg.fecha_fin,
+                    comunicado: cfg.comunicado || ''
+                };
+            }
+        }
+
+        if (resPrendas.ok) {
+            const lista = await resPrendas.json();
+            if (Array.isArray(lista)) {
+                confeccionPrendasCache = lista.map(p => {
+                    const cols = typeof p.colores === 'string' ? JSON.parse(p.colores) : (p.colores || []);
+                    const tlls = typeof p.tallas === 'string' ? JSON.parse(p.tallas) : (p.tallas || []);
+                    const imgs = typeof p.imagenes === 'string' ? JSON.parse(p.imagenes) : (p.imagenes || []);
+                    return {
+                        id: p.id,
+                        modelo: p.modelo,
+                        precio: Number(p.precio),
+                        colores: cols,
+                        tallas: tlls,
+                        imagen: p.imagen || (imgs[0] || ''),
+                        imagenes: Array.isArray(imgs) && imgs.length > 0 ? imgs : (p.imagen ? [p.imagen] : [])
+                    };
+                });
+            }
+        }
+    } catch (err) {
+        console.warn('Error sincronizando módulo de confección con Neon:', err.message);
+    }
+}
+
+async function abrirModuloConfeccion() {
     const modal = document.getElementById('confeccionModal');
     if (modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         cambiarTabConfeccion('catalogo');
+        verificarPermisosAdminConfeccionTabs();
+        await sincronizarDatosConfeccionDB();
         renderizarBannerPeriodoConfeccion();
         renderCatalogoConfeccion();
         verificarPermisosAdminConfeccionTabs();
@@ -1277,8 +1328,9 @@ function togglePanelEditarFechasCatalogo(forceState = null) {
     lucide.createIcons();
 }
 
-function guardarFechasYComunicadoRapido(e) {
+async function guardarFechasYComunicadoRapido(e) {
     e.preventDefault();
+    const { token } = getSession();
     const inicio = document.getElementById('quickConfFechaInicio').value;
     const fin = document.getElementById('quickConfFechaFin').value;
     const comunicado = document.getElementById('quickConfComunicado').value.trim();
@@ -1288,26 +1340,41 @@ function guardarFechasYComunicadoRapido(e) {
         return;
     }
 
-    const nuevaConfig = {
-        inicio,
-        fin,
-        comunicado: comunicado || '¡Bienvenidos a nuestra campaña de confección personalizada! Selecciona tu modelo favorito, color y talla dentro del plazo indicado.'
-    };
-    localStorage.setItem('liz_confeccion_fechas', JSON.stringify(nuevaConfig));
+    const comunicadoFinal = comunicado || '¡Bienvenidos a nuestra campaña de confección personalizada! Selecciona tu modelo favorito, color y talla dentro del plazo indicado.';
 
-    // Sincronizar también con los inputs del formulario de registro
-    const formInicio = document.getElementById('confFechaInicio');
-    const formFin = document.getElementById('confFechaFin');
-    if (formInicio) formInicio.value = inicio;
-    if (formFin) formFin.value = fin;
+    try {
+        const res = await fetch(`${API_URL}/confeccion/config`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                fecha_inicio: inicio,
+                fecha_fin: fin,
+                comunicado: comunicadoFinal
+            })
+        });
 
-    togglePanelEditarFechasCatalogo(false);
-    renderizarBannerPeriodoConfeccion();
-    renderCatalogoConfeccion();
-    showToast('¡Fechas y Comunicado Oficial actualizados en tiempo real!', 'success');
+        if (!res.ok) throw new Error('Error al guardar en base de datos');
+
+        confeccionConfigCache = { inicio, fin, comunicado: comunicadoFinal };
+
+        const formInicio = document.getElementById('confFechaInicio');
+        const formFin = document.getElementById('confFechaFin');
+        if (formInicio) formInicio.value = inicio;
+        if (formFin) formFin.value = fin;
+
+        togglePanelEditarFechasCatalogo(false);
+        renderizarBannerPeriodoConfeccion();
+        renderCatalogoConfeccion();
+        showToast('¡Fechas y Comunicado Oficial guardados en Neon!', 'success');
+    } catch (err) {
+        showToast('Error al guardar configuración: ' + err.message, 'error');
+    }
 }
 
-function cambiarTabConfeccion(tab) {
+async function cambiarTabConfeccion(tab) {
     const secCat = document.getElementById('seccionTabCatalogo');
     const secAdm = document.getElementById('seccionTabAdmin');
     const secRep = document.getElementById('seccionTabReporte');
@@ -1342,19 +1409,13 @@ function cambiarTabConfeccion(tab) {
     } else if (tab === 'reporte') {
         secRep.classList.remove('hidden');
         if (btnRep) btnRep.className = activeTabClass;
-        renderReporteClientes();
+        await renderReporteClientes();
     }
     lucide.createIcons();
 }
 
 function obtenerConfigFechasConfeccion() {
-    const defaultConfig = {
-        inicio: new Date().toISOString().slice(0, 16),
-        fin: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-        comunicado: '¡Bienvenidos a nuestra campaña de confección personalizada! Selecciona tu modelo favorito, color y talla dentro del plazo indicado.'
-    };
-    const saved = JSON.parse(localStorage.getItem('liz_confeccion_fechas'));
-    return saved ? { ...defaultConfig, ...saved } : defaultConfig;
+    return confeccionConfigCache;
 }
 
 function renderizarBannerPeriodoConfeccion() {
@@ -1403,11 +1464,7 @@ function renderizarBannerPeriodoConfeccion() {
 }
 
 function obtenerPrendasConfeccion() {
-    const lista = JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [];
-    return lista.map(p => ({
-        ...p,
-        imagenes: Array.isArray(p.imagenes) && p.imagenes.length > 0 ? p.imagenes : (p.imagen ? [p.imagen] : [])
-    }));
+    return confeccionPrendasCache;
 }
 
 async function handleConfeccionFilesSelection(e) {
@@ -1484,15 +1541,15 @@ function resetFormAdminConfeccion() {
     renderGaleriaPreviewConfeccion();
 }
 
-function guardarPrendaConfeccion(e) {
+async function guardarPrendaConfeccion(e) {
     e.preventDefault();
+    const { token } = getSession();
     const id = document.getElementById('confPrendaId').value;
     const modelo = document.getElementById('confModelo').value.trim();
     const precio = parseFloat(document.getElementById('confPrecio').value);
     const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
     const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
 
-    // Capturar si el usuario escribió URLs en el input sin presionar "+ Agregar URL"
     const urlInput = document.getElementById('confImagenUrl');
     if (urlInput && urlInput.value.trim()) {
         const extraUrls = urlInput.value.split(',').map(u => u.trim()).filter(Boolean);
@@ -1500,50 +1557,58 @@ function guardarPrendaConfeccion(e) {
         urlInput.value = '';
     }
 
-    // Preservar comunicado actual al guardar fechas desde el formulario
     const confActual = obtenerConfigFechasConfeccion();
     const fechaInicio = document.getElementById('confFechaInicio').value;
     const fechaFin = document.getElementById('confFechaFin').value;
-    if (fechaInicio && fechaFin) {
-        localStorage.setItem('liz_confeccion_fechas', JSON.stringify({
-            ...confActual,
-            inicio: fechaInicio,
-            fin: fechaFin
-        }));
-    }
 
     const imagenesFinales = tempConfeccionImagenes.length > 0
         ? [...tempConfeccionImagenes]
         : ['https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500'];
 
-    let prendas = obtenerPrendasConfeccion();
-    if (id) {
-        prendas = prendas.map(p => p.id == id ? {
-            id: Number(id),
-            modelo,
-            precio,
-            colores,
-            tallas,
-            imagen: imagenesFinales[0],
-            imagenes: imagenesFinales
-        } : p);
-    } else {
-        const nueva = {
-            id: Date.now(),
-            modelo,
-            precio,
-            colores,
-            tallas,
-            imagen: imagenesFinales[0],
-            imagenes: imagenesFinales
-        };
-        prendas.push(nueva);
-    }
+    try {
+        if (fechaInicio && fechaFin) {
+            await fetch(`${API_URL}/confeccion/config`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    fecha_inicio: fechaInicio,
+                    fecha_fin: fechaFin,
+                    comunicado: confActual.comunicado
+                })
+            });
+        }
 
-    localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
-    showToast('¡Fechas y prenda de confección guardadas con éxito!', 'success');
-    resetFormAdminConfeccion();
-    cambiarTabConfeccion('catalogo');
+        const url = id ? `${API_URL}/confeccion/prendas/${id}` : `${API_URL}/confeccion/prendas`;
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                modelo,
+                precio,
+                colores,
+                tallas,
+                imagen: imagenesFinales[0],
+                imagenes: imagenesFinales
+            })
+        });
+
+        if (!res.ok) throw new Error('Error al guardar la prenda en Neon');
+
+        await sincronizarDatosConfeccionDB();
+        showToast('¡Fechas y prenda de confección guardadas en Neon!', 'success');
+        resetFormAdminConfeccion();
+        cambiarTabConfeccion('catalogo');
+    } catch (err) {
+        showToast('Error al guardar: ' + err.message, 'error');
+    }
 }
 
 function slideConfeccionImage(prendaId, direction) {
@@ -1673,42 +1738,67 @@ function editarPrendaConfeccion(id) {
     cambiarTabConfeccion('admin');
 }
 
-function eliminarPrendaConfeccion(id) {
-    if (confirm('¿Deseas eliminar esta prenda de confección?')) {
-        let prendas = obtenerPrendasConfeccion();
-        prendas = prendas.filter(p => p.id != id);
-        localStorage.setItem('liz_confeccion_prendas', JSON.stringify(prendas));
+async function eliminarPrendaConfeccion(id) {
+    if (!confirm('¿Deseas eliminar esta prenda de confección?')) return;
+    const { token } = getSession();
+
+    try {
+        const res = await fetch(`${API_URL}/confeccion/prendas/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('No se pudo eliminar');
+        await sincronizarDatosConfeccionDB();
         renderCatalogoConfeccion();
-        showToast('Prenda eliminada', 'warning');
+        showToast('Prenda eliminada de Neon', 'warning');
+    } catch (err) {
+        showToast('Error al eliminar: ' + err.message, 'error');
     }
 }
 
-function registrarPedidoClienteEnReporte(pedido) {
-    let historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
-    historial.unshift(pedido);
-    localStorage.setItem('liz_reporte_pedidos_confeccion', JSON.stringify(historial));
+async function registrarPedidoClienteEnReporte(pedido) {
+    try {
+        await fetch(`${API_URL}/confeccion/pedidos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pedido)
+        });
+    } catch (err) {
+        console.warn('No se pudo guardar el pedido en Neon:', err.message);
+    }
 }
 
-function renderReporteClientes() {
+async function renderReporteClientes() {
     const tbody = document.getElementById('tablaReporteClientesBody');
     if (!tbody) return;
-    const historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
+    const { token } = getSession();
 
-    if (historial.length === 0) {
+    try {
+        const res = await fetch(`${API_URL}/confeccion/pedidos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            confeccionPedidosCache = await res.json();
+        }
+    } catch (err) {
+        console.warn('Error cargando reporte:', err.message);
+    }
+
+    if (!confeccionPedidosCache || confeccionPedidosCache.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pedidos de confección registrados todavía.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = historial.map((ped, idx) => `
+    tbody.innerHTML = confeccionPedidosCache.map((ped) => `
         <tr class="hover:bg-slate-50 transition">
             <td class="p-3 font-mono font-bold text-slate-900">${ped.orden}</td>
             <td class="p-3 text-slate-600">${ped.fecha}</td>
             <td class="p-3 font-bold text-slate-800">${ped.modelo}</td>
             <td class="p-3 text-slate-600">${ped.color}</td>
             <td class="p-3 font-bold">${ped.talla}</td>
-            <td class="p-3 font-black text-rose-600">S/ ${ped.precio.toFixed(2)}</td>
+            <td class="p-3 font-black text-rose-600">S/ ${Number(ped.precio).toFixed(2)}</td>
             <td class="p-3 text-center">
-                <button onclick="eliminarItemReporte(${idx})" class="p-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg transition cursor-pointer" title="Eliminar registro">
+                <button onclick="eliminarItemReporte(${ped.id})" class="p-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white rounded-lg transition cursor-pointer" title="Eliminar registro">
                     <i class="fas fa-trash-alt text-xs"></i>
                 </button>
             </td>
@@ -1716,20 +1806,34 @@ function renderReporteClientes() {
     `).join('');
 }
 
-function limpiarReporteClientes() {
-    if (confirm('¿Estás seguro de vaciar el reporte de pedidos de clientes?')) {
-        localStorage.removeItem('liz_reporte_pedidos_confeccion');
-        renderReporteClientes();
-        showToast('Reporte limpiado', 'warning');
+async function limpiarReporteClientes() {
+    if (!confirm('¿Estás seguro de vaciar el reporte de pedidos de clientes?')) return;
+    const { token } = getSession();
+    try {
+        await fetch(`${API_URL}/confeccion/pedidos`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        confeccionPedidosCache = [];
+        await renderReporteClientes();
+        showToast('Reporte limpiado en Neon', 'warning');
+    } catch (err) {
+        showToast('Error al limpiar reporte', 'error');
     }
 }
 
-function eliminarItemReporte(index) {
-    let historial = JSON.parse(localStorage.getItem('liz_reporte_pedidos_confeccion')) || [];
-    historial.splice(index, 1);
-    localStorage.setItem('liz_reporte_pedidos_confeccion', JSON.stringify(historial));
-    renderReporteClientes();
-    showToast('Registro eliminado del reporte', 'warning');
+async function eliminarItemReporte(id) {
+    const { token } = getSession();
+    try {
+        await fetch(`${API_URL}/confeccion/pedidos/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        await renderReporteClientes();
+        showToast('Registro eliminado del reporte', 'warning');
+    } catch (err) {
+        showToast('Error al eliminar registro', 'error');
+    }
 }
 
 function consultarConfeccionWhatsApp(id) {
