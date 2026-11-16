@@ -1514,7 +1514,7 @@ function renderGaleriaPreviewConfeccion() {
 
     container.innerHTML = `
         <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[11px] font-extrabold text-slate-800">Galería (${tempConfeccionImagenes.length} foto${tempConfeccionImagenes.length > 1 ? 's' : ''}):</span>
+            <span class="text-[11px] font-extrabold text-slate-800">Galería (${tempConfeccionImagenes.length} fotos):</span>
             <span class="text-[10px] text-rose-600 font-bold">La primera imagen será la portada</span>
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
@@ -2208,6 +2208,7 @@ async function cambiarEstadoPago(id, estado) {
         showToast('Error de conexión al actualizar estado', 'error');
     }
 }
+
 // =====================================================================
 // HISTORIAL DE PAGOS Y ESTADO PARA EL CLIENTE
 // =====================================================================
@@ -2238,13 +2239,22 @@ function closeClientPaymentsModal() {
 async function renderTablaClientPayments(nombreUsuario) {
     const tbody = document.getElementById('tablaClientPaymentsBody');
     if (!tbody) return;
+    const { token } = getSession();
 
     try {
-        const res = await fetch(`${API_URL}/pagos`);
+        // Consultamos la ruta general de pagos con el token de sesión
+        const res = await fetch(`${API_URL}/pagos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!res.ok) throw new Error('Error al cargar pagos');
         const todosLosPagos = await res.json();
 
-        const pagosCliente = todosLosPagos.filter(p => p.cliente === nombreUsuario || p.cliente === 'Cliente Invitado');
+        // Si es admin mostramos todo, si es cliente filtramos por su nombre
+        const { isAdmin } = getSession();
+        const pagosCliente = isAdmin ? todosLosPagos : todosLosPagos.filter(p => 
+            p.cliente && p.cliente.toLowerCase().includes(nombreUsuario.toLowerCase()) || 
+            p.cliente === 'Cliente Invitado'
+        );
 
         if (pagosCliente.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No tienes pagos registrados con Yape o Plin todavía.</td></tr>`;
@@ -2276,5 +2286,3 @@ async function renderTablaClientPayments(nombreUsuario) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-rose-500">Error al cargar tus pagos.</td></tr>`;
     }
 }
-
-
