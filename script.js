@@ -35,12 +35,12 @@ let state = {
     selectedSizesPerCard: {},
     selectedColorsPerCard: {},
     cart: [],
-    isRegisterMode: false
+    isRegisterMode: false l
 };
 
 let tempUploadedImages = [];
 
-const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
+const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas','Blusas'];
 const SIZES = ['Todas', 'S', 'M', 'L', 'XL', 'XXL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
