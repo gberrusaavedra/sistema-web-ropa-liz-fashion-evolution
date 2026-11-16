@@ -1403,26 +1403,7 @@ function renderizarBannerPeriodoConfeccion() {
 }
 
 function obtenerPrendasConfeccion() {
-    const lista = JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [
-        {
-            id: 1,
-            modelo: 'Casaca Biker Exclusiva de Cuero Sintético',
-            precio: 149.00,
-            colores: ['Negro', 'Corinto', 'Marrón'],
-            tallas: ['S', 'M', 'L', 'XL'],
-            imagen: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500',
-            imagenes: ['https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500']
-        },
-        {
-            id: 2,
-            modelo: 'Conjunto Urbano Oversize con Capucha',
-            precio: 129.00,
-            colores: ['Beige', 'Gris', 'Negro', 'Verde Militar'],
-            tallas: ['S', 'M', 'L'],
-            imagen: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500',
-            imagenes: ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500']
-        }
-    ];
+    const lista = JSON.parse(localStorage.getItem('liz_confeccion_prendas')) || [];
     return lista.map(p => ({
         ...p,
         imagenes: Array.isArray(p.imagenes) && p.imagenes.length > 0 ? p.imagenes : (p.imagen ? [p.imagen] : [])
@@ -1589,6 +1570,15 @@ function renderCatalogoConfeccion() {
     if (!grid) return;
     const prendas = obtenerPrendasConfeccion();
     const { isAdmin } = getSession();
+
+    if (prendas.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 text-xs sm:text-sm">
+                Aún no hay modelos publicados en el catálogo de confección.
+            </div>
+        `;
+        return;
+    }
 
     const conf = obtenerConfigFechasConfeccion();
     const ahora = new Date().getTime();
