@@ -1968,3 +1968,222 @@ function descargarPDFConfeccion(id) {
     doc.save(`Orden_Confeccion_${prenda.modelo.substring(0, 10).trim()}.pdf`);
     showToast('¡PDF generado y registrado en reporte!', 'success');
 }
+// =====================================================================
+// MÓDULO DE PAGOS YAPE Y PLIN (VALIDACIÓN, DUPLICADOS Y ADMINISTRADOR)
+// =====================================================================
+let selectedPaymentMethod = 'Yape';
+let voucherBase64Temp = '';
+
+function selectPaymentMethod(method) {
+    selectedPaymentMethod = method;
+    const btnYape = document.getElementById('btnPayYape');
+    const btnPlin = document.getElementById('btnPayPlin');
+    const lbl = document.getElementById('paymentMethodLabel');
+
+    if (lbl) lbl.textContent = method;
+
+    if (method === 'Yape') {
+        if (btnYape) btnYape.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-purple-500 bg-purple-50 text-purple-700";
+        if (btnPlin) btnPlin.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-slate-200 bg-white text-slate-700";
+    } else {
+        if (btnPlin) btnPlin.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-blue-500 bg-blue-50 text-blue-700";
+        if (btnYape) btnYape.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-slate-200 bg-white text-slate-700";
+    }
+}
+
+function procederPagoYapePlin() {
+    if (state.cart.length === 0) {
+        showToast('Tu bolsa está vacía', 'warning');
+        return;
+    }
+    let total = 0;
+    state.cart.forEach(item => {
+        const p = PRODUCTS.find(prod => prod.id === item.productId);
+        if (p) total += p.salePrice * item.qty;
+    });
+
+    const titleEl = document.getElementById('voucherModalTitle');
+    const totalEl = document.getElementById('voucherTotalPagar');
+    if (titleEl) titleEl.textContent = `Validar Pago por ${selectedPaymentMethod}`;
+    if (totalEl) totalEl.textContent = `Total a Pagar: ${formatPrice(total)}`;
+    
+    const modal = document.getElementById('voucherModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeVoucherModal() {
+    const modal = document.getElementById('voucherModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+// Generar hash SHA-256 de la imagen para evitar que suban dos veces el mismo voucher
+async function generarHashImagen(base64Str) {
+    const msgBuffer = new TextEncoder().encode(base64Str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const voucherInput = document.getElementById('voucherFile');
+    if (voucherInput) {
+        voucherInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                voucherBase64Temp = evt.target.result;
+                const prev = document.getElementById('voucherPreviewImg');
+                const cont = document.getElementById('voucherPreviewContainer');
+                if (prev && cont) {
+                    prev.src = voucherBase64Temp;
+                    cont.classList.remove('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+});
+
+async function handleSubirVoucher(e) {
+    e.preventDefault();
+    if (!voucherBase64Temp) {
+        showToast('Sube la captura de tu voucher', 'error');
+        return;
+    }
+
+    let total = 0;
+    state.cart.forEach(item => {
+        const p = PRODUCTS.find(prod => prod.id === item.productId);
+        if (p) total += p.salePrice * item.qty;
+    });
+
+    const ordenCode = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const hashImagen = await generarHashImagen(voucherBase64Temp);
+    const { user } = getSession();
+
+    try {
+        const res = await fetch(`${API_URL}/pagos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orden: ordenCode,
+                cliente: user ? user.nombre : 'Cliente Invitado',
+                total,
+                metodo: selectedPaymentMethod,
+                imagen_voucher: voucherBase64Temp,
+                hash_imagen: hashImagen
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.error || 'Este comprobante ya fue utilizado anteriormente.', 'error');
+            return;
+        }
+
+        showToast('¡Voucher enviado con éxito para validación!', 'success');
+        closeVoucherModal();
+        toggleCartDrawer(false);
+
+        // Mensaje automático para WhatsApp indicando que se hizo el pago y se envía el comprobante
+        let msg = `🛍️ *NUEVO PAGO POR ${selectedPaymentMethod.toUpperCase()}* 🛍️\n`;
+        msg += `🧾 *Orden:* ${ordenCode}\n`;
+        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n`;
+        msg += `💰 *Total Pagado:* ${formatPrice(total)}\n`;
+        msg += `✅ *Estado:* Voucher subido correctamente, pendiente de validación.\n\n`;
+        msg += `¡Acabo de realizar el pago y subir mi captura para coordinar el envío!`;
+
+        state.cart = [];
+        renderCart();
+
+        window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
+    } catch (err) {
+        showToast('Error al conectar con el servidor', 'error');
+    }
+}
+
+// Funciones exclusivas del Administrador para ver y aprobar/rechazar vouchers
+async function abrirAdminVouchersModal() {
+    const modal = document.getElementById('adminVouchersModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    await renderTablaAdminVouchers();
+}
+
+function closeAdminVouchersModal() {
+    const modal = document.getElementById('adminVouchersModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function renderTablaAdminVouchers() {
+    const tbody = document.getElementById('tablaAdminVouchersBody');
+    if (!tbody) return;
+    const { token } = getSession();
+
+    try {
+        const res = await fetch(`${API_URL}/pagos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Error al cargar pagos');
+        const pagos = await res.json();
+
+        if (pagos.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No hay pagos registrados con Yape o Plin.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = pagos.map(p => `
+            <tr class="hover:bg-slate-50 transition">
+                <td class="p-3 font-mono font-bold">${p.orden}</td>
+                <td class="p-3 font-bold text-slate-800">${p.cliente}</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.metodo === 'Yape' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${p.metodo}</span></td>
+                <td class="p-3 font-black text-rose-600">S/ ${Number(p.total).toFixed(2)}</td>
+                <td class="p-3 text-center">
+                    <a href="${p.imagen_voucher}" target="_blank" class="inline-block">
+                        <img src="${p.imagen_voucher}" class="w-12 h-12 object-cover rounded-lg border hover:scale-110 transition shadow-xs" title="Ver comprobante completo">
+                    </a>
+                </td>
+                <td class="p-3 text-center">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black ${p.estado === 'Aprobado' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}">${p.estado}</span>
+                </td>
+                <td class="p-3 text-center flex items-center justify-center gap-1.5">
+                    <button onclick="cambiarEstadoPago(${p.id}, 'Aprobado')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] cursor-pointer">Aprobar</button>
+                    <button onclick="cambiarEstadoPago(${p.id}, 'Rechazado')" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-600 text-rose-700 hover:text-white font-bold rounded-lg text-[10px] cursor-pointer">Rechazar</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-500">Error al cargar la lista de pagos.</td></tr>`;
+    }
+}
+
+async function cambiarEstadoPago(id, estado) {
+    const { token } = getSession();
+    try {
+        const res = await fetch(`${API_URL}/pagos/${id}/estado`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ estado })
+        });
+        if (res.ok) {
+            showToast(`Pago marcado como ${estado}`, 'success');
+            await renderTablaAdminVouchers();
+        }
+    } catch (err) {
+        showToast('Error al actualizar estado', 'error');
+    }
+}
