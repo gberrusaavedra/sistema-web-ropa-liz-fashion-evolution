@@ -35,12 +35,12 @@ let state = {
     selectedSizesPerCard: {},
     selectedColorsPerCard: {},
     cart: [],
-    isRegisterMode: false l
+    isRegisterMode: false
 };
 
 let tempUploadedImages = [];
 
-const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas','Blusas'];
+const CATEGORIES = ['Todos', 'Polos/Camisetas', 'Blusas', 'Pantalones/Jeans', 'Casacas/Abrigos', 'Vestidos', 'Faldas'];
 const SIZES = ['Todas', 'S', 'M', 'L', 'XL', 'XXL'];
 const PROMO_TAGS = ['Todos', 'Normal', 'Remate Final', 'Oferta Flash', 'Últimas Tallas', '2x1'];
 
@@ -155,7 +155,6 @@ async function handleAuthSubmit(e) {
         showToast('No se pudo conectar con el servidor.', 'error');
     }
 }
-
 
 function loginWithSocial(provider) {
     const demoUser = {
