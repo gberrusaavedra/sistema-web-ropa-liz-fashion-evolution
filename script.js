@@ -2423,8 +2423,7 @@ function closePostAddModal() {
 function goToCheckoutFromModal() {
     closePostAddModal();
     toggleCartDrawer(true);
-} 
-
+}
 
 const cardQuantities = {};
 
@@ -2436,11 +2435,9 @@ function changeCardQty(productId, delta) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
 
-    // Obtener la variante/imagen activa
     const rawImgIdx = sliderIndexes[productId] || 0;
     const currentImgIdx = rawImgIdx < (product.images?.length || 1) ? rawImgIdx : 0;
     
-    // Obtener el stock por talla
     const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
         ? product.variantDetails[currentImgIdx].stockBySize 
         : product.stockBySize;
@@ -2454,7 +2451,6 @@ function changeCardQty(productId, delta) {
         nuevaCantidad = 1;
     }
 
-    // Validar stock disponible para el cliente
     if (nuevaCantidad > stockTallaActual) {
         showToast(`Solo quedan ${stockTallaActual} unidades disponibles en la talla ${selectedSize}`, 'warning');
         return;
@@ -2473,7 +2469,6 @@ function addToCartWithQty(productId) {
     for (let i = 0; i < qty; i++) {
         addToCart(productId);
     }
-    // Reiniciar contador de la tarjeta a 1
     cardQuantities[productId] = 1;
     const qtySpan = document.getElementById(`qty-input-${productId}`);
     if (qtySpan) {
