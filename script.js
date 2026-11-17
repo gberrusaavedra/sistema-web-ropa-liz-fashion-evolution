@@ -158,22 +158,6 @@ async function handleAuthSubmit(e) {
     }
 }
 
-function loginWithSocial(provider) {
-    const demoUser = {
-        id: Date.now(),
-        nombre: provider === 'Google' ? 'Usuario Google' : 'Usuario Facebook',
-        email: `usuario_${provider.toLowerCase()}@lizfashion.com`,
-        rol: 'cliente'
-    };
-    
-    localStorage.setItem('rs_token', 'social_token_' + Date.now());
-    localStorage.setItem('rs_usuario', JSON.stringify(demoUser));
-    closeAuthModal();
-    updateAuthUI();
-    applyFilters();
-    showToast(`¡Bienvenido a LIZ FASHION EVOLUTION con ${provider}!`, 'success');
-}
-
 function logoutUser() {
     if (confirm('¿Deseas cerrar tu sesión actual?')) {
         localStorage.removeItem('rs_token');
