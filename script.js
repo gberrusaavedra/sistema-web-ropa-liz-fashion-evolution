@@ -2500,3 +2500,39 @@ function addToCartWithQty(productId) {
         qtySpan.textContent = '1';
     }
 }
+// =====================================================================
+// CONTROL DE ANIMACIÓN VISUAL LOGIN / SIGN UP (DESLIZANTE)
+// =====================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const authContainer = document.getElementById('authContainer');
+    const overlaySignup = document.getElementById('overlaySignup');
+    const overlayLogin = document.getElementById('overlayLogin');
+    const showSignup = document.getElementById('showSignup');
+    const showLogin = document.getElementById('showLogin');
+
+    if (overlaySignup && authContainer) {
+        overlaySignup.addEventListener('click', () => {
+            authContainer.classList.add("right-panel-active");
+        });
+    }
+
+    if (showSignup && authContainer) {
+        showSignup.addEventListener('click', (e) => {
+            e.preventDefault();
+            authContainer.classList.add("right-panel-active");
+        });
+    }
+
+    if (overlayLogin && authContainer) {
+        overlayLogin.addEventListener('click', () => {
+            authContainer.classList.remove("right-panel-active");
+        });
+    }
+
+    if (showLogin && authContainer) {
+        showLogin.addEventListener('click', (e) => {
+            e.preventDefault();
+            authContainer.classList.remove("right-panel-active");
+        });
+    }
+});
