@@ -2170,7 +2170,8 @@ async function handleSubirVoucher(e) {
     const hashImagen = await generarHashImagen(voucherBase64Temp);
     const { user } = getSession();
 
- const res = await fetch(`${API_URL}/pagos`, {
+    try {
+        const res = await fetch(`${API_URL}/pagos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2205,8 +2206,10 @@ async function handleSubirVoucher(e) {
         renderCart();
 
         window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
+    } catch (err) {
+        showToast('Error al conectar con el servidor', 'error');
     }
-
+}
 async function abrirAdminVouchersModal() {
     const modal = document.getElementById('adminVouchersModal');
     if (!modal) return;
