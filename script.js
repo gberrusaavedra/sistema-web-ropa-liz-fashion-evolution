@@ -1992,7 +1992,7 @@ function selectPaymentMethod(method) {
         if (btnYape) btnYape.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-purple-500 bg-purple-50 text-purple-700";
         if (btnPlin) btnPlin.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-slate-200 bg-white text-slate-700";
         
-        if (qrImage) qrImage.src = "yape.jpg"; //[cite: 5]
+        if (qrImage) qrImage.src = "img/yape.jpg";
         if (qrLabel) {
             qrLabel.textContent = "Yape Seleccionado";
             qrLabel.className = "text-xs font-black text-purple-700 mt-2 uppercase";
@@ -2002,7 +2002,7 @@ function selectPaymentMethod(method) {
         if (btnPlin) btnPlin.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-blue-500 bg-blue-50 text-blue-700";
         if (btnYape) btnYape.className = "p-2.5 border-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer border-slate-200 bg-white text-slate-700";
         
-        if (qrImage) qrImage.src = "plin.jpg"; //[cite: 6]
+        if (qrImage) qrImage.src = "img/plin.jpg";
         if (qrLabel) {
             qrLabel.textContent = "Plin Seleccionado";
             qrLabel.className = "text-xs font-black text-blue-600 mt-2 uppercase";
