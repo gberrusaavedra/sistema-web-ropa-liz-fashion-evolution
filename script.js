@@ -719,7 +719,8 @@ function applyFilters() {
             const matchCategory = p.category.toLowerCase().includes(query);
             const matchMaterial = (p.material || '').toLowerCase().includes(query);
             const matchCode = (p.code || '').toLowerCase().includes(query);
-            if (!matchName && !matchCategory && !matchMaterial && !matchCode) return false;
+            const matchTag = (p.tag || '').toLowerCase().includes(query);
+            if (!matchName && !matchCategory && !matchMaterial && !matchCode && !matchTag) return false;
         }
         return true;
     });
