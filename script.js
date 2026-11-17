@@ -685,9 +685,21 @@ function applyFilters() {
     const sortSelect = document.getElementById('sortSelect');
     state.sortBy = sortSelect ? sortSelect.value : 'featured';
     
+    // Sincronizamos y capturamos el valor de escritorio y móvil
     const desktopInput = document.getElementById('searchInputDesktop');
     const mobileInput = document.getElementById('searchInputMobile');
-    const queryText = (desktopInput ? desktopInput.value : '') || (mobileInput ? mobileInput.value : '') || state.searchQuery || '';
+    
+    let queryText = '';
+    if (document.activeElement === desktopInput && desktopInput) {
+        queryText = desktopInput.value;
+        if (mobileInput) mobileInput.value = queryText;
+    } else if (document.activeElement === mobileInput && mobileInput) {
+        queryText = mobileInput.value;
+        if (desktopInput) desktopInput.value = queryText;
+    } else {
+        queryText = (desktopInput ? desktopInput.value : '') || (mobileInput ? mobileInput.value : '') || state.searchQuery || '';
+    }
+    
     state.searchQuery = queryText;
     const query = queryText.trim().toLowerCase();
 
@@ -706,7 +718,8 @@ function applyFilters() {
             const matchName = p.name.toLowerCase().includes(query);
             const matchCategory = p.category.toLowerCase().includes(query);
             const matchMaterial = (p.material || '').toLowerCase().includes(query);
-            if (!matchName && !matchCategory && !matchMaterial) return false;
+            const matchCode = (p.code || '').toLowerCase().includes(query);
+            if (!matchName && !matchCategory && !matchMaterial && !matchCode) return false;
         }
         return true;
     });
