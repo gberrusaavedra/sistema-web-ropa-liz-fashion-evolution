@@ -404,21 +404,29 @@ function openProductFormModal(product = null) {
     const modal = document.getElementById('productFormModal');
     if (!modal) return;
 
-    document.getElementById('formProductId').value = product ? product.id : '';
-    document.getElementById('productFormTitle').textContent = product ? 'Editar Prenda' : 'Subir Nueva Prenda';
-    document.getElementById('formName').value = product ? (product.name || '') : '';
-    document.getElementById('formCategory').value = product ? (product.category || 'Polos/Camisetas') : 'Polos/Camisetas';
-    document.getElementById('formTag').value = product ? (product.tag || 'Normal') : 'Normal';
-    document.getElementById('formSalePrice').value = product ? product.salePrice : '';
-    document.getElementById('formPrecioMayor').value = product && product.precioMayor ? product.precioMayor : '';
-    document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
-    document.getElementById('formDescription').value = product ? (product.description || '') : '';
-    document.getElementById('formMaterial').value = product ? (product.material || '') : '';
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
+
+    setVal('formProductId', product ? product.id : '');
+    
+    const titleEl = document.getElementById('productFormTitle');
+    if (titleEl) titleEl.textContent = product ? 'Editar Prenda' : 'Subir Nueva Prenda';
+
+    setVal('formName', product ? (product.name || '') : '');
+    setVal('formCategory', product ? (product.category || 'Polos/Camisetas') : 'Polos/Camisetas');
+    setVal('formTag', product ? (product.tag || 'Normal') : 'Normal');
+    setVal('formSalePrice', product ? product.salePrice : '');
+    setVal('formPrecioMayor', product && product.precioMayor ? product.precioMayor : '');
+    setVal('formRegularPrice', product ? product.regularPrice : '');
+    setVal('formDescription', product ? (product.description || '') : '');
+    setVal('formMaterial', product ? (product.material || '') : '');
     
     tempUploadedImages = product && product.images ? [...product.images] : (product ? [product.image] : []);
     renderDynamicVariantsInputs(product ? product.variantDetails : null);
 
-    document.getElementById('formImageUrl').value = product && product.images ? product.images.join(', ') : '';
+    setVal('formImageUrl', product && product.images ? product.images.join(', ') : '');
     const fileInput = document.getElementById('formImageFile');
     if (fileInput) fileInput.value = '';
 
