@@ -161,17 +161,20 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2 text-xs sm:text-sm font-extrabold">
                 <span class="bg-slate-950 text-amber-400 px-2.5 py-0.5 rounded-md uppercase text-[11px]">Modo Administrador</span>
-                <span>Puedes subir nuevas prendas, editar precios/tallas o eliminar productos del catálogo.</span>
+                <span>Puedes gestionar productos, validar pagos y revisar reportes de confección.</span>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="event.stopPropagation(); openAdminVouchersModal()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer shadow-xs">
                     <i data-lucide="smartphone" class="w-4 h-4 text-purple-300"></i> Validar Yape/Plin
                 </button>
+                <button onclick="event.stopPropagation(); abrirModuloConfeccion(); setTimeout(() => cambiarTabConfeccion('reporte'), 300);" class="bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer shadow-xs">
+                    <i data-lucide="clipboard-list" class="w-4 h-4"></i> Ver Reporte Confección
+                </button>
                 <button onclick="event.stopPropagation(); openTimerModal()" class="bg-white/90 hover:bg-white text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer shadow-xs">
-                    <i data-lucide="clock" class="w-4 h-4 text-rose-600"></i> Editar Hora Oferta
+                    <i data-lucide="clock" class="w-4 h-4 text-rose-600"></i> Editar Hora
                 </button>
                 <button onclick="openProductFormModal()" class="bg-slate-950 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i> Subir Nueva Prenda
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i> Subir Prenda
                 </button>
             </div>
         </div>
