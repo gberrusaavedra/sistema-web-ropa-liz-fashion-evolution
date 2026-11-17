@@ -164,6 +164,33 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// =====================================================================
+// RUTA DE RECUPERACIÓN DE CONTRASEÑA CON PALABRA SECRETA
+// =====================================================================
+app.post('/api/recuperar-password', async (req, res) => {
+    const { email, palabra_secreta, nueva_password } = req.body;
+    try {
+        const result = await pool.query(
+            'SELECT * FROM usuarios WHERE email = $1 AND palabra_secreta = $2',
+            [email, palabra_secreta]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(400).json({ error: 'Correo o palabra secreta incorrectos' });
+        }
+
+        await pool.query(
+            'UPDATE usuarios SET password = $1 WHERE email = $2',
+            [nueva_password, email]
+        );
+
+        res.json({ success: true, message: 'Contraseña actualizada con éxito' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error en el servidor al recuperar contraseña' });
+    }
+});
+
 app.get('/api/productos', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM productos ORDER BY id DESC');
