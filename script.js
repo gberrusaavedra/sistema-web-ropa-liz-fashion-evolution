@@ -2385,3 +2385,163 @@ function goToCheckoutFromModal() {
     closePostAddModal();
     toggleCartDrawer(true);
 }
+
+// =====================================================================
+// EXTENSIÓN: SELECTOR RÁPIDO DE TALLAS Y COLORES SIN SALIR DE LA SECCIÓN
+// =====================================================================
+let activeInlineProduct = null;
+let activeInlineColorIndex = 0;
+let activeInlineSize = 'M';
+let activeInlineQty = 1;
+
+function openInlineSelector(productId) {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+
+    activeInlineProduct = product;
+    activeInlineColorIndex = sliderIndexes[productId] || 0;
+    activeInlineSize = getFirstAvailableSize(product, activeInlineColorIndex);
+    activeInlineQty = 1;
+
+    renderInlineModalContent();
+    const modal = document.getElementById('inlineSelectorModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+    lucide.createIcons();
+}
+
+function closeInlineSelectorModal() {
+    const modal = document.getElementById('inlineSelectorModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function renderInlineModalContent() {
+    if (!activeInlineProduct) return;
+    const p = activeInlineProduct;
+    const imgs = p.images && p.images.length > 0 ? p.images : [p.image];
+    if (activeInlineColorIndex >= imgs.length) activeInlineColorIndex = 0;
+
+    const currentImg = imgs[activeInlineColorIndex];
+    const currentStockMap = (p.variantDetails && p.variantDetails[activeInlineColorIndex]) 
+        ? p.variantDetails[activeInlineColorIndex].stockBySize 
+        : p.stockBySize;
+
+    const currentSalePrice = (p.variantDetails && p.variantDetails[activeInlineColorIndex]?.salePrice) 
+        ? Number(p.variantDetails[activeInlineColorIndex].salePrice) 
+        : p.salePrice;
+
+    // Actualizar textos e imagen principal del modal
+    document.getElementById('inlineModalImg').src = currentImg;
+    document.getElementById('inlineModalCode').textContent = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
+    document.getElementById('inlineModalTitle').textContent = p.name;
+    document.getElementById('inlineModalPrice').textContent = formatPrice(currentSalePrice);
+    document.getElementById('inlineModalQty').textContent = activeInlineQty;
+
+    // Renderizar opciones de colores / imágenes
+    let allColorsList = [];
+    if (p.variantDetails && p.variantDetails.length > 0) {
+        allColorsList = p.variantDetails.map((v, idx) => ({ name: v.color || `Opción ${idx+1}`, index: idx }));
+    } else if (p.colors && p.colors.length > 0) {
+        allColorsList = p.colors.map((c, idx) => ({ name: c, index: idx }));
+    } else {
+        allColorsList = [{ name: 'Único', index: 0 }];
+    }
+
+    const colorsContainer = document.getElementById('inlineModalColorsContainer');
+    colorsContainer.innerHTML = allColorsList.map(cObj => `
+        <button type="button" onclick="selectInlineColor(${cObj.index})" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+            activeInlineColorIndex === cObj.index 
+                ? 'bg-rose-600 text-white border-rose-600 shadow-xs' 
+                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-400'
+        }">
+            🎨 <span>${cObj.name}</span>
+        </button>
+    `).join('');
+
+    // Renderizar tallas disponibles
+    const sizesContainer = document.getElementById('inlineModalSizesContainer');
+    sizesContainer.innerHTML = ['S', 'M', 'L', 'XL', 'XXL'].map(sz => {
+        const stockQty = currentStockMap[sz] || 0;
+        const isOut = stockQty <= 0;
+        const isSelected = activeInlineSize === sz && !isOut;
+        return `
+            <button type="button" ${isOut ? 'disabled' : `onclick="selectInlineSize('${sz}')"`} class="py-2 rounded-xl text-xs font-extrabold border transition flex flex-col items-center justify-center ${
+                isOut ? 'bg-slate-100 text-slate-300 border-slate-200 line-through cursor-not-allowed' :
+                isSelected ? 'bg-slate-900 text-white border-slate-900 cursor-pointer shadow-xs' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-900 cursor-pointer'
+            }">
+                <span>${sz}</span>
+                <span class="text-[9px] opacity-75">(${stockQty})</span>
+            </button>
+        `;
+    }).join('');
+
+    const stockHint = document.getElementById('inlineModalStockHint');
+    const availableForSize = currentStockMap[activeInlineSize] || 0;
+    stockHint.textContent = `Stock disponible en talla ${activeInlineSize}: ${availableForSize} und.`;
+}
+
+function selectInlineColor(idx) {
+    activeInlineColorIndex = idx;
+    if (activeInlineProduct) {
+        activeInlineSize = getFirstAvailableSize(activeInlineProduct, activeInlineColorIndex);
+    }
+    renderInlineModalContent();
+}
+
+function selectInlineSize(sz) {
+    activeInlineSize = sz;
+    renderInlineModalContent();
+}
+
+function changeInlineQty(delta) {
+    activeInlineQty += delta;
+    if (activeInlineQty < 1) activeInlineQty = 1;
+    
+    if (activeInlineProduct) {
+        const currentStockMap = (activeInlineProduct.variantDetails && activeInlineProduct.variantDetails[activeInlineColorIndex]) 
+            ? activeInlineProduct.variantDetails[activeInlineColorIndex].stockBySize 
+            : activeInlineProduct.stockBySize;
+        const maxStock = currentStockMap[activeInlineSize] || 1;
+        if (activeInlineQty > maxStock) activeInlineQty = maxStock;
+    }
+    
+    document.getElementById('inlineModalQty').textContent = activeInlineQty;
+}
+
+function confirmAddToCartFromInlineModal() {
+    if (!activeInlineProduct) return;
+    const p = activeInlineProduct;
+    
+    let colorName = 'Único';
+    if (p.variantDetails && p.variantDetails[activeInlineColorIndex]?.color) {
+        colorName = p.variantDetails[activeInlineColorIndex].color;
+    } else if (p.colors && p.colors[activeInlineColorIndex]) {
+        colorName = p.colors[activeInlineColorIndex];
+    }
+
+    const currentStockMap = (p.variantDetails && p.variantDetails[activeInlineColorIndex]) 
+        ? p.variantDetails[activeInlineColorIndex].stockBySize 
+        : p.stockBySize;
+
+    const stockAvailable = currentStockMap[activeInlineSize] || 0;
+    if (stockAvailable < activeInlineQty) {
+        showToast('No hay suficiente stock para la cantidad seleccionada', 'error');
+        return;
+    }
+
+    const existing = state.cart.find(i => i.productId === p.id && i.size === activeInlineSize && i.color === colorName);
+    if (existing) {
+        existing.qty += activeInlineQty;
+    } else {
+        state.cart.push({ productId: p.id, size: activeInlineSize, color: colorName, qty: activeInlineQty });
+    }
+
+    closeInlineSelectorModal();
+    renderCart();
+    openPostAddModal(p);
+}
