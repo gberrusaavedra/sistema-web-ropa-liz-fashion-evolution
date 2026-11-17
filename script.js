@@ -2205,10 +2205,7 @@ async function handleSubirVoucher(e) {
         renderCart();
 
         window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
-    } catch (err) {
-        showToast('Error al conectar con el servidor', 'error');
     }
-}
 
 async function abrirAdminVouchersModal() {
     const modal = document.getElementById('adminVouchersModal');
