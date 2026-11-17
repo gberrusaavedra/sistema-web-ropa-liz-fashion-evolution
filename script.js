@@ -693,7 +693,6 @@ function applyFilters() {
     const sortSelect = document.getElementById('sortSelect');
     state.sortBy = sortSelect ? sortSelect.value : 'featured';
     
-    // Sincronizamos y capturamos el valor de escritorio y móvil
     const desktopInput = document.getElementById('searchInputDesktop');
     const mobileInput = document.getElementById('searchInputMobile');
     
@@ -1003,7 +1002,6 @@ function renderCart() {
     document.getElementById('cartDrawerFooter').classList.remove('hidden');
     document.getElementById('cartSavingsBanner').classList.remove('hidden');
 
-    // 1. Agrupar y sumar unidades totales por cada producto para activar el descuento por mayor
     const cantidadesPorProducto = {};
     state.cart.forEach(item => {
         cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
@@ -1022,7 +1020,6 @@ function renderCart() {
         let precioAplicado = p.salePrice;
         let esPrecioMayor = false;
 
-        // Si lleva 3 o más unidades de este modelo (combinando tallas/colores), se aplica el precio por mayor
         if (totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR) {
             precioAplicado = p.precioMayor || (p.salePrice * 0.85);
             esPrecioMayor = true;
@@ -1317,6 +1314,7 @@ async function sincronizarDatosConfeccionDB() {
                         id: p.id,
                         modelo: p.modelo,
                         precio: Number(p.precio),
+                        precioMayor: p.precio_mayor ? Number(p.precio_mayor) : (Number(p.precio) * 0.85),
                         colores: cols,
                         tallas: tlls,
                         imagen: p.imagen || (imgs[0] || ''),
@@ -1634,6 +1632,7 @@ async function guardarPrendaConfeccion(e) {
     const id = document.getElementById('confPrendaId').value;
     const modelo = document.getElementById('confModelo').value.trim();
     const precio = parseFloat(document.getElementById('confPrecio').value);
+    const precioMayor = parseFloat(document.getElementById('confPrecioMayor').value) || (precio * 0.85);
     const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
     const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
 
@@ -1680,6 +1679,7 @@ async function guardarPrendaConfeccion(e) {
             body: JSON.stringify({
                 modelo,
                 precio,
+                precio_mayor: precioMayor,
                 colores,
                 tallas,
                 imagen: imagenesFinales[0],
@@ -1770,7 +1770,10 @@ function renderCatalogoConfeccion() {
                     ` : ''}
 
                     <h5 class="font-bold text-slate-900 text-sm mb-1">${p.modelo}</h5>
-                    <p class="text-rose-600 font-black text-lg mb-3">S/ ${p.precio.toFixed(2)}</p>
+                    <div class="mb-3">
+                        <p class="text-rose-600 font-black text-lg">S/ ${p.precio.toFixed(2)}</p>
+                        ${p.precioMayor ? `<span class="text-[11px] font-bold text-emerald-600">Por mayor (3+ unds): S/ ${p.precioMayor.toFixed(2)}</span>` : ''}
+                    </div>
                     
                     <div class="space-y-2 mb-3">
                         <div>
@@ -1817,6 +1820,7 @@ function editarPrendaConfeccion(id) {
     document.getElementById('confPrendaId').value = p.id;
     document.getElementById('confModelo').value = p.modelo;
     document.getElementById('confPrecio').value = p.precio;
+    document.getElementById('confPrecioMayor').value = p.precioMayor || '';
     document.getElementById('confColores').value = p.colores.join(', ');
     document.getElementById('confTallas').value = p.tallas.join(', ');
     document.getElementById('confImagenUrl').value = '';
@@ -2323,7 +2327,6 @@ async function cambiarEstadoPago(id, estado) {
                 mensajeWhatsApp += `Lamentablemente tu comprobante no pudo ser validado (imagen borrosa o monto incorrecto). Por favor, comunícate con nosotros para solucionarlo.`;
             }
 
-            // Intentar obtener el teléfono del cliente registrado o pedirlo si no existe
             let telefonoCliente = pagoActualizado.telefono || '';
 
             if (!telefonoCliente || telefonoCliente.trim() === '') {
