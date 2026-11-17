@@ -2407,10 +2407,37 @@ function changeCardQty(productId, delta) {
     if (!cardQuantities[productId]) {
         cardQuantities[productId] = 1;
     }
-    cardQuantities[productId] += delta;
-    if (cardQuantities[productId] < 1) {
-        cardQuantities[productId] = 1;
+
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+
+    // Obtener la imagen / color activo actual
+    const rawImgIdx = sliderIndexes[productId] || 0;
+    const currentImgIdx = rawImgIdx < (product.images?.length || 1) ? rawImgIdx : 0;
+    
+    // Obtener el mapa de stock por talla según la variante activa
+    const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
+        ? product.variantDetails[currentImgIdx].stockBySize 
+        : product.stockBySize;
+
+    // Obtener la talla seleccionada actualmente en la tarjeta
+    const selectedSize = state.selectedSizesPerCard[productId] || getFirstAvailableSize(product, currentImgIdx);
+    const stockTallaActual = currentStockMap[selectedSize] || 0;
+
+    let nuevaCantidad = cardQuantities[productId] + delta;
+
+    // Validar que no baje de 1
+    if (nuevaCantidad < 1) {
+        nuevaCantidad = 1;
     }
+
+    // Validar que no supere el stock disponible para esa talla y color
+    if (nuevaCantidad > stockTallaActual) {
+        showToast(`Solo hay ${stockTallaActual} unidades disponibles en la talla ${selectedSize}`, 'warning');
+        return; // Detiene el incremento y no permite subir más
+    }
+
+    cardQuantities[productId] = nuevaCantidad;
     
     const qtySpan = document.getElementById(`qty-input-${productId}`);
     if (qtySpan) {
