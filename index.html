@@ -811,7 +811,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE MÓDULO DE CONFECCIÓN Y REPORTE -->
+  <!-- MODAL DE MÓDULO DE CONFECCIÓN Y REPORTE -->
     <div id="confeccionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
         <div class="bg-[#FDFBF7] w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-8">
             
@@ -830,7 +830,7 @@
                 <button onclick="cerrarModuloConfeccion()" class="relative z-10 w-9 h-9 rounded-full bg-white/10 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center text-xl font-bold transition-colors cursor-pointer">&times;</button>
             </div>
 
-            <!-- Pestañas de Navegación del Modal (Visible para Admin / Clientes) -->
+            <!-- Pestañas de Navegación del Modal y Botón de Bolsa de Confección Consolidada -->
             <div class="bg-white px-6 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-2">
                     <button onclick="cambiarTabConfeccion('catalogo')" id="tabBtnCatalogo" class="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition cursor-pointer">
@@ -843,7 +843,16 @@
                         <i class="fas fa-clipboard-list text-rose-600"></i> Reporte de Clientes / Pedidos
                     </button>
                 </div>
-                <span id="badgeRolConfeccion" class="text-xs font-extrabold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">Vista Cliente</span>
+
+                <div class="flex items-center gap-2">
+                    <span id="badgeRolConfeccion" class="text-xs font-extrabold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">Vista Cliente</span>
+                    <!-- Botón para ver y enviar de forma consolidada las prendas agregadas sin salir -->
+                    <button onclick="abrirBolsaConfeccion()" class="relative flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs transition shadow-sm cursor-pointer">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Bolsa Confección</span>
+                        <span id="badgeBolsaConfeccion" class="bg-white text-rose-600 text-[10px] font-black px-1.5 py-0.2 rounded-full">0</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Contenido de las Secciones -->
@@ -863,7 +872,6 @@
                             </div>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <!-- Botón exclusivo para el Administrador justo antes del estado -->
                             <button id="btnEditarFechasCatalogoAdmin" onclick="togglePanelEditarFechasCatalogo()" class="hidden px-3.5 py-1.5 bg-slate-900 hover:bg-rose-600 text-white font-bold rounded-xl text-xs shadow-sm transition items-center gap-1.5 cursor-pointer">
                                 <i data-lucide="calendar-cog" class="w-3.5 h-3.5 text-amber-400"></i> Editar Fechas / Comunicado
                             </button>
@@ -873,7 +881,7 @@
                         </div>
                     </div>
 
-                    <!-- Panel Desplegable Exclusivo Administrador para Editar Fechas y Comunicado en Tiempo Real -->
+                    <!-- Panel Desplegable Exclusivo Administrador -->
                     <div id="panelEditarFechasCatalogo" class="hidden bg-white border-2 border-slate-900 rounded-2xl p-5 shadow-lg space-y-3.5">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                             <h5 class="font-black text-slate-900 text-xs sm:text-sm flex items-center gap-2">
@@ -887,24 +895,24 @@
                         <form onsubmit="guardarFechasYComunicadoRapido(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
                             <div>
                                 <label class="block font-bold text-slate-700 mb-1">📅 Fecha y Hora de Inicio *</label>
-                                <input type="datetime-local" id="quickConfFechaInicio" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white font-semibold text-slate-900 transition">
+                                <input type="datetime-local" id="quickConfFechaInicio" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 font-semibold text-slate-900 transition">
                             </div>
                             <div>
                                 <label class="block font-bold text-slate-700 mb-1">⏰ Fecha y Hora de Término *</label>
-                                <input type="datetime-local" id="quickConfFechaFin" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white font-semibold text-slate-900 transition">
+                                <input type="datetime-local" id="quickConfFechaFin" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 font-semibold text-slate-900 transition">
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="block font-bold text-slate-700 mb-1">📢 Comunicado / Aviso Oficial para los Clientes</label>
-                                <textarea id="quickConfComunicado" rows="2" placeholder="Escribe aquí el comunicado oficial que verán todos los clientes..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white font-medium text-slate-800 transition"></textarea>
+                                <textarea id="quickConfComunicado" rows="2" placeholder="Escribe aquí el comunicado oficial..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 font-medium text-slate-800 transition"></textarea>
                             </div>
                             <div class="sm:col-span-2 flex justify-end gap-2 pt-1">
                                 <button type="button" onclick="togglePanelEditarFechasCatalogo(false)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer transition">Cancelar</button>
-                                <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm shadow-rose-600/20 cursor-pointer transition">Guardar Cambios</button>
+                                <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm cursor-pointer transition">Guardar Cambios</button>
                             </div>
                         </form>
                     </div>
 
-                    <!-- Cuadro de Comunicado Oficial Visible para Todos los Clientes -->
+                    <!-- Cuadro de Comunicado Oficial -->
                     <div id="cuadroComunicadoOficial" class="bg-slate-900 text-white border border-slate-800 rounded-2xl p-4 shadow-sm flex items-start gap-3.5 relative overflow-hidden">
                         <div class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
                             <i data-lucide="megaphone" class="w-4 h-4"></i>
@@ -931,52 +939,51 @@
                         <h4 class="font-black text-slate-900 text-lg mb-1 flex items-center gap-2">
                             <i class="fas fa-image text-rose-600"></i> Registrar o Editar Prenda de Confección con Imagen
                         </h4>
-                        <p class="text-xs text-slate-500 mb-4">Sube múltiples fotos desde tu dispositivo o ingresa enlaces separados por coma. Define colores, tallas y precio base.</p>
+                        <p class="text-xs text-slate-500 mb-4">Sube múltiples fotos desde tu dispositivo o ingresa enlaces separados por coma.</p>
                         
                         <form id="formAdminConfeccion" onsubmit="guardarPrendaConfeccion(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <input type="hidden" id="confPrendaId">
                             
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Nombre / Modelo de la Prenda *</label>
-                                <input type="text" id="confModelo" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white transition" placeholder="Ej. Casaca Biker Exclusiva">
+                                <input type="text" id="confModelo" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 transition" placeholder="Ej. Casaca Biker Exclusiva">
                             </div>
 
                             <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Precio Base (S/) *</label>
-                    <input type="number" step="0.01" id="confPrecio" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white transition" placeholder="149.00">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-emerald-700 mb-1">Precio x Mayor (S/)</label>
-                    <input type="number" step="0.01" id="confPrecioMayor" class="w-full p-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white transition font-bold text-emerald-800" placeholder="Ej. 120.00">
-                </div>
-            </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Precio Base (S/) *</label>
+                                    <input type="number" step="0.01" id="confPrecio" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 transition" placeholder="149.00">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-emerald-700 mb-1">Precio x Mayor (S/)</label>
+                                    <input type="number" step="0.01" id="confPrecioMayor" class="w-full p-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl outline-none focus:border-rose-500 transition font-bold text-emerald-800" placeholder="Ej. 120.00">
+                                </div>
+                            </div>
+
+                            <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Colores Disponibles (separados por coma)</label>
-                                <input type="text" id="confColores" value="Negro, Corinto, Beige, Azul Marino" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white transition">
+                                <input type="text" id="confColores" value="Negro, Corinto, Beige, Azul Marino" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 transition">
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Tallas Disponibles</label>
-                                <input type="text" id="confTallas" value="S, M, L, XL" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white transition">
+                                <input type="text" id="confTallas" value="S, M, L, XL" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-rose-500 transition">
                             </div>
 
                             <div class="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
-                                <label class="block text-xs font-bold text-slate-800">Imágenes de la Prenda (Sube varias fotos o pega enlaces separados por coma)</label>
-                                <input type="file" id="confImagenFile" accept="image/*" multiple class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 cursor-pointer">
+                                <label class="block text-xs font-bold text-slate-800">Imágenes de la Prenda (Sube varias fotos o enlaces)</label>
+                                <input type="file" id="confImagenFile" accept="image/*" multiple class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 cursor-pointer">
                                 <div class="flex gap-2">
-                                    <input type="text" id="confImagenUrl" placeholder="O pega enlaces separados por coma https://..., https://..." class="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-rose-500">
+                                    <input type="text" id="confImagenUrl" placeholder="O pega enlaces separados por coma https://..." class="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-rose-500">
                                     <button type="button" onclick="agregarEnlacesConfeccion()" class="px-4 py-2 bg-slate-900 hover:bg-rose-600 text-white font-bold rounded-xl text-xs shrink-0 cursor-pointer transition">
                                         + Agregar URL
                                     </button>
                                 </div>
-
-                                <!-- Galería de Vista Previa con Botón Individual para Eliminar -->
                                 <div id="confGaleriaPreviewContainer" class="pt-1">
                                     <div class="text-[11px] text-slate-400 italic">No hay imágenes cargadas todavía.</div>
                                 </div>
                             </div>
 
-                            <!-- Configuración de Fechas de Confección (Editable Admin) -->
                             <div class="md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1">📅 Fecha y Hora de Inicio *</label>
@@ -990,7 +997,7 @@
 
                             <div class="md:col-span-2 flex justify-end gap-2 pt-2">
                                 <button type="button" onclick="resetFormAdminConfeccion(); cambiarTabConfeccion('catalogo')" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer transition">Cancelar</button>
-                                <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md shadow-rose-600/20 cursor-pointer transition">Guardar y Publicar Prenda</button>
+                                <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs shadow-md cursor-pointer transition">Guardar y Publicar Prenda</button>
                             </div>
                         </form>
                     </div>
@@ -1011,7 +1018,7 @@
                     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-xs">
-                               <thead>
+                                <thead>
                                     <tr class="bg-slate-900 text-white font-bold">
                                         <th class="p-3">N° Orden</th>
                                         <th class="p-3">Fecha / Hora</th>
@@ -1022,14 +1029,51 @@
                                         <th class="p-3 text-center">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tablaReporteClientesBody" class="divide-y divide-slate-100">
-                                    <!-- Dinámico por JS -->
-                                </tbody>
+                                <tbody id="tablaReporteClientesBody" class="divide-y divide-slate-100"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BOLSA DE CONFECCIÓN CONSOLIDADA (Múltiples prendas acumuladas) -->
+    <div id="bolsaConfeccionModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 p-6 space-y-4 my-auto relative">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-slate-900 text-base">Bolsa de Confección Consolidada</h3>
+                        <p class="text-xs text-slate-500" id="subtituloBolsaConf">0 prendas acumuladas</p>
+                    </div>
+                </div>
+                <button onclick="cerrarBolsaConfeccion()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer font-bold">✕</button>
+            </div>
+
+            <!-- Listado de prendas agregadas consecutivamente -->
+            <div id="listaBolsaConfeccionItems" class="max-h-[45vh] overflow-y-auto space-y-3 pr-1">
+                <!-- Dinámico por JS -->
+            </div>
+
+            <div class="border-t border-slate-200 pt-3 space-y-3">
+                <div class="flex justify-between items-center text-sm font-black text-slate-900">
+                    <span>Total Estimado Confección:</span>
+                    <span id="totalBolsaConfeccion" class="text-rose-600 text-lg">S/ 0.00</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <button onclick="enviarBolsaConfeccionWhatsApp()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md">
+                        <i class="fab fa-whatsapp text-sm"></i> Enviar Pedido Consolidado (WhatsApp)
+                    </button>
+                    <button onclick="generarPDFBolsaConfeccionConsolidada()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md">
+                        <i class="fas fa-file-pdf text-rose-400"></i> Descargar Orden PDF Consolidada
+                    </button>
+                </div>
             </div>
         </div>
     </div>

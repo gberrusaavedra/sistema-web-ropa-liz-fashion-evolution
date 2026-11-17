@@ -2580,3 +2580,221 @@ async function recuperarPasswordNeon(email, palabra_secreta, nueva_password) {
         showToast('Error de conexión con el servidor', 'error');
     }
 }
+
+
+// =====================================================================
+// BOLSA DE CONFECCIÓN CONSOLIDADA (AÑADIR MÚLTIPLES PRENDAS SIN SALIR)
+// =====================================================================
+let bolsaConfeccionItems = [];
+
+function agregarPrendaBolsaConfeccion(id) {
+    const conf = obtenerConfigFechasConfeccion();
+    const ahora = new Date().getTime();
+    if (ahora > new Date(conf.fin).getTime() || ahora < new Date(conf.inicio).getTime()) {
+        showToast('El plazo para realizar pedidos de confección ha finalizado.', 'error');
+        return;
+    }
+
+    const prendas = obtenerPrendasConfeccion();
+    const prenda = prendas.find(p => p.id == id);
+    if (!prenda) return;
+
+    const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
+    const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
+
+    bolsaConfeccionItems.push({
+        id: prenda.id,
+        modelo: prenda.modelo,
+        color: colorSeleccionado,
+        talla: tallaSeleccionada,
+        precio: prenda.precio,
+        imagen: prenda.imagenes && prenda.imagenes.length > 0 ? prenda.imagenes[0] : prenda.imagen
+    });
+
+    actualizarBadgeBolsaConfeccion();
+    showToast(`¡"${prenda.modelo}" (${colorSeleccionado} - Talla ${tallaSeleccionada}) agregada a la bolsa!`, 'success');
+}
+
+function actualizarBadgeBolsaConfeccion() {
+    const badge = document.getElementById('badgeBolsaConfeccion');
+    if (badge) badge.textContent = bolsaConfeccionItems.length;
+}
+
+function abrirBolsaConfeccion() {
+    renderizarBolsaConfeccionItems();
+    const modal = document.getElementById('bolsaConfeccionModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function cerrarBolsaConfeccion() {
+    const modal = document.getElementById('bolsaConfeccionModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function renderizarBolsaConfeccionItems() {
+    const container = document.getElementById('listaBolsaConfeccionItems');
+    const subtitulo = document.getElementById('subtituloBolsaConf');
+    const totalSpan = document.getElementById('totalBolsaConfeccion');
+    if (!container) return;
+
+    subtitulo.textContent = `${bolsaConfeccionItems.length} prenda(s) acumulada(s)`;
+
+    if (bolsaConfeccionItems.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">No has agregado ninguna prenda de confección todavía. Sigue explorando el catálogo.</div>`;
+        if (totalSpan) totalSpan.textContent = 'S/ 0.00';
+        return;
+    }
+
+    let total = 0;
+    container.innerHTML = bolsaConfeccionItems.map((item, idx) => {
+        total += item.precio;
+        return `
+            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <img src="${item.imagen}" class="w-14 h-16 object-cover rounded-xl border shrink-0" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Prenda'">
+                <div class="flex-1">
+                    <h5 class="font-bold text-slate-900 text-xs">${item.modelo}</h5>
+                    <span class="text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600 font-semibold inline-block mt-0.5">Color: ${item.color} | Talla: ${item.talla}</span>
+                    <p class="text-xs font-black text-rose-600 mt-1">S/ ${item.precio.toFixed(2)}</p>
+                </div>
+                <button onclick="bolsaConfeccionItems.splice(${idx}, 1); actualizarBadgeBolsaConfeccion(); renderizarBolsaConfeccionItems();" class="p-2 text-slate-400 hover:text-rose-600 cursor-pointer transition" title="Quitar prenda">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+
+    if (totalSpan) totalSpan.textContent = `S/ ${total.toFixed(2)}`;
+}
+
+function enviarBolsaConfeccionWhatsApp() {
+    if (bolsaConfeccionItems.length === 0) {
+        showToast('Tu bolsa de confección está vacía', 'warning');
+        return;
+    }
+
+    const nroOrden = `CONF-LIZ-${Math.floor(100000 + Math.random() * 900000)}`;
+    const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
+    let total = 0;
+
+    let mensaje = `🔥 *PEDIDO CONSOLIDADO DE CONFECCIÓN* 🔥\n`;
+    mensaje += `🧾 *N° Orden:* ${nroOrden}\n`;
+    mensaje += `📅 *Fecha:* ${fechaActual}\n\n`;
+
+    bolsaConfeccionItems.forEach((item, index) => {
+        total += item.precio;
+        mensaje + `${index + 1}. *${item.modelo}*\n`;
+        mensaje += `   • Color: *${item.color}* | Talla: *${item.talla}*\n`;
+        mensaje += `   • Precio: S/ ${item.precio.toFixed(2)}\n\n`;
+
+        // Registrar en el reporte de la base de datos Neon de forma automática
+        registrarPedidoClienteEnReporte({
+            orden: `${nroOrden}-${index + 1}`,
+            fecha: fechaActual,
+            modelo: item.modelo,
+            color: item.color,
+            talla: item.talla,
+            precio: item.precio
+        });
+    });
+
+    mensaje += `💰 *TOTAL CONSOLIDADO: S/ ${total.toFixed(2)}*\n\n`;
+    mensaje += `¡Hola! Acabo de acumular estas prendas en mi bolsa de confección. Quedo a la espera de las coordinaciones de pago y envío.`;
+
+    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    
+    bolsaConfeccionItems = [];
+    actualizarBadgeBolsaConfeccion();
+    cerrarBolsaConfeccion();
+    showToast('¡Pedido consolidado enviado por WhatsApp y registrado!', 'success');
+}
+
+function generarPDFBolsaConfeccionConsolidada() {
+    if (bolsaConfeccionItems.length === 0) {
+        showToast('Tu bolsa de confección está vacía', 'warning');
+        return;
+    }
+
+    if (typeof window.jspdf === 'undefined' && typeof jsPDF === 'undefined') {
+        alert('Librería jsPDF no detectada.');
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const nroOrden = `CONF-LIZ-${Math.floor(100000 + Math.random() * 900000)}`;
+    const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
+
+    // Cabecera PDF
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 210, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LIZ FASHION EVOLUTION', 15, 22);
+    
+    doc.setFontSize(9);
+    doc.text('ORDEN CONSOLIDADA DE CONFECCIÓN', 120, 22);
+
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
+    doc.text(`Fecha: ${fechaActual}`, 15, 45);
+    doc.text(`N° de Orden: ${nroOrden}`, 135, 45);
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 50, 195, 50);
+
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalle de las Prendas Acumuladas:', 15, 60);
+
+    let yPos = 70;
+    let totalGeneral = 0;
+
+    bolsaConfeccionItems.forEach((item, index) => {
+        totalGeneral += item.precio;
+        if (yPos > 260) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${index + 1}. Modelo: ${item.modelo}`, 15, yPos);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(`   • Color: ${item.color}   |   Talla: ${item.talla}`, 15, yPos + 6);
+        doc.text(`   • Precio: S/ ${item.precio.toFixed(2)}`, 15, yPos + 12);
+
+        registrarPedidoClienteEnReporte({
+            orden: `${nroOrden}-${index + 1}`,
+            fecha: fechaActual,
+            modelo: item.modelo,
+            color: item.color,
+            talla: item.talla,
+            precio: item.precio
+        });
+
+        yPos += 22;
+    });
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, yPos + 2, 195, yPos + 2);
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total a Pagar: S/ ${totalGeneral.toFixed(2)}`, 135, yPos + 12);
+
+    doc.save(`Orden_Consolidada_Confeccion_${nroOrden}.pdf`);
+    
+    bolsaConfeccionItems = [];
+    actualizarBadgeBolsaConfeccion();
+    cerrarBolsaConfeccion();
+    showToast('¡PDF consolidado generado con éxito!', 'success');
+}
