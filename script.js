@@ -116,9 +116,13 @@ function closeAuthModal() {
 function toggleAuthMode() {
     state.isRegisterMode = !state.isRegisterMode;
     document.getElementById('authModalTitle').textContent = state.isRegisterMode ? 'Crear Cuenta Cliente' : 'Iniciar Sesión';
-    document.getElementById('authModalSubtitle').textContent = state.isRegisterMode ? 'Regístrate para guardar tus pedidos' : 'Ingresa como Administrador o Cliente';
+    document.getElementById('authModalSubtitle').textContent = state.isRegisterMode ? 'Regístrate para guardar tus pedidos y facilitar tus compras' : 'Ingresa como Administrador o Cliente';
+    
+    // Mostrar u ocultar campos adicionales de registro
     document.getElementById('authNameGroup').classList.toggle('hidden', !state.isRegisterMode);
+    document.getElementById('authPhoneGroup').classList.toggle('hidden', !state.isRegisterMode);
     document.getElementById('authSecretGroup').classList.toggle('hidden', !state.isRegisterMode);
+    
     document.getElementById('authSubmitBtn').textContent = state.isRegisterMode ? 'Registrarme' : 'Entrar Ahora';
     document.getElementById('authToggleBtn').textContent = state.isRegisterMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿Eres cliente nuevo? Crea tu cuenta aquí';
 }
@@ -128,10 +132,11 @@ async function handleAuthSubmit(e) {
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
     const nombre = document.getElementById('authName').value.trim();
+    const telefono = document.getElementById('authPhone') ? document.getElementById('authPhone').value.trim() : '';
     const palabra_secreta = document.getElementById('authSecret').value.trim();
 
     const endpoint = state.isRegisterMode ? '/registro' : '/login';
-    const payload = state.isRegisterMode ? { nombre, email, password, palabra_secreta } : { email, password };
+    const payload = state.isRegisterMode ? { nombre, email, password, telefono, palabra_secreta } : { email, password };
 
     try {
         const res = await fetch(API_URL + endpoint, {
@@ -2296,7 +2301,26 @@ async function cambiarEstadoPago(id, estado) {
                 mensajeWhatsApp += `Lamentablemente tu comprobante no pudo ser validado (imagen borrosa o monto incorrecto). Por favor, comunícate con nosotros para solucionarlo.`;
             }
 
-            window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+            // Intentar obtener el teléfono del cliente registrado o pedirlo si no existe
+            let telefonoCliente = pagoActualizado.telefono || '';
+
+            if (!telefonoCliente || telefonoCliente.trim() === '') {
+                telefonoCliente = prompt(
+                    `El pago de ${pagoActualizado.cliente} fue marcado como ${estado}.\nNo se encontró un número registrado. Ingresa su WhatsApp:`, 
+                    "9"
+                );
+            }
+
+            if (telefonoCliente && telefonoCliente.trim() !== '') {
+                let numeroLimpio = telefonoCliente.trim().replace(/\s+/g, '');
+                if (!numeroLimpio.startsWith('51') && numeroLimpio.length === 9) {
+                    numeroLimpio = '51' + numeroLimpio;
+                }
+                window.open(`https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+            } else {
+                showToast('Estado actualizado, pero no se abrió WhatsApp por falta de número.', 'warning');
+            }
+
         } else {
             showToast('Error al actualizar estado', 'error');
         }
@@ -2304,6 +2328,7 @@ async function cambiarEstadoPago(id, estado) {
         showToast('Error de conexión al actualizar estado', 'error');
     }
 }
+
 
 // =====================================================================
 // HISTORIAL DE PAGOS Y ESTADO PARA EL CLIENTE
