@@ -25,6 +25,7 @@ async function initDB() {
             nombre VARCHAR(100) NOT NULL,
             email VARCHAR(150) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
+            telefono VARCHAR(20),
             palabra_secreta VARCHAR(100) NOT NULL,
             rol VARCHAR(20) DEFAULT 'cliente' CHECK (rol IN ('admin', 'cliente')),
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -96,9 +97,10 @@ async function initDB() {
         );
     `);
 
-    // Asegurar compatibilidad si la tabla ya existía sin la columna precio_mayor
+    // Asegurar compatibilidad si la tabla ya existía sin la columna precio_mayor o teléfono
     await pool.query(`
         ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
+        ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
     `);
 
     await pool.query(`
@@ -132,11 +134,11 @@ function soloAdmin(req, res, next) {
 app.get('/', (req, res) => res.send('API REMATE STYLE activa'));
 
 app.post('/api/registro', async (req, res) => {
-    const { nombre, email, password, palabra_secreta } = req.body;
+    const { nombre, email, password, telefono, palabra_secreta } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol',
-            [nombre, email, password, palabra_secreta, 'cliente']
+            'INSERT INTO usuarios (nombre, email, password, telefono, palabra_secreta, rol) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, nombre, email, telefono, rol',
+            [nombre, email, password, telefono || '', palabra_secreta, 'cliente']
         );
         const user = result.rows[0];
         const token = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
@@ -154,7 +156,7 @@ app.post('/api/login', async (req, res) => {
 
         const user = result.rows[0];
         const token = jwt.sign({ id: user.id, rol: user.rol, nombre: user.nombre }, SECRET_KEY, { expiresIn: '24h' });
-        res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol } });
+        res.json({ token, usuario: { id: user.id, nombre: user.nombre, email: user.email, telefono: user.telefono, rol: user.rol } });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
