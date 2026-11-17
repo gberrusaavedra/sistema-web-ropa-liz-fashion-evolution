@@ -1803,12 +1803,15 @@ function renderCatalogoConfeccion() {
                             ⛔ Plazo de pedidos culminado
                         </div>
                     ` : `
-                        <button onclick="descargarPDFConfeccion(${p.id})" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
-                            <i class="fas fa-file-pdf text-rose-400"></i> Descargar Orden PDF
-                        </button>
-                        <button onclick="consultarConfeccionWhatsApp(${p.id})" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
-                            <i class="fab fa-whatsapp"></i> Separar por WhatsApp
-                        </button>
+                       <button onclick="agregarPrendaBolsaConfeccion(${p.id})" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fas fa-shopping-bag"></i> Agregar a Bolsa Confección
+                    </button>
+                    <button onclick="descargarPDFConfeccion(${p.id})" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fas fa-file-pdf text-rose-400"></i> Descargar Orden PDF
+                    </button>
+                    <button onclick="consultarConfeccionWhatsApp(${p.id})" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fab fa-whatsapp"></i> Separar por WhatsApp
+                    </button>
                     `}
 
                     ${isAdmin ? `
