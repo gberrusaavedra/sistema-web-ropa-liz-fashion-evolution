@@ -352,3 +352,47 @@
 .auth-container.right-panel-active .overlay-right {
     transform: translateX(20%);
 }
+/* ==========================================================================
+   ADAPTABILIDAD MÓVIL Y TABLET PARA EL MODAL DE AUTENTICACIÓN
+   ========================================================================== */
+@media (max-width: 768px) {
+    .auth-container {
+        width: 100% !important;
+        min-height: 520px !important;
+        flex-direction: column !important;
+        border-radius: 16px !important;
+        margin: 10px auto !important;
+    }
+
+    .form-container {
+        width: 100% !important;
+        height: 100% !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+    }
+
+    .form-container form {
+        padding: 20px 20px !important;
+        justify-content: center !important;
+    }
+
+    /* Ocultamos el panel deslizante lateral en móviles para priorizar la usabilidad y los inputs */
+    .overlay-container {
+        display: none !important;
+    }
+
+    /* Ajuste de contenedores al alternar con JS en pantallas pequeñas */
+    .auth-container.right-panel-active .login-container {
+        transform: translateX(0) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    .auth-container.right-panel-active .sign-up-container {
+        transform: translateX(0) !important;
+        opacity: 1 !important;
+        z-index: 10 !important;
+        pointer-events: auto !important;
+    }
+}
