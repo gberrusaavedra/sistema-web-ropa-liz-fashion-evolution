@@ -1024,13 +1024,19 @@ function renderCart() {
         const code = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         regTotal += p.regularPrice * item.qty;
 
+      // Sumar la cantidad total acumulada de este mismo producto en el carrito
+        const totalQtyForProduct = state.cart
+            .filter(i => i.productId === item.productId)
+            .reduce((sum, i) => sum + i.qty, 0);
+
         let precioEfectivo = p.salePrice;
         let esPrecioMayorAplicado = false;
-        if (p.precioMayor && item.qty >= (p.minMayorQty || 3)) {
+
+        // Si el total de unidades de este producto alcanza el mínimo (ej. 3+), aplica precio por mayor
+        if (p.precioMayor && totalQtyForProduct >= (p.minMayorQty || 3)) {
             precioEfectivo = p.precioMayor;
             esPrecioMayorAplicado = true;
         }
-
         saleTotal += precioEfectivo * item.qty;
 
         return `
@@ -2536,7 +2542,7 @@ function confirmAddToCartFromInlineModal() {
 
     const currentStockMap = (p.variantDetails && p.variantDetails[activeInlineColorIndex]) 
         ? p.variantDetails[activeInlineColorIndex].stockBySize 
-        : p.variantDetails[activeInlineColorIndex] || p.stockBySize;
+        : p.stockBySize;
 
     const stockAvailable = currentStockMap[activeInlineSize] || 0;
     if (stockAvailable < activeInlineQty) {
@@ -2555,6 +2561,6 @@ function confirmAddToCartFromInlineModal() {
     // Actualizar el carrito visualmente de inmediato
     renderCart();
     
-    // Mostrar notificación de éxito pero mantener la ventana abierta para seguir eligiendo más colores/tallas
+    // Mostrar notificación de éxito manteniendo la ventana abierta para seguir eligiendo
     showToast(`¡Agregado! (${activeInlineQty}x - Talla ${activeInlineSize} - ${colorName})`, 'success');
 }
