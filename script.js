@@ -2,8 +2,8 @@
 // 1. CONFIGURACIÓN GLOBAL Y CONEXIÓN A RENDER / NEON
 // =====================================================================
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
-const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
-const WHATSAPP_PHONE = "931598799";
+const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.[cite: 1]
+const WHATSAPP_PHONE = "931598799";[cite: 1]
 
 let PRODUCTS = [
     {
