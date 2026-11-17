@@ -137,14 +137,24 @@ function toggleAuthMode() {
 
 async function handleAuthSubmit(e) {
     e.preventDefault();
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value.trim();
-    const nombre = document.getElementById('authName').value.trim();
-    const telefono = document.getElementById('authPhone') ? document.getElementById('authPhone').value.trim() : '';
-    const palabra_secreta = document.getElementById('authSecret').value.trim();
+    
+    // Identificamos si el submit viene del formulario de registro o de login
+    const isSignup = e.target.id === 'signupForm';
 
-    const endpoint = state.isRegisterMode ? '/registro' : '/login';
-    const payload = state.isRegisterMode ? { nombre, email, password, telefono, palabra_secreta } : { email, password };
+    const emailInput = document.getElementById(isSignup ? 'signupEmail' : 'loginUser');
+    const passwordInput = document.getElementById(isSignup ? 'signupPassword' : 'loginPassword');
+    const nameInput = document.getElementById('signupUser');
+    const phoneInput = document.getElementById('signupPhone');
+
+    const email = emailInput ? emailInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value.trim() : '';
+    const nombre = nameInput ? nameInput.value.trim() : '';
+    const telefono = phoneInput ? phoneInput.value.trim() : '';
+
+    const endpoint = isSignup ? '/registro' : '/login';
+    const payload = isSignup 
+        ? { nombre, email, password, telefono, palabra_secreta: 'piura2026' } 
+        : { email, password };
 
     try {
         const res = await fetch(API_URL + endpoint, {
@@ -2500,9 +2510,6 @@ function addToCartWithQty(productId) {
         qtySpan.textContent = '1';
     }
 }
-// =====================================================================
-// CONTROL DE ANIMACIÓN VISUAL LOGIN / SIGN UP (DESLIZANTE)
-// =====================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const authContainer = document.getElementById('authContainer');
     const overlaySignup = document.getElementById('overlaySignup');
