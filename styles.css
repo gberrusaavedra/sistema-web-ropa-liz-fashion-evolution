@@ -358,7 +358,8 @@
 @media (max-width: 768px) {
     .auth-container {
         width: 100% !important;
-        min-height: 520px !important;
+        max-width: 95vw !important;
+        min-height: 480px !important;
         flex-direction: column !important;
         border-radius: 16px !important;
         margin: 10px auto !important;
@@ -370,6 +371,7 @@
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
+        transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out !important;
     }
 
     .form-container form {
@@ -377,22 +379,37 @@
         justify-content: center !important;
     }
 
-    /* Ocultamos el panel deslizante lateral en móviles para priorizar la usabilidad y los inputs */
+    /* Ocultamos el panel lateral deslizante en celulares y tablets pequeñas */
     .overlay-container {
         display: none !important;
     }
 
-    /* Ajuste de contenedores al alternar con JS en pantallas pequeñas */
-    .auth-container.right-panel-active .login-container {
+    /* Control de visibilidad al alternar entre Iniciar Sesión y Registro en móvil */
+    .auth-container .login-container {
+        opacity: 1 !important;
+        z-index: 2 !important;
+        pointer-events: auto !important;
         transform: translateX(0) !important;
+    }
+
+    .auth-container .sign-up-container {
         opacity: 0 !important;
+        z-index: 1 !important;
         pointer-events: none !important;
+        transform: translateX(0) !important;
+    }
+
+    .auth-container.right-panel-active .login-container {
+        opacity: 0 !important;
+        z-index: 1 !important;
+        pointer-events: none !important;
+        transform: translateX(0) !important;
     }
 
     .auth-container.right-panel-active .sign-up-container {
-        transform: translateX(0) !important;
         opacity: 1 !important;
-        z-index: 10 !important;
+        z-index: 5 !important;
         pointer-events: auto !important;
+        transform: translateX(0) !important;
     }
 }
