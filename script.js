@@ -9,21 +9,20 @@ const MIN_UNIDADES_MAYOR = 3; // Mínimo de unidades para activar el descuento p
 let PRODUCTS = [
     {
         id: 1,
-        name: "Casaca Bomber Impermeable Urbana",
-        category: "Casacas/Abrigos",
+        name: "Polo Manga 3/4",
+        category: "Polos/Manga 3/4",
         tag: "Remate Final",
-        regularPrice: 189.90,
-        salePrice: 56.90,
-        precioMayor: 45.00, // Precio por mayor opcional por producto
+        regularPrice: 38.00,
+        salePrice: 25.00,
+        precioMayor: 20.00,
         image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
         images: [
-            "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
-            "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80"
+            "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80"
         ],
-        stockBySize: { S: 1, M: 2, L: 0, XL: 1, XXL: 0 },
-        maxInitialStock: 15,
-        material: "100% Poliéster repelente al agua con forro térmico acolchado.",
-        description: "Casaca ligera cortavientos ideal para media estación. Corte slim fit con cierres metálicos reforzados."
+        stockBySize: { S: 0, M: 0, L: 3, XL: 1, XXL: 0 },
+        maxInitialStock: 10,
+        material: "Algodón reactivo de exportación.",
+        description: "Polo manga 3/4 con lazo y diseño exclusivo."
     }
 ];
 
@@ -239,7 +238,7 @@ async function fetchProductsFromDB() {
                     tag: p.etiqueta || 'Remate Final',
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
-                    precioMayor: p.precio_mayor ? Number(p.precio_mayor) : (Number(p.precio_remate) * 0.85), // 15% menos por mayor por defecto si no se especifica
+                    precioMayor: p.precio_mayor ? Number(p.precio_mayor) : (Number(p.precio_remate) * 0.85),
                     image: parsedImages[0],
                     images: parsedImages,
                     variantDetails: parsedVariants,
@@ -411,6 +410,7 @@ function openProductFormModal(product = null) {
     document.getElementById('formCategory').value = product ? (product.category || 'Polos/Camisetas') : 'Polos/Camisetas';
     document.getElementById('formTag').value = product ? (product.tag || 'Normal') : 'Normal';
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
+    document.getElementById('formPrecioMayor').value = product && product.precioMayor ? product.precioMayor : '';
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
     document.getElementById('formDescription').value = product ? (product.description || '') : '';
     document.getElementById('formMaterial').value = product ? (product.material || '') : '';
@@ -499,6 +499,7 @@ async function handleSaveProduct(e) {
 
     const tagVal = document.getElementById('formTag').value;
     const baseSalePrice = parseFloat(document.getElementById('formSalePrice').value) || 0;
+    const precioMayorVal = parseFloat(document.getElementById('formPrecioMayor').value) || (baseSalePrice * 0.85);
     const regularPriceVal = tagVal === 'Normal' ? baseSalePrice : (parseFloat(document.getElementById('formRegularPrice').value) || baseSalePrice);
 
     const payload = {
@@ -506,6 +507,7 @@ async function handleSaveProduct(e) {
         categoria: document.getElementById('formCategory').value,
         etiqueta: tagVal,
         precio_remate: baseSalePrice,
+        precio_mayor: precioMayorVal,
         precio_original: regularPriceVal,
         stock_by_size: aggregatedStock,
         variant_details: variantDetails,
@@ -799,9 +801,13 @@ function renderProductGrid(productsList) {
                         <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2">${product.name}</h3>
                     </div>
                    ${product.description ? `<p class="text-xs text-slate-600 mt-1 mb-2">${product.description}</p>` : ''}
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(currentSalePrice)}</span>
-                        ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
+                    
+                    <div class="flex flex-col">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(currentSalePrice)}</span>
+                            ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
+                        </div>
+                        ${product.precioMayor ? `<span class="text-[11px] font-bold text-emerald-600">Por mayor (3+ unds): ${formatPrice(product.precioMayor)}</span>` : ''}
                     </div>
 
                     <div class="space-y-1">
@@ -933,8 +939,6 @@ function addToCart(productId, explicitSize = null) {
         state.cart.push({ productId, size, color, qty: 1 });
     }
     renderCart();
-    
-    // Muestra el modal con los botones de Pagar o Seguir Comprando
     openPostAddModal(product);
 }
 
@@ -955,7 +959,7 @@ function renderCart() {
     document.getElementById('cartDrawerFooter').classList.remove('hidden');
     document.getElementById('cartSavingsBanner').classList.remove('hidden');
 
-    // 1. Agrupar y sumar cantidades totales por cada ID de producto (independiente de tallas y colores)
+    // 1. Agrupar y sumar unidades totales por cada producto para activar el descuento por mayor
     const cantidadesPorProducto = {};
     state.cart.forEach(item => {
         cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
@@ -970,13 +974,13 @@ function renderCart() {
         
         regTotal += p.regularPrice * item.qty;
 
-        // 2. Verificar si el total de unidades de este producto en el carrito alcanza el mínimo por mayor (>= 3)
         const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
         let precioAplicado = p.salePrice;
         let esPrecioMayor = false;
 
+        // Si lleva 3 o más unidades de este modelo (combinando tallas/colores), se aplica el precio por mayor
         if (totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR) {
-            precioAplicado = p.precioMayor || (p.salePrice * 0.85); // Aplica precio por mayor
+            precioAplicado = p.precioMayor || (p.salePrice * 0.85);
             esPrecioMayor = true;
         }
 
@@ -991,8 +995,8 @@ function renderCart() {
                     <span class="text-[11px] bg-slate-100 px-2 py-0.5 rounded font-bold inline-block mt-0.5">Color: ${item.color || 'Único'} | Talla: ${item.size} | Cant: ${item.qty}</span>
                     
                     ${esPrecioMayor 
-                        ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Descuento por mayor aplicado (Llevas ${totalUnidadesEsteProducto} unds en total)!</span>` 
-                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${MIN_UNIDADES_MAYOR - totalUnidadesEsteProducto} unds más de este modelo (cualquier talla/color) para activar precio por mayor</span>`
+                        ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Descuento por mayor aplicado (Llevas ${totalUnidadesEsteProducto} unds)!</span>` 
+                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${MIN_UNIDADES_MAYOR - totalUnidadesEsteProducto} unds más de este modelo para activar precio por mayor</span>`
                     }
 
                     <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(precioAplicado * item.qty)} ${esPrecioMayor ? '<span class="text-[10px] font-bold text-rose-500">(Precio Mayor)</span>' : ''}</div>
@@ -1022,7 +1026,6 @@ function sendOrderToWhatsApp() {
     msg += `🧾 *Código de Orden:* ${orderCode}\n\n`;
     let total = 0;
     
-    // Calcular agrupados para el mensaje de WhatsApp también
     const cantidadesPorProducto = {};
     state.cart.forEach(item => {
         cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
@@ -2056,7 +2059,6 @@ function procederPagoYapePlin() {
         return;
     }
     
-    // Calcular el total considerando si aplica precio por mayor (>= 3 unidades por producto)
     const cantidadesPorProducto = {};
     state.cart.forEach(item => {
         cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
@@ -2265,7 +2267,6 @@ async function cambiarEstadoPago(id, estado) {
             showToast(`Pago marcado como ${estado}`, 'success');
             await renderTablaAdminVouchers();
 
-            // Notificar por WhatsApp al cliente de forma automática al aprobar o rechazar
             let iconoEstado = estado === 'Aprobado' ? '✅ ¡PAGO APROBADO!' : '❌ ¡PAGO RECHAZADO / OBSERVADO!';
             let mensajeWhatsApp = `Hola *${pagoActualizado.cliente}*,\n\n` +
                                   `Te saludamos de *LIZ FASHION EVOLUTION*.\n` +
@@ -2355,7 +2356,7 @@ async function renderTablaClientPayments(nombreUsuario) {
 }
 
 // =====================================================================
-// EXTENSIÓN: MODAL POST-AGREGAR AL CARRITO (PAGAR O SEGUIR COMPRANDO)
+// EXTENSIÓN: MODAL POST-AGREGAR AL CARRITO (PAGAR OR SEGUIR COMPRANDO)
 // =====================================================================
 function openPostAddModal(product) {
     const modal = document.getElementById('postAddModal');

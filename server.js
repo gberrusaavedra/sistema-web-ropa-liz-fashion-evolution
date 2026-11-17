@@ -37,6 +37,7 @@ async function initDB() {
             etiqueta VARCHAR(50) DEFAULT 'Remate Final',
             precio_remate NUMERIC(10, 2) NOT NULL,
             precio_original NUMERIC(10, 2) NOT NULL,
+            precio_mayor NUMERIC(10, 2) DEFAULT 0.00,
             stock_by_size JSONB NOT NULL,
             porcentaje_vendido INTEGER DEFAULT 35,
             material TEXT,
@@ -93,6 +94,11 @@ async function initDB() {
             estado VARCHAR(20) DEFAULT 'Pendiente',
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+    `);
+
+    // Asegurar compatibilidad si la tabla ya existía sin la columna precio_mayor
+    await pool.query(`
+        ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
     `);
 
     await pool.query(`
@@ -164,13 +170,13 @@ app.get('/api/productos', async (req, res) => {
 });
 
 app.post('/api/productos', soloAdmin, async (req, res) => {
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
             [
-                titulo, categoria, etiqueta, precio_remate, precio_original, 
+                titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0,
                 JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
                 JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
                 JSON.stringify(imagenes || [imagen_url]),
@@ -185,12 +191,12 @@ app.post('/api/productos', soloAdmin, async (req, res) => {
 
 app.put('/api/productos/:id', soloAdmin, async (req, res) => {
     const { id } = req.params;
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
     try {
         const result = await pool.query(
-            `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, stock_by_size=$6, porcentaje_vendido=$7, material=$8, descripcion=$9, imagen_url=$10, colores=$11, imagenes=$12, variant_details=$13 WHERE id=$14 RETURNING *`,
+            `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, precio_mayor=$6, stock_by_size=$7, porcentaje_vendido=$8, material=$9, descripcion=$10, imagen_url=$11, colores=$12, imagenes=$13, variant_details=$14 WHERE id=$15 RETURNING *`,
             [
-                titulo, categoria, etiqueta, precio_remate, precio_original, 
+                titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0,
                 JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
                 JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
                 JSON.stringify(imagenes || [imagen_url]),
@@ -240,7 +246,6 @@ app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
 // MÓDULO DE PAGO YAPE Y PLIN (VALIDACIÓN DE VOUCHERS Y DUPLICADOS)
 // =====================================================================
 
-// Ruta pública para que los clientes consulten sus propios pagos
 app.get('/api/pagos/cliente/:nombre', async (req, res) => {
     const { nombre } = req.params;
     try {
@@ -251,7 +256,6 @@ app.get('/api/pagos/cliente/:nombre', async (req, res) => {
     }
 });
 
-// Ruta exclusiva para el administrador (ver todos los pagos)
 app.get('/api/pagos', soloAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM pagos_yape_plin ORDER BY id DESC');
