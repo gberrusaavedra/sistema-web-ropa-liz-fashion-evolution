@@ -2,8 +2,8 @@
 // 1. CONFIGURACIÓN GLOBAL Y CONEXIÓN A RENDER / NEON
 // =====================================================================
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
-const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.[cite: 1]
-const WHATSAPP_PHONE = "931598799";[cite: 1]
+const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
+const WHATSAPP_PHONE = "931598799";
 
 let PRODUCTS = [
     {
@@ -156,6 +156,22 @@ async function handleAuthSubmit(e) {
     } catch (err) {
         showToast('No se pudo conectar con el servidor.', 'error');
     }
+}
+
+function loginWithSocial(provider) {
+    const demoUser = {
+        id: Date.now(),
+        nombre: provider === 'Google' ? 'Usuario Google' : 'Usuario Facebook',
+        email: `usuario_${provider.toLowerCase()}@lizfashion.com`,
+        rol: 'cliente'
+    };
+    
+    localStorage.setItem('rs_token', 'social_token_' + Date.now());
+    localStorage.setItem('rs_usuario', JSON.stringify(demoUser));
+    closeAuthModal();
+    updateAuthUI();
+    applyFilters();
+    showToast(`¡Bienvenido a LIZ FASHION EVOLUTION con ${provider}!`, 'success');
 }
 
 function logoutUser() {
