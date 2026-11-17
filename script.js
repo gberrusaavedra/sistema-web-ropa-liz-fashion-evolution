@@ -2277,3 +2277,31 @@ async function renderTablaClientPayments(nombreUsuario) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-rose-500">Error al cargar tus pagos.</td></tr>`;
     }
 }
+
+// =====================================================================
+// EXTENSIÓN: MODAL POST-AGREGAR AL CARRITO (PAGAR O SEGUIR COMPRANDO)
+// =====================================================================
+function openPostAddModal(product) {
+    const modal = document.getElementById('postAddModal');
+    const desc = document.getElementById('postAddProductDesc');
+    if (desc) {
+        desc.textContent = `Has agregado "${product.name}" a tu bolsa. ¿Qué deseas hacer ahora?`;
+    }
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closePostAddModal() {
+    const modal = document.getElementById('postAddModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function goToCheckoutFromModal() {
+    closePostAddModal();
+    toggleCartDrawer(true);
+}
