@@ -2170,13 +2170,13 @@ async function handleSubirVoucher(e) {
     const hashImagen = await generarHashImagen(voucherBase64Temp);
     const { user } = getSession();
 
-    try {
-        const res = await fetch(`${API_URL}/pagos`, {
+ const res = await fetch(`${API_URL}/pagos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 orden: ordenCode,
                 cliente: user ? user.nombre : 'Cliente Invitado',
+                telefono: user ? (user.telefono || '') : '',
                 total,
                 metodo: selectedPaymentMethod,
                 imagen_voucher: voucherBase64Temp,

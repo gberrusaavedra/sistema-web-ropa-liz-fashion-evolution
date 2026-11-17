@@ -88,6 +88,7 @@ async function initDB() {
             id SERIAL PRIMARY KEY,
             orden VARCHAR(50) NOT NULL,
             cliente VARCHAR(150),
+            telefono VARCHAR(20),
             total NUMERIC(10, 2) NOT NULL,
             metodo VARCHAR(20) NOT NULL,
             imagen_voucher TEXT NOT NULL,
@@ -97,10 +98,11 @@ async function initDB() {
         );
     `);
 
-    // Asegurar compatibilidad si la tabla ya existía sin la columna precio_mayor o teléfono
+    // Asegurar compatibilidad si las tablas ya existían sin las columnas nuevas
     await pool.query(`
         ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
         ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
+        ALTER TABLE pagos_yape_plin ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
     `);
 
     await pool.query(`
@@ -260,7 +262,13 @@ app.get('/api/pagos/cliente/:nombre', async (req, res) => {
 
 app.get('/api/pagos', soloAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM pagos_yape_plin ORDER BY id DESC');
+        const query = `
+            SELECT p.*, COALESCE(p.telefono, u.telefono) as telefono 
+            FROM pagos_yape_plin p
+            LEFT JOIN usuarios u ON LOWER(TRIM(p.cliente)) = LOWER(TRIM(u.nombre))
+            ORDER BY p.id DESC
+        `;
+        const result = await pool.query(query);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -268,7 +276,7 @@ app.get('/api/pagos', soloAdmin, async (req, res) => {
 });
 
 app.post('/api/pagos', async (req, res) => {
-    const { orden, cliente, total, metodo, imagen_voucher, hash_imagen } = req.body;
+    const { orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen } = req.body;
     try {
         const check = await pool.query('SELECT id FROM pagos_yape_plin WHERE hash_imagen = $1', [hash_imagen]);
         if (check.rows.length > 0) {
@@ -276,9 +284,9 @@ app.post('/api/pagos', async (req, res) => {
         }
 
         const result = await pool.query(
-            `INSERT INTO pagos_yape_plin (orden, cliente, total, metodo, imagen_voucher, hash_imagen)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [orden, cliente || 'Cliente Web', total, metodo, imagen_voucher, hash_imagen]
+            `INSERT INTO pagos_yape_plin (orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [orden, cliente || 'Cliente Web', telefono || '', total, metodo, imagen_voucher, hash_imagen]
         );
         res.json(result.rows[0]);
     } catch (err) {
