@@ -119,9 +119,17 @@ function toggleAuthMode() {
     document.getElementById('authModalSubtitle').textContent = state.isRegisterMode ? 'Regístrate para guardar tus pedidos y facilitar tus compras' : 'Ingresa como Administrador o Cliente';
     
     // Mostrar u ocultar campos adicionales de registro
+    const phoneGroup = document.getElementById('authPhoneGroup');
+    const phoneInput = document.getElementById('authPhone');
+    
+    phoneGroup.classList.toggle('hidden', !state.isRegisterMode);
     document.getElementById('authNameGroup').classList.toggle('hidden', !state.isRegisterMode);
-    document.getElementById('authPhoneGroup').classList.toggle('hidden', !state.isRegisterMode);
     document.getElementById('authSecretGroup').classList.toggle('hidden', !state.isRegisterMode);
+    
+    // Evita que el navegador bloquee el inicio de sesión exigiendo un campo oculto
+    if (phoneInput) {
+        phoneInput.required = state.isRegisterMode;
+    }
     
     document.getElementById('authSubmitBtn').textContent = state.isRegisterMode ? 'Registrarme' : 'Entrar Ahora';
     document.getElementById('authToggleBtn').textContent = state.isRegisterMode ? '¿Ya tienes cuenta? Inicia sesión' : '¿Eres cliente nuevo? Crea tu cuenta aquí';
