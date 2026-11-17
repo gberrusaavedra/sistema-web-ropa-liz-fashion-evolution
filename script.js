@@ -2543,3 +2543,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// =====================================================================
+// RECUPERACIÓN DE CONTRASEÑA CON PALABRA SECRETA
+// =====================================================================
+function openForgotPasswordModal(e) {
+    e.preventDefault();
+    const email = prompt("Ingresa tu correo electrónico registrado:");
+    if (!email) return;
+
+    const palabraSecreta = prompt("Ingresa tu palabra secreta de recuperación (ej. piura2026):");
+    if (!palabraSecreta) return;
+
+    const nuevaPassword = prompt("Ingresa tu nueva contraseña:");
+    if (!nuevaPassword) return;
+
+    recuperarPasswordNeon(email.trim(), palabraSecreta.trim(), nuevaPassword.trim());
+}
+
+async function recuperarPasswordNeon(email, palabra_secreta, nueva_password) {
+    try {
+        const res = await fetch(`${API_URL}/recuperar-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, palabra_secreta, nueva_password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            showToast(data.error || 'No se pudo recuperar la contraseña', 'error');
+            return;
+        }
+
+        showToast('¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.', 'success');
+    } catch (err) {
+        showToast('Error de conexión con el servidor', 'error');
+    }
+}
