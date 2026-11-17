@@ -4,6 +4,7 @@
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
 const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
 const WHATSAPP_PHONE = "931598799";
+const MIN_UNIDADES_MAYOR = 3; // Mínimo de unidades para activar el descuento por mayor
 
 let PRODUCTS = [
     {
@@ -13,6 +14,7 @@ let PRODUCTS = [
         tag: "Remate Final",
         regularPrice: 189.90,
         salePrice: 56.90,
+        precioMayor: 45.00, // Precio por mayor opcional por producto
         image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
         images: [
             "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
@@ -237,6 +239,7 @@ async function fetchProductsFromDB() {
                     tag: p.etiqueta || 'Remate Final',
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
+                    precioMayor: p.precio_mayor ? Number(p.precio_mayor) : (Number(p.precio_remate) * 0.85), // 15% menos por mayor por defecto si no se especifica
                     image: parsedImages[0],
                     images: parsedImages,
                     variantDetails: parsedVariants,
@@ -952,21 +955,47 @@ function renderCart() {
     document.getElementById('cartDrawerFooter').classList.remove('hidden');
     document.getElementById('cartSavingsBanner').classList.remove('hidden');
 
+    // 1. Agrupar y sumar cantidades totales por cada ID de producto (independiente de tallas y colores)
+    const cantidadesPorProducto = {};
+    state.cart.forEach(item => {
+        cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
+    });
+
     let regTotal = 0, saleTotal = 0;
+
     container.innerHTML = state.cart.map((item, idx) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (!p) return '';
         const code = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
+        
         regTotal += p.regularPrice * item.qty;
-        saleTotal += p.salePrice * item.qty;
+
+        // 2. Verificar si el total de unidades de este producto en el carrito alcanza el mínimo por mayor (>= 3)
+        const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
+        let precioAplicado = p.salePrice;
+        let esPrecioMayor = false;
+
+        if (totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR) {
+            precioAplicado = p.precioMayor || (p.salePrice * 0.85); // Aplica precio por mayor
+            esPrecioMayor = true;
+        }
+
+        saleTotal += precioAplicado * item.qty;
+
         return `
-            <div class="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200">
+            <div class="flex gap-3 bg-white p-3 rounded-2xl border ${esPrecioMayor ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'}">
                 <img src="${p.image}" class="w-16 h-20 object-cover rounded-xl">
                 <div class="flex-1">
                     <span class="text-[10px] font-black text-slate-500 uppercase">CÓD: ${code}</span>
                     <h4 class="font-bold text-xs text-slate-900">${p.name}</h4>
                     <span class="text-[11px] bg-slate-100 px-2 py-0.5 rounded font-bold inline-block mt-0.5">Color: ${item.color || 'Único'} | Talla: ${item.size} | Cant: ${item.qty}</span>
-                    <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(p.salePrice * item.qty)}</div>
+                    
+                    ${esPrecioMayor 
+                        ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Descuento por mayor aplicado (Llevas ${totalUnidadesEsteProducto} unds en total)!</span>` 
+                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${MIN_UNIDADES_MAYOR - totalUnidadesEsteProducto} unds más de este modelo (cualquier talla/color) para activar precio por mayor</span>`
+                    }
+
+                    <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(precioAplicado * item.qty)} ${esPrecioMayor ? '<span class="text-[10px] font-bold text-rose-500">(Precio Mayor)</span>' : ''}</div>
                 </div>
                 <button onclick="state.cart.splice(${idx},1); renderCart();" class="text-slate-400 hover:text-rose-600 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
@@ -992,13 +1021,23 @@ function sendOrderToWhatsApp() {
     let msg = `🔥 *PEDIDO LIZ FASHION EVOLUTION* 🔥\n`;
     msg += `🧾 *Código de Orden:* ${orderCode}\n\n`;
     let total = 0;
+    
+    // Calcular agrupados para el mensaje de WhatsApp también
+    const cantidadesPorProducto = {};
+    state.cart.forEach(item => {
+        cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
+    });
+
     state.cart.forEach((item, i) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
-        total += p.salePrice * item.qty;
+        const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
+        let precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
+        
+        total += precioAplicado * item.qty;
         msg += `${i + 1}. *[${prodCode}] ${p.name}*\n`;
         msg += `   • Color: *${item.color || 'Único'}* | Talla: *${item.size}* | Cant: *${item.qty}*\n`;
-        msg += `   • Subtotal: ${formatPrice(p.salePrice * item.qty)}\n`;
+        msg += `   • Subtotal: ${formatPrice(precioAplicado * item.qty)} ${totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? '(Precio Mayor)' : ''}\n`;
     });
     msg += `\n💰 *TOTAL: ${formatPrice(total)}*`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -2016,10 +2055,21 @@ function procederPagoYapePlin() {
         showToast('Tu bolsa está vacía', 'warning');
         return;
     }
+    
+    // Calcular el total considerando si aplica precio por mayor (>= 3 unidades por producto)
+    const cantidadesPorProducto = {};
+    state.cart.forEach(item => {
+        cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
+    });
+
     let total = 0;
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
-        if (p) total += p.salePrice * item.qty;
+        if (p) {
+            const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
+            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
+            total += precioAplicado * item.qty;
+        }
     });
 
     const titleEl = document.getElementById('voucherModalTitle');
@@ -2077,10 +2127,19 @@ async function handleSubirVoucher(e) {
         return;
     }
 
+    const cantidadesPorProducto = {};
+    state.cart.forEach(item => {
+        cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
+    });
+
     let total = 0;
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
-        if (p) total += p.salePrice * item.qty;
+        if (p) {
+            const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
+            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
+            total += precioAplicado * item.qty;
+        }
     });
 
     const ordenCode = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
