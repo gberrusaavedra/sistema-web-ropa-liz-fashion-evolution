@@ -887,14 +887,24 @@ function renderProductGrid(productsList) {
                             <button type="button" onclick="changeCardQty(${product.id}, -1)" class="px-2.5 py-2 text-slate-600 hover:bg-slate-200 font-bold text-xs cursor-pointer">-</button>
                             <span id="qty-val-${product.id}" class="px-2.5 text-xs font-extrabold text-slate-900">${currentQty}</span>
                             <button type="button" onclick="changeCardQty(${product.id}, 1)" class="px-2.5 py-2 text-slate-600 hover:bg-slate-200 font-bold text-xs cursor-pointer">+</button>
-                       <!-- Botón Tallas/Color para elegir sin salir -->
-<button onclick="openInlineSelector(${product.id})" class="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1" title="Elegir talla o color sin salir">
-    <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Tallas/Color
-</button>
+                       
 
-<button onclick="addToCartWithQuantity(${product.id})" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
-    <i data-lucide="shopping-bag" class="w-4 h-4"></i> Agregar
-</button>
+
+
+                           <!-- Botón Tallas/Color para elegir sin salir -->
+        <button onclick="openInlineSelector(${product.id})" class="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-3 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1" title="Elegir talla o color sin salir">
+            <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Tallas/Color
+        </button>
+
+        <button onclick="addToCartWithQuantity(${product.id})" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="shopping-bag" class="w-4 h-4"></i> Agregar
+        </button>
+        <button onclick="inquireSingleProductWhatsApp(${product.id})" class="p-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 rounded-xl transition-colors cursor-pointer" title="Consultar por WhatsApp">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+        </button>
+
+
+
 
                     ${isAdmin ? `
                         <div class="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2">
@@ -2526,7 +2536,7 @@ function confirmAddToCartFromInlineModal() {
 
     const currentStockMap = (p.variantDetails && p.variantDetails[activeInlineColorIndex]) 
         ? p.variantDetails[activeInlineColorIndex].stockBySize 
-        : p.stockBySize;
+        : p.variantDetails[activeInlineColorIndex] || p.stockBySize;
 
     const stockAvailable = currentStockMap[activeInlineSize] || 0;
     if (stockAvailable < activeInlineQty) {
@@ -2534,6 +2544,7 @@ function confirmAddToCartFromInlineModal() {
         return;
     }
 
+    // Guardar o acumular la combinación seleccionada en la bolsa
     const existing = state.cart.find(i => i.productId === p.id && i.size === activeInlineSize && i.color === colorName);
     if (existing) {
         existing.qty += activeInlineQty;
@@ -2541,7 +2552,9 @@ function confirmAddToCartFromInlineModal() {
         state.cart.push({ productId: p.id, size: activeInlineSize, color: colorName, qty: activeInlineQty });
     }
 
-    closeInlineSelectorModal();
+    // Actualizar el carrito visualmente de inmediato
     renderCart();
-    openPostAddModal(p);
+    
+    // Mostrar notificación de éxito pero mantener la ventana abierta para seguir eligiendo más colores/tallas
+    showToast(`¡Agregado! (${activeInlineQty}x - Talla ${activeInlineSize} - ${colorName})`, 'success');
 }
