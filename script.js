@@ -13,6 +13,8 @@ let PRODUCTS = [
         tag: "Remate Final",
         regularPrice: 189.90,
         salePrice: 56.90,
+        precioMayor: 48.00,
+        minMayorQty: 3,
         image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
         images: [
             "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
@@ -237,6 +239,8 @@ async function fetchProductsFromDB() {
                     tag: p.etiqueta || 'Remate Final',
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
+                    precioMayor: p.precio_mayor ? Number(p.precio_mayor) : null,
+                    minMayorQty: p.min_mayor_qty ? Number(p.min_mayor_qty) : 3,
                     image: parsedImages[0],
                     images: parsedImages,
                     variantDetails: parsedVariants,
@@ -408,6 +412,8 @@ function openProductFormModal(product = null) {
     document.getElementById('formCategory').value = product ? (product.category || 'Polos/Camisetas') : 'Polos/Camisetas';
     document.getElementById('formTag').value = product ? (product.tag || 'Normal') : 'Normal';
     document.getElementById('formSalePrice').value = product ? product.salePrice : '';
+    document.getElementById('formPrecioMayor').value = product && product.precioMayor ? product.precioMayor : '';
+    document.getElementById('formMinMayorQty').value = product && product.minMayorQty ? product.minMayorQty : 3;
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
     document.getElementById('formDescription').value = product ? (product.description || '') : '';
     document.getElementById('formMaterial').value = product ? (product.material || '') : '';
@@ -496,6 +502,8 @@ async function handleSaveProduct(e) {
 
     const tagVal = document.getElementById('formTag').value;
     const baseSalePrice = parseFloat(document.getElementById('formSalePrice').value) || 0;
+    const precioMayorVal = parseFloat(document.getElementById('formPrecioMayor').value) || null;
+    const minMayorQtyVal = parseInt(document.getElementById('formMinMayorQty').value) || 3;
     const regularPriceVal = tagVal === 'Normal' ? baseSalePrice : (parseFloat(document.getElementById('formRegularPrice').value) || baseSalePrice);
 
     const payload = {
@@ -503,6 +511,8 @@ async function handleSaveProduct(e) {
         categoria: document.getElementById('formCategory').value,
         etiqueta: tagVal,
         precio_remate: baseSalePrice,
+        precio_mayor: precioMayorVal,
+        min_mayor_qty: minMayorQtyVal,
         precio_original: regularPriceVal,
         stock_by_size: aggregatedStock,
         variant_details: variantDetails,
@@ -747,6 +757,13 @@ function renderProductGrid(productsList) {
         const isLowStock = totalStock <= 4;
         const productCode = product.code || `LIZ-${String(product.id).padStart(4, '0')}`;
         
+        const tienePrecioMayor = product.precioMayor && product.precioMayor > 0;
+        const minMayor = product.minMayorQty || 3;
+
+        if (!window.cardQuantities) window.cardQuantities = {};
+        if (!window.cardQuantities[product.id]) window.cardQuantities[product.id] = 1;
+        const currentQty = window.cardQuantities[product.id];
+
         let allColorsList = [];
         if (product.variantDetails && product.variantDetails.length > 0) {
             allColorsList = product.variantDetails.map((v, idx) => ({ name: v.color || 'Único', index: idx }));
@@ -796,9 +813,20 @@ function renderProductGrid(productsList) {
                         <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2">${product.name}</h3>
                     </div>
                    ${product.description ? `<p class="text-xs text-slate-600 mt-1 mb-2">${product.description}</p>` : ''}
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(currentSalePrice)}</span>
-                        ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
+                    
+                    <!-- Precios por Menor y Mayor Adaptables -->
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(currentSalePrice)}</span>
+                            ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
+                            <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-auto">x Menor</span>
+                        </div>
+                        ${tienePrecioMayor ? `
+                            <div class="flex items-center justify-between bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-xl">
+                                <span class="text-[11px] font-extrabold text-purple-800">📦 Por Mayor (x ${minMayor}+ und):</span>
+                                <span class="text-sm font-black text-purple-700">${formatPrice(product.precioMayor)}</span>
+                            </div>
+                        ` : ''}
                     </div>
 
                     <div class="space-y-1">
@@ -853,8 +881,14 @@ function renderProductGrid(productsList) {
                         </div>
                     </div>
 
+                    <!-- Selector de Cantidad Directo y Botón Agregar -->
                     <div class="pt-2 flex items-center gap-2">
-                        <button onclick="addToCart(${product.id})" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                        <div class="flex items-center bg-slate-100 border border-slate-200 rounded-xl overflow-hidden shrink-0">
+                            <button type="button" onclick="changeCardQty(${product.id}, -1)" class="px-2.5 py-2 text-slate-600 hover:bg-slate-200 font-bold text-xs cursor-pointer">-</button>
+                            <span id="qty-val-${product.id}" class="px-2.5 text-xs font-extrabold text-slate-900">${currentQty}</span>
+                            <button type="button" onclick="changeCardQty(${product.id}, 1)" class="px-2.5 py-2 text-slate-600 hover:bg-slate-200 font-bold text-xs cursor-pointer">+</button>
+                        </div>
+                        <button onclick="addToCartWithQuantity(${product.id})" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
                             <i data-lucide="shopping-bag" class="w-4 h-4"></i> Agregar
                         </button>
                         <button onclick="inquireSingleProductWhatsApp(${product.id})" class="p-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 rounded-xl transition-colors cursor-pointer" title="Consultar por WhatsApp">
@@ -879,6 +913,57 @@ function renderProductGrid(productsList) {
     lucide.createIcons();
 }
 
+// Funciones auxiliares para controlar la cantidad en la tarjeta
+function changeCardQty(productId, delta) {
+    if (!window.cardQuantities) window.cardQuantities = {};
+    let current = window.cardQuantities[productId] || 1;
+    current += delta;
+    if (current < 1) current = 1;
+    window.cardQuantities[productId] = current;
+    
+    const qtySpan = document.getElementById(`qty-val-${productId}`);
+    if (qtySpan) qtySpan.textContent = current;
+}
+
+function addToCartWithQuantity(productId) {
+    const product = PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+
+    const qtyToAdd = window.cardQuantities && window.cardQuantities[productId] ? window.cardQuantities[productId] : 1;
+    
+    const rawImgIdx = sliderIndexes[productId] || 0;
+    const currentImgIdx = rawImgIdx < (product.images?.length || 1) ? rawImgIdx : 0;
+    const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
+        ? product.variantDetails[currentImgIdx].stockBySize 
+        : product.stockBySize;
+
+    const size = state.selectedSizesPerCard[productId] || getFirstAvailableSize(product, currentImgIdx);
+    
+    let color = 'Único';
+    if (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].color) {
+        color = product.variantDetails[currentImgIdx].color;
+    } else if (product.colors && product.colors[currentImgIdx]) {
+        color = product.colors[currentImgIdx];
+    }
+
+    const availableStock = currentStockMap[size] || 0;
+    if (availableStock < qtyToAdd) {
+        showToast('No hay suficiente stock disponible para esa cantidad', 'error');
+        return;
+    }
+
+    const existing = state.cart.find(i => i.productId === productId && i.size === size && i.color === color);
+    if (existing) {
+        existing.qty += qtyToAdd;
+    } else {
+        state.cart.push({ productId, size, color, qty: qtyToAdd });
+    }
+
+    window.cardQuantities[productId] = 1;
+    renderCart();
+    openPostAddModal(product);
+}
+
 function selectCardSize(productId, size) {
     state.selectedSizesPerCard[productId] = size;
     applyFilters();
@@ -899,40 +984,10 @@ function jumpToColorImage(productId, imgIndex) {
 }
 
 // =====================================================================
-// 6. CARRITO, WHATSAPP Y UTILIDADES
+// 6. CARRITO, WHATSAPP Y CÁLCULO DE PRECIO POR MAYOR AUTOMÁTICO
 // =====================================================================
 function addToCart(productId, explicitSize = null) {
-    const product = PRODUCTS.find(p => p.id === productId);
-    if (!product) return;
-    
-    const rawImgIdx = sliderIndexes[productId] || 0;
-    const currentImgIdx = rawImgIdx < (product.images?.length || 1) ? rawImgIdx : 0;
-    const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
-        ? product.variantDetails[currentImgIdx].stockBySize 
-        : product.stockBySize;
-
-    const size = explicitSize || state.selectedSizesPerCard[productId] || getFirstAvailableSize(product, currentImgIdx);
-    
-    let color = 'Único';
-    if (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].color) {
-        color = product.variantDetails[currentImgIdx].color;
-    } else if (product.colors && product.colors[currentImgIdx]) {
-        color = product.colors[currentImgIdx];
-    }
-
-    const availableStock = currentStockMap[size] || 0;
-    if (availableStock <= 0) return showToast('Talla agotada', 'error');
-
-    const existing = state.cart.find(i => i.productId === productId && i.size === size && i.color === color);
-    if (existing) {
-        existing.qty += 1;
-    } else {
-        state.cart.push({ productId, size, color, qty: 1 });
-    }
-    renderCart();
-    
-    // Muestra el modal con los botones de Pagar o Seguir Comprando
-    openPostAddModal(product);
+    addToCartWithQuantity(productId);
 }
 
 function renderCart() {
@@ -958,7 +1013,16 @@ function renderCart() {
         if (!p) return '';
         const code = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         regTotal += p.regularPrice * item.qty;
-        saleTotal += p.salePrice * item.qty;
+
+        let precioEfectivo = p.salePrice;
+        let esPrecioMayorAplicado = false;
+        if (p.precioMayor && item.qty >= (p.minMayorQty || 3)) {
+            precioEfectivo = p.precioMayor;
+            esPrecioMayorAplicado = true;
+        }
+
+        saleTotal += precioEfectivo * item.qty;
+
         return `
             <div class="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200">
                 <img src="${p.image}" class="w-16 h-20 object-cover rounded-xl">
@@ -966,7 +1030,8 @@ function renderCart() {
                     <span class="text-[10px] font-black text-slate-500 uppercase">CÓD: ${code}</span>
                     <h4 class="font-bold text-xs text-slate-900">${p.name}</h4>
                     <span class="text-[11px] bg-slate-100 px-2 py-0.5 rounded font-bold inline-block mt-0.5">Color: ${item.color || 'Único'} | Talla: ${item.size} | Cant: ${item.qty}</span>
-                    <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(p.salePrice * item.qty)}</div>
+                    ${esPrecioMayorAplicado ? `<span class="block text-[10px] text-purple-700 font-extrabold mt-0.5">📦 ¡Precio x Mayor aplicado!</span>` : ''}
+                    <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(precioEfectivo * item.qty)}</div>
                 </div>
                 <button onclick="state.cart.splice(${idx},1); renderCart();" class="text-slate-400 hover:text-rose-600 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
@@ -995,10 +1060,14 @@ function sendOrderToWhatsApp() {
     state.cart.forEach((item, i) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
-        total += p.salePrice * item.qty;
+        let precioEfectivo = p.salePrice;
+        if (p.precioMayor && item.qty >= (p.minMayorQty || 3)) {
+            precioEfectivo = p.precioMayor;
+        }
+        total += precioEfectivo * item.qty;
         msg += `${i + 1}. *[${prodCode}] ${p.name}*\n`;
         msg += `   • Color: *${item.color || 'Único'}* | Talla: *${item.size}* | Cant: *${item.qty}*\n`;
-        msg += `   • Subtotal: ${formatPrice(p.salePrice * item.qty)}\n`;
+        msg += `   • Subtotal: ${formatPrice(precioEfectivo * item.qty)}\n`;
     });
     msg += `\n💰 *TOTAL: ${formatPrice(total)}*`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -1015,7 +1084,7 @@ function inquireSingleProductWhatsApp(productId) {
     } else if (p.colors && p.colors[rawImgIdx]) {
         col = p.colors[rawImgIdx];
     }
-    const msg = `Hola *LIZ FASHION EVOLUTION*, quiero separar/consultar:\n• *Código Producto:* ${prodCode}\n• *Prenda:* ${p.name}\n• *Color:* ${col}\n• *Talla:* ${sz}\n• *Precio:* ${formatPrice(p.salePrice)}\n¿Sigue disponible?`;
+    const msg = `Hola *LIZ FASHION EVOLUTION*, quiero separar/consultar:\n• *Código Producto:* ${prodCode}\n• *Prenda:* ${p.name}\n• *Color:* ${col}\n• *Talla:* ${sz}\n• *Precio Menor:* ${formatPrice(p.salePrice)}${p.precioMayor ? `\n• *Precio Mayor:* ${formatPrice(p.precioMayor)} (x${p.minMayorQty || 3}+)` : ''}\n¿Sigue disponible?`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -2002,7 +2071,13 @@ function procederPagoYapePlin() {
     let total = 0;
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
-        if (p) total += p.salePrice * item.qty;
+        if (p) {
+            let precioEfectivo = p.salePrice;
+            if (p.precioMayor && item.qty >= (p.minMayorQty || 3)) {
+                precioEfectivo = p.precioMayor;
+            }
+            total += precioEfectivo * item.qty;
+        }
     });
 
     const titleEl = document.getElementById('voucherModalTitle');
@@ -2063,7 +2138,13 @@ async function handleSubirVoucher(e) {
     let total = 0;
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
-        if (p) total += p.salePrice * item.qty;
+        if (p) {
+            let precioEfectivo = p.salePrice;
+            if (p.precioMayor && item.qty >= (p.minMayorQty || 3)) {
+                precioEfectivo = p.precioMayor;
+            }
+            total += precioEfectivo * item.qty;
+        }
     });
 
     const ordenCode = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -2189,7 +2270,6 @@ async function cambiarEstadoPago(id, estado) {
             showToast(`Pago marcado como ${estado}`, 'success');
             await renderTablaAdminVouchers();
 
-            // Notificar por WhatsApp al cliente de forma automática al aprobar o rechazar
             let iconoEstado = estado === 'Aprobado' ? '✅ ¡PAGO APROBADO!' : '❌ ¡PAGO RECHAZADO / OBSERVADO!';
             let mensajeWhatsApp = `Hola *${pagoActualizado.cliente}*,\n\n` +
                                   `Te saludamos de *LIZ FASHION EVOLUTION*.\n` +
