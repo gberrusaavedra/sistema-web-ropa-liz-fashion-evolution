@@ -871,9 +871,18 @@ function renderProductGrid(productsList) {
                     </div>
 
                     <div class="pt-2 flex items-center gap-2">
-                        <button onclick="addToCart(${product.id})" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                        <!-- Control de cantidad rápido (- y +) -->
+                        <div class="flex items-center bg-slate-100 rounded-xl border border-slate-200 overflow-hidden shrink-0">
+                            <button type="button" onclick="changeCardQty(${product.id}, -1)" class="px-2.5 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-200 transition cursor-pointer">-</button>
+                            <span id="qty-input-${product.id}" class="px-2 text-xs font-black text-slate-900">1</span>
+                            <button type="button" onclick="changeCardQty(${product.id}, 1)" class="px-2.5 py-2.5 text-xs font-black text-slate-700 hover:bg-slate-200 transition cursor-pointer">+</button>
+                        </div>
+
+                        <!-- Botón Agregar con la cantidad seleccionada -->
+                        <button onclick="addToCartWithQty(${product.id})" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer">
                             <i data-lucide="shopping-bag" class="w-4 h-4"></i> Agregar
                         </button>
+
                         <button onclick="inquireSingleProductWhatsApp(${product.id})" class="p-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 rounded-xl transition-colors cursor-pointer" title="Consultar por WhatsApp">
                             <i data-lucide="message-circle" class="w-4 h-4"></i>
                         </button>
@@ -2389,4 +2398,34 @@ function closePostAddModal() {
 function goToCheckoutFromModal() {
     closePostAddModal();
     toggleCartDrawer(true);
+} 
+
+
+const cardQuantities = {};
+
+function changeCardQty(productId, delta) {
+    if (!cardQuantities[productId]) {
+        cardQuantities[productId] = 1;
+    }
+    cardQuantities[productId] += delta;
+    if (cardQuantities[productId] < 1) {
+        cardQuantities[productId] = 1;
+    }
+    
+    const qtySpan = document.getElementById(`qty-input-${productId}`);
+    if (qtySpan) {
+        qtySpan.textContent = cardQuantities[productId];
+    }
+}
+
+function addToCartWithQty(productId) {
+    const qty = cardQuantities[productId] || 1;
+    for (let i = 0; i < qty; i++) {
+        addToCart(productId);
+    }
+    cardQuantities[productId] = 1;
+    const qtySpan = document.getElementById(`qty-input-${productId}`);
+    if (qtySpan) {
+        qtySpan.textContent = '1';
+    }
 }
