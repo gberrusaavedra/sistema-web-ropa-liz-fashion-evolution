@@ -4,26 +4,25 @@
 const API_URL = "https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api";
 const EXCHANGE_RATE = 0.27; // 1 PEN = 0.27 USD aprox.
 const WHATSAPP_PHONE = "931598799";
-const MIN_UNIDADES_MAYOR = 3; // Mínimo de unidades para activar el descuento por mayor
 
 let PRODUCTS = [
     {
         id: 1,
-        name: "Casaca Bomber Impermeable Urbana",
-        category: "Casacas/Abrigos",
+        name: "Polo Manga 3/4",
+        category: "Polos/Manga 3/4",
         tag: "Remate Final",
-        regularPrice: 189.90,
-        salePrice: 56.90,
-        precioMayor: 45.00,
+        regularPrice: 38.00,
+        salePrice: 25.00,
+        precioMayor: 20.00,
+        minMayor: 3,
         image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
         images: [
-            "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80",
-            "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80"
+            "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=800&q=80"
         ],
-        stockBySize: { S: 1, M: 2, L: 0, XL: 1, XXL: 0 },
-        maxInitialStock: 15,
-        material: "100% Poliéster repelente al agua con forro térmico acolchado.",
-        description: "Casaca ligera cortavientos ideal para media estación. Corte slim fit con cierres metálicos reforzados."
+        stockBySize: { S: 0, M: 0, L: 3, XL: 1, XXL: 0 },
+        maxInitialStock: 10,
+        material: "Algodón reactivo de exportación.",
+        description: "Polo manga 3/4 con lazo y diseño exclusivo."
     }
 ];
 
@@ -240,6 +239,7 @@ async function fetchProductsFromDB() {
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
                     precioMayor: p.precio_mayor !== undefined && p.precio_mayor !== null ? Number(p.precio_mayor) : (Number(p.precio_remate) * 0.85),
+                    minMayor: p.min_mayor !== undefined && p.min_mayor !== null ? Number(p.min_mayor) : 3,
                     image: parsedImages[0],
                     images: parsedImages,
                     variantDetails: parsedVariants,
@@ -417,6 +417,11 @@ function openProductFormModal(product = null) {
         inputPrecioMayor.value = product && product.precioMayor !== undefined ? product.precioMayor : '';
     }
 
+    const inputMinMayor = document.getElementById('formMinMayor');
+    if (inputMinMayor) {
+        inputMinMayor.value = product && product.minMayor !== undefined ? product.minMayor : 3;
+    }
+
     document.getElementById('formRegularPrice').value = product ? product.regularPrice : '';
     document.getElementById('formDescription').value = product ? (product.description || '') : '';
     document.getElementById('formMaterial').value = product ? (product.material || '') : '';
@@ -509,6 +514,9 @@ async function handleSaveProduct(e) {
     const inputPrecioMayorElem = document.getElementById('formPrecioMayor');
     const precioMayorVal = inputPrecioMayorElem && inputPrecioMayorElem.value !== '' ? parseFloat(inputPrecioMayorElem.value) : (baseSalePrice * 0.85);
 
+    const inputMinMayorElem = document.getElementById('formMinMayor');
+    const minMayorVal = inputMinMayorElem && inputMinMayorElem.value !== '' ? parseInt(inputMinMayorElem.value) : 3;
+
     const regularPriceVal = tagVal === 'Normal' ? baseSalePrice : (parseFloat(document.getElementById('formRegularPrice').value) || baseSalePrice);
 
     const payload = {
@@ -517,6 +525,7 @@ async function handleSaveProduct(e) {
         etiqueta: tagVal,
         precio_remate: baseSalePrice,
         precio_mayor: precioMayorVal,
+        min_mayor: minMayorVal,
         precio_original: regularPriceVal,
         stock_by_size: aggregatedStock,
         variant_details: variantDetails,
@@ -816,7 +825,7 @@ function renderProductGrid(productsList) {
                             <span class="text-xl sm:text-2xl font-black ${discountPct > 0 ? 'text-rose-600' : 'text-slate-900'}">${formatPrice(currentSalePrice)}</span>
                             ${discountPct > 0 ? `<span class="text-xs sm:text-sm text-slate-400 line-through">${formatPrice(product.regularPrice)}</span>` : ''}
                         </div>
-                        ${product.precioMayor !== undefined ? `<span class="text-[11px] font-extrabold text-emerald-600 mt-0.5">Por mayor (3+ unds): ${formatPrice(product.precioMayor)}</span>` : ''}
+                        ${product.precioMayor !== undefined ? `<span class="text-[11px] font-extrabold text-emerald-600 mt-0.5">Por mayor (${product.minMayor}+ unds): ${formatPrice(product.precioMayor)}</span>` : ''}
                     </div>
 
                     <div class="space-y-1">
@@ -968,7 +977,6 @@ function renderCart() {
     document.getElementById('cartDrawerFooter').classList.remove('hidden');
     document.getElementById('cartSavingsBanner').classList.remove('hidden');
 
-    // 1. Agrupar y sumar unidades totales por cada producto para activar el descuento por mayor
     const cantidadesPorProducto = {};
     state.cart.forEach(item => {
         cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
@@ -987,8 +995,10 @@ function renderCart() {
         let precioAplicado = p.salePrice;
         let esPrecioMayor = false;
 
-        // Si lleva 3 o más unidades de este modelo (combinando tallas/colores), aplica precio por mayor
-        if (totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR) {
+        // Valida contra el mínimo de unidades por mayor configurado en esta prenda específica
+        const minimoRequerido = p.minMayor !== undefined ? p.minMayor : 3;
+
+        if (totalUnidadesEsteProducto >= minimoRequerido) {
             precioAplicado = p.precioMayor !== undefined ? p.precioMayor : (p.salePrice * 0.85);
             esPrecioMayor = true;
         }
@@ -1005,7 +1015,7 @@ function renderCart() {
                     
                     ${esPrecioMayor 
                         ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Descuento por mayor aplicado (Llevas ${totalUnidadesEsteProducto} unds)!</span>` 
-                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${MIN_UNIDADES_MAYOR - totalUnidadesEsteProducto} unds más de este modelo para activar precio por mayor</span>`
+                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${minimoRequerido - totalUnidadesEsteProducto} unds más (mín. ${minimoRequerido}) para activar precio por mayor</span>`
                     }
 
                     <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(precioAplicado * item.qty)} ${esPrecioMayor ? '<span class="text-[10px] font-bold text-rose-500">(Precio Mayor)</span>' : ''}</div>
@@ -1044,12 +1054,13 @@ function sendOrderToWhatsApp() {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
-        let precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor !== undefined ? p.precioMayor : (p.salePrice * 0.85)) : p.salePrice;
+        const minimoRequerido = p.minMayor !== undefined ? p.minMayor : 3;
+        let precioAplicado = totalUnidadesEsteProducto >= minimoRequerido ? (p.precioMayor !== undefined ? p.precioMayor : (p.salePrice * 0.85)) : p.salePrice;
         
         total += precioAplicado * item.qty;
         msg += `${i + 1}. *[${prodCode}] ${p.name}*\n`;
         msg += `   • Color: *${item.color || 'Único'}* | Talla: *${item.size}* | Cant: *${item.qty}*\n`;
-        msg += `   • Subtotal: ${formatPrice(precioAplicado * item.qty)} ${totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? '(Precio Mayor)' : ''}\n`;
+        msg += `   • Subtotal: ${formatPrice(precioAplicado * item.qty)} ${totalUnidadesEsteProducto >= minimoRequerido ? '(Precio Mayor)' : ''}\n`;
     });
     msg += `\n💰 *TOTAL: ${formatPrice(total)}*`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -2078,7 +2089,8 @@ function procederPagoYapePlin() {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
-            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor !== undefined ? p.precioMayor : (p.salePrice * 0.85)) : p.salePrice;
+            const minimoRequerido = p.minMayor !== undefined ? p.minMayor : 3;
+            const precioAplicado = totalUnidadesEsteProducto >= minimoRequerido ? (p.precioMayor !== undefined ? p.precioMayor : (p.salePrice * 0.85)) : p.salePrice;
             total += precioAplicado * item.qty;
         }
     });
@@ -2148,7 +2160,8 @@ async function handleSubirVoucher(e) {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
-            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor !== undefined ? p.precioMayor : (p.salePrice * 0.85)) : p.salePrice;
+            const minimoRequerido = p.minMayor !== undefined ? p.minMayor : 3;
+            const precioAplicado = totalUnidadesEsteProducto >= minimoRequerido ? (p.precioMayor !== undefined ? p.precioMayor : (p.salePrice * 0.85)) : p.salePrice;
             total += precioAplicado * item.qty;
         }
     });

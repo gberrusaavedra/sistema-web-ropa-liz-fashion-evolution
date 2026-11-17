@@ -38,6 +38,7 @@ async function initDB() {
             precio_remate NUMERIC(10, 2) NOT NULL,
             precio_original NUMERIC(10, 2) NOT NULL,
             precio_mayor NUMERIC(10, 2) DEFAULT 0.00,
+            min_mayor INTEGER DEFAULT 3,
             stock_by_size JSONB NOT NULL,
             porcentaje_vendido INTEGER DEFAULT 35,
             material TEXT,
@@ -96,9 +97,10 @@ async function initDB() {
         );
     `);
 
-    // Asegurar compatibilidad si la tabla ya existía sin la columna precio_mayor
+    // Asegurar compatibilidad si las tablas ya existían sin las columnas nuevas
     await pool.query(`
         ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
+        ALTER TABLE productos ADD COLUMN IF NOT EXISTS min_mayor INTEGER DEFAULT 3;
     `);
 
     await pool.query(`
@@ -170,13 +172,13 @@ app.get('/api/productos', async (req, res) => {
 });
 
 app.post('/api/productos', soloAdmin, async (req, res) => {
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, min_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+            `INSERT INTO productos (titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, min_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
             [
-                titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0,
+                titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0, min_mayor || 3,
                 JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
                 JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
                 JSON.stringify(imagenes || [imagen_url]),
@@ -191,12 +193,12 @@ app.post('/api/productos', soloAdmin, async (req, res) => {
 
 app.put('/api/productos/:id', soloAdmin, async (req, res) => {
     const { id } = req.params;
-    const { titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
+    const { titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor, min_mayor, stock_by_size, porcentaje_vendido, material, descripcion, imagen_url, colores, imagenes, variant_details } = req.body;
     try {
         const result = await pool.query(
-            `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, precio_mayor=$6, stock_by_size=$7, porcentaje_vendido=$8, material=$9, descripcion=$10, imagen_url=$11, colores=$12, imagenes=$13, variant_details=$14 WHERE id=$15 RETURNING *`,
+            `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, precio_mayor=$6, min_mayor=$7, stock_by_size=$8, porcentaje_vendido=$9, material=$10, descripcion=$11, imagen_url=$12, colores=$13, imagenes=$14, variant_details=$15 WHERE id=$16 RETURNING *`,
             [
-                titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0,
+                titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0, min_mayor || 3,
                 JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
                 JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
                 JSON.stringify(imagenes || [imagen_url]),
