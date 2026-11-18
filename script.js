@@ -2198,15 +2198,17 @@ async function handleSubirVoucher(e) {
     let total = 0;
     const detallesParaBD = [];
 
-    // Recorremos la bolsa de compras para calcular totales y armar el detalle
+    // Recorremos la bolsa de compras para calcular totales y armar el detalle exacto
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
+            const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
             const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
             total += precioAplicado * item.qty;
 
             detallesParaBD.push({
+                codigo: prodCode,
                 titulo: p.name,
                 precio_remate: precioAplicado,
                 talla: item.size,
@@ -2247,26 +2249,26 @@ async function handleSubirVoucher(e) {
         closeVoucherModal();
         toggleCartDrawer(false);
 
-        // --- MENSAJE DETALLADO AUTOMÁTICO PARA WHATSAPP ---
-        let msg = `🛍️ *NUEVO PAGO Y VALIDACIÓN (${selectedPaymentMethod.toUpperCase()})* 🛍️\n`;
+        // --- CONSTRUCCIÓN DEL MENSAJE DETALLADO PARA WHATSAPP ---
+        let msg = `🛍️ *NUEVO PAGO Y PEDIDO (${selectedPaymentMethod.toUpperCase()})* 🛍️\n`;
         msg += `🧾 *Orden:* ${ordenCode}\n`;
         msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n\n`;
         msg += `📋 *Detalle de la Bolsa de Compras:*\n`;
 
         detallesParaBD.forEach((item, index) => {
-            msg += `${index + 1}. *${item.titulo}*\n`;
+            msg += `${index + 1}. *[${item.codigo}] ${item.titulo}*\n`;
             msg += `   • Color: *${item.color}* | Talla: *${item.talla}* | Cant: *${item.cantidad}*\n`;
             msg += `   • Subtotal: S/ ${(item.precio_remate * item.cantidad).toFixed(2)}\n\n`;
         });
 
         msg += `💰 *TOTAL PAGADO: ${formatPrice(total)}*\n`;
-        msg += `✅ *Estado:* Voucher subido y registrado en mi reporte. ¡Quedo a la espera del envío!`;
+        msg += `✅ *Estado:* Voucher enviado y registrado en mi reporte web. ¡Quedo a la espera de la confirmación y el envío!`;
 
-        // Vaciamos el carrito de compras local después del envío exitoso
+        // Vaciamos el carrito local
         state.cart = [];
         renderCart();
 
-        // Abre automáticamente el WhatsApp con el mensaje detallado listo
+        // Abre automáticamente el WhatsApp con todo el detalle de la bolsa
         window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
     } catch (err) {
         showToast('Error al conectar con el servidor', 'error');
