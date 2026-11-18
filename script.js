@@ -2237,7 +2237,15 @@ async function handleSubirVoucher(e) {
             showToast(data.error || 'Este comprobante ya fue utilizado anteriormente.', 'error');
             return;
         }
-
+// GUARDAR EN EL HISTORIAL Y REPORTE DE CLIENTES AUTOMÁTICAMENTE
+    registrarCompraCliente({
+        items: state.cart,
+        subtotal: total,
+        descuento: 0,
+        total: total,
+        metodoPago: selectedPaymentMethod,
+        voucherImg: voucherBase64Temp
+    });
         showToast('¡Voucher enviado con éxito para validación!', 'success');
         closeVoucherModal();
         toggleCartDrawer(false);
@@ -2850,4 +2858,92 @@ function generarPDFBolsaConfeccionConsolidada() {
     actualizarBadgeBolsaConfeccion();
     cerrarBolsaConfeccion();
     showToast('¡PDF consolidado generado con éxito!', 'success');
+}
+
+
+// ==========================================================================
+// SISTEMA DE GUARDADO DE COMPRAS Y REPORTES DE CLIENTES (LIZ FASHION EVOLUTION)
+// ==========================================================================
+
+function obtenerTodasLasComprasClientes() {
+    try {
+        return JSON.parse(localStorage.getItem('liz_fashion_compras_clientes')) || [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function registrarCompraCliente(pedidoData) {
+    const compras = obtenerTodasLasComprasClientes();
+    const activeUser = currentUser || (localStorage.getItem('liz_current_user') ? JSON.parse(localStorage.getItem('liz_current_user')) : null);
+    
+    const nuevaCompra = {
+        idOrden: '#RMT-' + Math.floor(1000 + Math.random() * 9000),
+        fecha: new Date().toLocaleString('es-PE'),
+        usuario: activeUser ? activeUser.user : 'Cliente Invitado',
+        email: activeUser ? activeUser.email : 'No registrado',
+        telefono: activeUser ? activeUser.telefono : 'No registrado',
+        items: pedidoData.items || cart || [],
+        subtotal: pedidoData.subtotal || 0,
+        descuento: pedidoData.descuento || 0,
+        total: pedidoData.total || 0,
+        metodoPago: pedidoData.metodoPago || selectedPaymentMethod || 'Yape',
+        voucherImg: pedidoData.voucherImg || null,
+        estado: 'Pendiente de Verificación'
+    };
+
+    compras.unshift(nuevaCompra);
+    localStorage.setItem('liz_fashion_compras_clientes', JSON.stringify(compras));
+    return nuevaCompra.idOrden;
+}
+
+function openClientPaymentsModal() {
+    const activeUser = currentUser || (localStorage.getItem('liz_current_user') ? JSON.parse(localStorage.getItem('liz_current_user')) : null);
+    
+    if (!activeUser) {
+        alert("Por favor inicia sesión para ver tus pagos y compras.");
+        if (typeof openAuthModal === 'function') openAuthModal();
+        return;
+    }
+
+    const tbody = document.getElementById('tablaClientPaymentsBody');
+    if (!tbody) return;
+
+    const comprasUsuario = obtenerTodasLasComprasClientes().filter(c => c.usuario === activeUser.user || c.email === activeUser.email);
+
+    if (comprasUsuario.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">Aún no tienes compras o pagos registrados.</td></tr>`;
+    } else {
+        tbody.innerHTML = comprasUsuario.map(c => `
+            <tr class="hover:bg-slate-50 transition">
+                <td class="p-3 font-mono font-bold text-slate-900">${c.idOrden}</td>
+                <td class="p-3 font-semibold text-slate-700">${c.metodoPago}</td>
+                <td class="p-3 font-extrabold text-rose-600">S/ ${parseFloat(c.total).toFixed(2)}</td>
+                <td class="p-3 text-center">
+                    ${c.voucherImg ? `<img src="${c.voucherImg}" class="w-10 h-10 object-cover rounded-lg mx-auto border cursor-pointer shadow-xs" onclick="window.open('${c.voucherImg}')" title="Ver voucher">` : '<span class="text-slate-400 text-[10px]">Sin voucher</span>'}
+                </td>
+                <td class="p-3 text-center">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                        c.estado === 'Aprobado' ? 'bg-emerald-100 text-emerald-800' : 
+                        c.estado === 'Rechazado' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                    }">${c.estado}</span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    const modal = document.getElementById('clientPaymentsModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function closeClientPaymentsModal() {
+    const modal = document.getElementById('clientPaymentsModal');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
 }
