@@ -2196,9 +2196,9 @@ async function handleSubirVoucher(e) {
     });
 
     let total = 0;
-    // Preparamos el detalle exacto de cada prenda del carrito para guardarlo en la BD
     const detallesParaBD = [];
 
+    // Recorremos la bolsa de compras para calcular totales y armar el detalle
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
@@ -2233,7 +2233,7 @@ async function handleSubirVoucher(e) {
                 metodo: selectedPaymentMethod,
                 imagen_voucher: voucherBase64Temp,
                 hash_imagen: hashImagen,
-                detalles_pedido: detallesParaBD // <--- AQUÍ SE ENVÍA EL DETALLE EXACTO A NEON
+                detalles_pedido: detallesParaBD
             })
         });
 
@@ -2243,20 +2243,30 @@ async function handleSubirVoucher(e) {
             return;
         }
 
-        showToast('¡Voucher y detalles de prendas guardados con éxito!', 'success');
+        showToast('¡Voucher enviado y guardado con éxito!', 'success');
         closeVoucherModal();
         toggleCartDrawer(false);
 
-        let msg = `🛍️ *NUEVO PAGO POR ${selectedPaymentMethod.toUpperCase()}* 🛍️\n`;
+        // --- MENSAJE DETALLADO AUTOMÁTICO PARA WHATSAPP ---
+        let msg = `🛍️ *NUEVO PAGO Y VALIDACIÓN (${selectedPaymentMethod.toUpperCase()})* 🛍️\n`;
         msg += `🧾 *Orden:* ${ordenCode}\n`;
-        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n`;
-        msg += `💰 *Total Pagado:* ${formatPrice(total)}\n`;
-        msg += `✅ *Estado:* Voucher subido correctamente, pendiente de validación.\n\n`;
-        msg += `¡Acabo de realizar el pago y subir mi captura con el detalle de mis prendas!`;
+        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n\n`;
+        msg += `📋 *Detalle de la Bolsa de Compras:*\n`;
 
+        detallesParaBD.forEach((item, index) => {
+            msg += `${index + 1}. *${item.titulo}*\n`;
+            msg += `   • Color: *${item.color}* | Talla: *${item.talla}* | Cant: *${item.cantidad}*\n`;
+            msg += `   • Subtotal: S/ ${(item.precio_remate * item.cantidad).toFixed(2)}\n\n`;
+        });
+
+        msg += `💰 *TOTAL PAGADO: ${formatPrice(total)}*\n`;
+        msg += `✅ *Estado:* Voucher subido y registrado en mi reporte. ¡Quedo a la espera del envío!`;
+
+        // Vaciamos el carrito de compras local después del envío exitoso
         state.cart = [];
         renderCart();
 
+        // Abre automáticamente el WhatsApp con el mensaje detallado listo
         window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
     } catch (err) {
         showToast('Error al conectar con el servidor', 'error');
