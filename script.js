@@ -302,19 +302,12 @@ function toggleOfferFields() {
 }
 
 async function handleImageFilesSelection(e) {
-    const files = Array.from(e.target.files);
-    tempUploadedImages = [];
-
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const base64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (evt) => resolve(evt.target.result);
-            reader.readAsDataURL(file);
-        });
-        tempUploadedImages.push(base64);
+    const inputVal = document.getElementById('formImageUrl').value.trim();
+    if (inputVal) {
+        tempUploadedImages = inputVal.split(',').map(u => u.trim()).filter(Boolean);
+    } else {
+        tempUploadedImages = [];
     }
-
     renderDynamicVariantsInputs();
 }
 
@@ -2900,23 +2893,16 @@ function generarPDFBolsaConfeccionConsolidada() {
 // VENTANA DE REPORTE DETALLADO DE PEDIDOS DEL CLIENTE
 // =====================================================================
 async function openClientReportModal() {
-    // 1. Buscamos primero en 'rs_usuario' (que es la llave real que usa tu app)
-    let currentUser = JSON.parse(localStorage.getItem('rs_usuario') || localStorage.getItem('currentUser') || localStorage.getItem('usuario'));
+    let currentUser = JSON.parse(localStorage.getItem('rs_usuario') || 'null');
     
-    if (!currentUser) {
-        const nombreSuelto = localStorage.getItem('userName') || localStorage.getItem('nombreUsuario');
-        if (nombreSuelto) {
-            currentUser = { nombre: nombreSuelto };
-        }
-    }
-
     if (!currentUser || (!currentUser.nombre && !currentUser.email)) {
-        alert('Debes iniciar sesión para ver tu reporte de pedidos');
+        showToast('Debes iniciar sesión para ver tu reporte de pedidos', 'warning');
         if (typeof openAuthModal === 'function') openAuthModal();
         return;
     }
 
-    const identificadorCliente = currentUser.nombre || currentUser.email;
+    // Tomamos el correo o el nombre como clave de búsqueda
+    const identificadorCliente = currentUser.email || currentUser.nombre;
 
     const modal = document.getElementById('clientReportModal');
     const container = document.getElementById('clientReportContainer');
@@ -2925,11 +2911,11 @@ async function openClientReportModal() {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     if (container) {
-        container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Consultando base de datos...</div>';
+        container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Cargando tu reporte personal...</div>';
     }
 
     try {
-        const res = await fetch(`https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/pagos/cliente/${encodeURIComponent(identificadorCliente)}`);
+        const res = await fetch(`${API_URL}/pagos/cliente/${encodeURIComponent(identificadorCliente)}`);
         const pagos = await res.json();
 
         if (!container) return;
@@ -2994,7 +2980,7 @@ async function openClientReportModal() {
         container.innerHTML = html;
     } catch (err) {
         if (container) {
-            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al conectar con el servidor para cargar el reporte.</div>';
+            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al conectar con el servidor para cargar tu reporte.</div>';
         }
     }
 }

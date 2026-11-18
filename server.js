@@ -282,7 +282,12 @@ app.put('/api/oferta-tiempo', soloAdmin, async (req, res) => {
 app.get('/api/pagos/cliente/:nombre', async (req, res) => {
     const { nombre } = req.params;
     try {
-        const result = await pool.query('SELECT * FROM pagos_yape_plin WHERE cliente ILIKE $1 ORDER BY id DESC', [nombre]);
+        const query = `
+            SELECT * FROM pagos_yape_plin 
+            WHERE cliente ILIKE $1 OR cliente ILIKE $2 
+            ORDER BY id DESC
+        `;
+        const result = await pool.query(query, [nombre, `%${nombre}%`]);
         res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
