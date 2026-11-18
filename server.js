@@ -94,6 +94,7 @@ async function initDB() {
             imagen_voucher TEXT NOT NULL,
             hash_imagen VARCHAR(64) UNIQUE NOT NULL,
             estado VARCHAR(20) DEFAULT 'Pendiente',
+            detalles_pedido JSONB DEFAULT '[]'::jsonb,
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `);
@@ -103,6 +104,7 @@ async function initDB() {
         ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
         ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
         ALTER TABLE pagos_yape_plin ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
+        ALTER TABLE pagos_yape_plin ADD COLUMN IF NOT EXISTS detalles_pedido JSONB DEFAULT '[]'::jsonb;
     `);
 
     await pool.query(`
@@ -303,7 +305,7 @@ app.get('/api/pagos', soloAdmin, async (req, res) => {
 });
 
 app.post('/api/pagos', async (req, res) => {
-    const { orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen } = req.body;
+    const { orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen, detalles_pedido } = req.body;
     try {
         const check = await pool.query('SELECT id FROM pagos_yape_plin WHERE hash_imagen = $1', [hash_imagen]);
         if (check.rows.length > 0) {
@@ -311,9 +313,9 @@ app.post('/api/pagos', async (req, res) => {
         }
 
         const result = await pool.query(
-            `INSERT INTO pagos_yape_plin (orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [orden, cliente || 'Cliente Web', telefono || '', total, metodo, imagen_voucher, hash_imagen]
+            `INSERT INTO pagos_yape_plin (orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen, detalles_pedido)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+            [orden, cliente || 'Cliente Web', telefono || '', total, metodo, imagen_voucher, hash_imagen, JSON.stringify(detalles_pedido || [])]
         );
         res.json(result.rows[0]);
     } catch (err) {
