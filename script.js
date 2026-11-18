@@ -2705,6 +2705,7 @@ function enviarBolsaConfeccionWhatsApp() {
     const nroOrden = `CONF-LIZ-${Math.floor(100000 + Math.random() * 900000)}`;
     const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
     
+    // Contar cuántas unidades hay de cada modelo para aplicar precio por mayor automáticamente
     const conteoModelos = {};
     bolsaConfeccionItems.forEach(item => {
         conteoModelos[item.modelo] = (conteoModelos[item.modelo] || 0) + 1;
@@ -2714,16 +2715,27 @@ function enviarBolsaConfeccionWhatsApp() {
     let mensaje = `🔥 *PEDIDO CONSOLIDADO DE CONFECCIÓN* 🔥\n`;
     mensaje += `🧾 *N° Orden:* ${nroOrden}\n`;
     mensaje += `📅 *Fecha:* ${fechaActual}\n\n`;
+    mensaje += `📋 *Detalle de prendas solicitadas:*\n\n`;
 
     bolsaConfeccionItems.forEach((item, index) => {
         const cantidadEsteModelo = conteoModelos[item.modelo];
-        let precioAplicado = cantidadEsteModelo >= MIN_UNIDADES_MAYOR ? (item.precioMayor || (item.precio * 0.85)) : item.precio;
+        let precioAplicado = item.precio;
+        let esPrecioMayor = false;
+
+        if (cantidadEsteModelo >= MIN_UNIDADES_MAYOR) {
+            precioAplicado = item.precioMayor || (item.precio * 0.85);
+            esPrecioMayor = true;
+        }
+
         total += precioAplicado;
 
-        mensaje += `${index + 1}. *${item.modelo}*\n`;
-        mensaje += `   • Color: *${item.color}* | Talla: *${item.talla}*\n`;
-        mensaje += `   • Precio: S/ ${precioAplicado.toFixed(2)} ${cantidadEsteModelo >= MIN_UNIDADES_MAYOR ? '(Precio Mayor)' : ''}\n\n`;
+        // AQUÍ SE DETALLA CADA PRENDA CON SU MODELO, COLOR, TALLA Y PRECIO EXACTO
+        mensaje += `${index + 1}. *Modelo:* ${item.modelo}\n`;
+        mensaje += `   • Color: *${item.color}*\n`;
+        mensaje += `   • Talla: *${item.talla}*\n`;
+        mensaje += `   • Precio: S/ ${precioAplicado.toFixed(2)} ${esPrecioMayor ? '(Precio Mayor)' : ''}\n\n`;
 
+        // Registrar en el reporte de la base de datos Neon de forma automática
         registrarPedidoClienteEnReporte({
             orden: `${nroOrden}-${index + 1}`,
             fecha: fechaActual,
@@ -2744,7 +2756,6 @@ function enviarBolsaConfeccionWhatsApp() {
     cerrarBolsaConfeccion();
     showToast('¡Pedido consolidado enviado por WhatsApp y registrado!', 'success');
 }
-
 function generarPDFBolsaConfeccionConsolidada() {
     if (bolsaConfeccionItems.length === 0) {
         showToast('Tu bolsa de confección está vacía', 'warning');
