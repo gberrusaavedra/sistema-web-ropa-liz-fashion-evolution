@@ -2196,12 +2196,24 @@ async function handleSubirVoucher(e) {
     });
 
     let total = 0;
+    // Preparamos el detalle exacto de cada prenda del carrito para guardarlo en la BD
+    const detallesParaBD = [];
+
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
             const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
             total += precioAplicado * item.qty;
+
+            detallesParaBD.push({
+                titulo: p.name,
+                precio_remate: precioAplicado,
+                talla: item.size,
+                color: item.color || 'Único',
+                cantidad: item.qty,
+                imagen: p.image || p.imagen_url
+            });
         }
     });
 
@@ -2220,7 +2232,8 @@ async function handleSubirVoucher(e) {
                 total,
                 metodo: selectedPaymentMethod,
                 imagen_voucher: voucherBase64Temp,
-                hash_imagen: hashImagen
+                hash_imagen: hashImagen,
+                detalles_pedido: detallesParaBD // <--- AQUÍ SE ENVÍA EL DETALLE EXACTO A NEON
             })
         });
 
@@ -2230,7 +2243,7 @@ async function handleSubirVoucher(e) {
             return;
         }
 
-        showToast('¡Voucher enviado con éxito para validación!', 'success');
+        showToast('¡Voucher y detalles de prendas guardados con éxito!', 'success');
         closeVoucherModal();
         toggleCartDrawer(false);
 
@@ -2239,7 +2252,7 @@ async function handleSubirVoucher(e) {
         msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n`;
         msg += `💰 *Total Pagado:* ${formatPrice(total)}\n`;
         msg += `✅ *Estado:* Voucher subido correctamente, pendiente de validación.\n\n`;
-        msg += `¡Acabo de realizar el pago y subir mi captura para coordinar el envío!`;
+        msg += `¡Acabo de realizar el pago y subir mi captura con el detalle de mis prendas!`;
 
         state.cart = [];
         renderCart();
