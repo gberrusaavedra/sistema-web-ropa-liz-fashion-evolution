@@ -2842,18 +2842,27 @@ function generarPDFBolsaConfeccionConsolidada() {
 }
 
 
-// --- VENTANA DE REPORTE DETALLADO DEL CLIENTE ---
+// =====================================================================
+// VENTANA DE REPORTE DETALLADO DE PEDIDOS DEL CLIENTE
+// =====================================================================
 async function openClientReportModal() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    // Intentamos recuperar el usuario activo de cualquiera de las llaves en localStorage
+    let currentUser = JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('usuario'));
+    
     if (!currentUser) {
-        if (typeof mostrarNotificacion === 'function') {
-            mostrarNotificacion('Debes iniciar sesión para ver tu reporte de pedidos', 'error');
-        } else {
-            alert('Debes iniciar sesión para ver tu reporte de pedidos');
+        const nombreSuelto = localStorage.getItem('userName') || localStorage.getItem('nombreUsuario');
+        if (nombreSuelto) {
+            currentUser = { nombre: nombreSuelto };
         }
+    }
+
+    if (!currentUser || (!currentUser.nombre && !currentUser.email)) {
+        alert('Debes iniciar sesión para ver tu reporte de pedidos');
         if (typeof openAuthModal === 'function') openAuthModal();
         return;
     }
+
+    const identificadorCliente = currentUser.nombre || currentUser.email;
 
     const modal = document.getElementById('clientReportModal');
     const container = document.getElementById('clientReportContainer');
@@ -2866,13 +2875,13 @@ async function openClientReportModal() {
     }
 
     try {
-        const res = await fetch(`https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/pagos/cliente/${encodeURIComponent(currentUser.nombre)}`);
+        const res = await fetch(`https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/pagos/cliente/${encodeURIComponent(identificadorCliente)}`);
         const pagos = await res.json();
 
         if (!container) return;
 
-        if (pagos.length === 0) {
-            container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">No tienes pedidos ni comprobantes registrados todavía.</div>';
+        if (!Array.isArray(pagos) || pagos.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">No tienes pedidos ni comprobantes registrados todavía. Realiza un pedido y sube tu comprobante para verlo aquí.</div>';
             return;
         }
 
@@ -2881,7 +2890,7 @@ async function openClientReportModal() {
             let badgeColor = pago.estado === 'Aprobado' ? 'bg-emerald-100 text-emerald-700' : (pago.estado === 'Rechazado' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800');
             
             html += `
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
                     <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                         <div>
                             <span class="font-black text-slate-900 text-sm">Orden: ${pago.orden}</span>
@@ -2898,7 +2907,7 @@ async function openClientReportModal() {
                         <div class="bg-white rounded-xl p-2.5 border border-slate-200 space-y-2">
             `;
 
-            if (pago.detalles_pedido && pago.detalles_pedido.length > 0) {
+            if (pago.detalles_pedido && Array.isArray(pago.detalles_pedido) && pago.detalles_pedido.length > 0) {
                 pago.detalles_pedido.forEach(item => {
                     html += `
                         <div class="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
@@ -2906,7 +2915,7 @@ async function openClientReportModal() {
                                 <img src="${item.imagen || item.imagen_url || 'placeholder.jpg'}" class="w-8 h-8 rounded-lg object-cover border">
                                 <div>
                                     <p class="font-bold text-slate-800">${item.titulo || item.modelo}</p>
-                                    <p class="text-[10px] text-slate-500">Talla: <b>${item.talla}</b> | Color: <b>${item.color}</b> | Cant: <b>${item.cantidad || 1}</b></p>
+                                    <p class="text-[10px] text-slate-500">Talla: <b>${item.talla || 'Única'}</b> | Color: <b>${item.color || 'Estándar'}</b> | Cant: <b>${item.cantidad || 1}</b></p>
                                 </div>
                             </div>
                             <span class="font-bold text-slate-900">S/ ${(Number(item.precio_remate || item.precio || 0) * (item.cantidad || 1)).toFixed(2)}</span>
@@ -2931,7 +2940,7 @@ async function openClientReportModal() {
         container.innerHTML = html;
     } catch (err) {
         if (container) {
-            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al cargar el reporte detallado.</div>';
+            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al conectar con el servidor para cargar el reporte.</div>';
         }
     }
 }
