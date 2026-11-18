@@ -2654,16 +2654,39 @@ function renderizarBolsaConfeccionItems() {
         return;
     }
 
+    // Contar cuántas unidades hay de cada modelo en la bolsa de confección
+    const conteoModelos = {};
+    bolsaConfeccionItems.forEach(item => {
+        conteoModelos[item.modelo] = (conteoModelos[item.modelo] || 0) + 1;
+    });
+
     let total = 0;
     container.innerHTML = bolsaConfeccionItems.map((item, idx) => {
-        total += item.precio;
+        const cantidadEsteModelo = conteoModelos[item.modelo];
+        let precioAplicado = item.precio;
+        let esPrecioMayor = false;
+
+        // Validar si alcanza el mínimo al por mayor (MIN_UNIDADES_MAYOR = 3)
+        if (cantidadEsteModelo >= MIN_UNIDADES_MAYOR) {
+            precioAplicado = item.precioMayor || (item.precio * 0.85);
+            esPrecioMayor = true;
+        }
+
+        total += precioAplicado;
+
         return `
-            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border ${esPrecioMayor ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'}">
                 <img src="${item.imagen}" class="w-14 h-16 object-cover rounded-xl border shrink-0" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Prenda'">
                 <div class="flex-1">
                     <h5 class="font-bold text-slate-900 text-xs">${item.modelo}</h5>
                     <span class="text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600 font-semibold inline-block mt-0.5">Color: ${item.color} | Talla: ${item.talla}</span>
-                    <p class="text-xs font-black text-rose-600 mt-1">S/ ${item.precio.toFixed(2)}</p>
+                    
+                    ${esPrecioMayor 
+                        ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Precio por mayor aplicado (${cantidadEsteModelo} unds)!</span>` 
+                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${MIN_UNIDADES_MAYOR - cantidadEsteModelo} unds más de este modelo para activar precio por mayor</span>`
+                    }
+
+                    <p class="text-xs font-black text-rose-600 mt-1">S/ ${precioAplicado.toFixed(2)} ${esPrecioMayor ? '<span class="text-[9px] text-rose-500">(Al por mayor)</span>' : ''}</p>
                 </div>
                 <button onclick="bolsaConfeccionItems.splice(${idx}, 1); actualizarBadgeBolsaConfeccion(); renderizarBolsaConfeccionItems();" class="p-2 text-slate-400 hover:text-rose-600 cursor-pointer transition" title="Quitar prenda">
                     <i class="fas fa-trash-alt text-xs"></i>
@@ -2683,26 +2706,33 @@ function enviarBolsaConfeccionWhatsApp() {
 
     const nroOrden = `CONF-LIZ-${Math.floor(100000 + Math.random() * 900000)}`;
     const fechaActual = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
-    let total = 0;
+    
+    const conteoModelos = {};
+    bolsaConfeccionItems.forEach(item => {
+        conteoModelos[item.modelo] = (conteoModelos[item.modelo] || 0) + 1;
+    });
 
+    let total = 0;
     let mensaje = `🔥 *PEDIDO CONSOLIDADO DE CONFECCIÓN* 🔥\n`;
     mensaje += `🧾 *N° Orden:* ${nroOrden}\n`;
     mensaje += `📅 *Fecha:* ${fechaActual}\n\n`;
 
     bolsaConfeccionItems.forEach((item, index) => {
-        total += item.precio;
-        mensaje + `${index + 1}. *${item.modelo}*\n`;
-        mensaje += `   • Color: *${item.color}* | Talla: *${item.talla}*\n`;
-        mensaje += `   • Precio: S/ ${item.precio.toFixed(2)}\n\n`;
+        const cantidadEsteModelo = conteoModelos[item.modelo];
+        let precioAplicado = cantidadEsteModelo >= MIN_UNIDADES_MAYOR ? (item.precioMayor || (item.precio * 0.85)) : item.precio;
+        total += precioAplicado;
 
-        // Registrar en el reporte de la base de datos Neon de forma automática
+        mensaje += `${index + 1}. *${item.modelo}*\n`;
+        mensaje += `   • Color: *${item.color}* | Talla: *${item.talla}*\n`;
+        mensaje += `   • Precio: S/ ${precioAplicado.toFixed(2)} ${cantidadEsteModelo >= MIN_UNIDADES_MAYOR ? '(Precio Mayor)' : ''}\n\n`;
+
         registrarPedidoClienteEnReporte({
             orden: `${nroOrden}-${index + 1}`,
             fecha: fechaActual,
             modelo: item.modelo,
             color: item.color,
             talla: item.talla,
-            precio: item.precio
+            precio: precioAplicado
         });
     });
 
