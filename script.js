@@ -2842,19 +2842,15 @@ function generarPDFBolsaConfeccionConsolidada() {
 }
 
 
-// Abrir la ventana de reporte detallado del cliente
+// --- VENTANA DE REPORTE DETALLADO DEL CLIENTE ---
 async function openClientReportModal() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     if (!currentUser) {
-        // Usamos alert o la función de notificación que tengas definida en tu script
         if (typeof mostrarNotificacion === 'function') {
             mostrarNotificacion('Debes iniciar sesión para ver tu reporte de pedidos', 'error');
-        } else if (typeof showToast === 'function') {
-            showToast('Debes iniciar sesión para ver tu reporte de pedidos', 'error');
         } else {
             alert('Debes iniciar sesión para ver tu reporte de pedidos');
         }
-        
         if (typeof openAuthModal === 'function') openAuthModal();
         return;
     }
