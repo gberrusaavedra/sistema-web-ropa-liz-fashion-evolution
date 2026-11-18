@@ -2846,8 +2846,8 @@ function generarPDFBolsaConfeccionConsolidada() {
 // VENTANA DE REPORTE DETALLADO DE PEDIDOS DEL CLIENTE
 // =====================================================================
 async function openClientReportModal() {
-    // Intentamos recuperar el usuario activo de cualquiera de las llaves en localStorage
-    let currentUser = JSON.parse(localStorage.getItem('currentUser') || localStorage.getItem('usuario'));
+    // 1. Buscamos primero en 'rs_usuario' (que es la llave real que usa tu app)
+    let currentUser = JSON.parse(localStorage.getItem('rs_usuario') || localStorage.getItem('currentUser') || localStorage.getItem('usuario'));
     
     if (!currentUser) {
         const nombreSuelto = localStorage.getItem('userName') || localStorage.getItem('nombreUsuario');
