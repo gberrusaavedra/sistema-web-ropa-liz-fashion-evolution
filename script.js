@@ -2611,6 +2611,7 @@ function agregarPrendaBolsaConfeccion(id) {
         color: colorSeleccionado,
         talla: tallaSeleccionada,
         precio: prenda.precio,
+        precioMayor: prenda.precioMayor || (prenda.precio * 0.85), // <-- AQUÍ ESTABA FALTANDO PASAR ESTE VALOR
         imagen: prenda.imagenes && prenda.imagenes.length > 0 ? prenda.imagenes[0] : prenda.imagen
     });
 
@@ -2654,19 +2655,17 @@ function renderizarBolsaConfeccionItems() {
         return;
     }
 
-    // Contar cuántas unidades hay de cada modelo en la bolsa de confección
     const conteoModelos = {};
     bolsaConfeccionItems.forEach(item => {
         conteoModelos[item.modelo] = (conteoModelos[item.modelo] || 0) + 1;
     });
 
     let total = 0;
-    container.innerHTML = bolsaConfeccionItems.map((item, idx) => {
+    container.innerHTML = bolbolsaConfeccionItems.map((item, idx) => {
         const cantidadEsteModelo = conteoModelos[item.modelo];
         let precioAplicado = item.precio;
         let esPrecioMayor = false;
 
-        // Validar si alcanza el mínimo al por mayor (MIN_UNIDADES_MAYOR = 3)
         if (cantidadEsteModelo >= MIN_UNIDADES_MAYOR) {
             precioAplicado = item.precioMayor || (item.precio * 0.85);
             esPrecioMayor = true;
@@ -2697,7 +2696,6 @@ function renderizarBolsaConfeccionItems() {
 
     if (totalSpan) totalSpan.textContent = `S/ ${total.toFixed(2)}`;
 }
-
 function enviarBolsaConfeccionWhatsApp() {
     if (bolsaConfeccionItems.length === 0) {
         showToast('Tu bolsa de confección está vacía', 'warning');
