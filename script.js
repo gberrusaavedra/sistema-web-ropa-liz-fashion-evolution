@@ -2389,22 +2389,22 @@ async function cambiarEstadoPago(id, estado) {
                     numeroLimpio = '51' + numeroLimpio;
                 }
 
-                // Generamos el enlace universal de WhatsApp
+                // Enlace universal de WhatsApp para ambos estados
                 const urlWhatsApp = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
-                // Mostramos un aviso flotante interactivo con un botón directo para abrir WhatsApp sin bloqueos
+                // Mostramos siempre el cuadro flotante con el botón directo funcional tanto para Aprobado como para Rechazado
                 const container = document.getElementById('toastContainer');
                 if (container) {
                     const alertaDiv = document.createElement('div');
                     alertaDiv.className = 'bg-slate-900 border-2 border-emerald-500 text-white p-4 rounded-3xl shadow-2xl flex flex-col gap-2.5 pointer-events-auto mt-2';
                     alertaDiv.innerHTML = `
                         <div class="flex items-center justify-between">
-                            <span class="font-black text-xs text-emerald-400">✅ ¡Pago ${estado} con éxito!</span>
+                            <span class="font-black text-xs text-emerald-400">✅ ¡Pago ${estado} correctamente!</span>
                             <button onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
                         </div>
-                        <p class="text-[11px] text-slate-300 leading-tight">Haz clic en el botón para notificar al cliente (${pagoActualizado.cliente}) por WhatsApp:</p>
+                        <p class="text-[11px] text-slate-300 leading-tight">Haz clic en el botón para enviar el mensaje de estado al cliente (${pagoActualizado.cliente}):</p>
                         <a href="${urlWhatsApp}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3 px-4 rounded-2xl text-center shadow-lg transition flex items-center justify-center gap-2">
-                            <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar Notificación a WhatsApp 💬
+                            <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar Mensaje de ${estado} a WhatsApp 💬
                         </a>
                     `;
                     container.appendChild(alertaDiv);
