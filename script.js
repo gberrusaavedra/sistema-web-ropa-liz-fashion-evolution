@@ -2267,25 +2267,17 @@ async function handleSubirVoucher(e) {
         state.cart = [];
         renderCart();
 
-        // Construimos el enlace y abrimos WhatsApp con el detalle
+        // Generamos el enlace universal de WhatsApp
         const urlWhatsApp = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
-        const ventanaWhatsApp = window.open(urlWhatsApp, '_blank');
 
-        if (!ventanaWhatsApp || ventanaWhatsApp.closed || typeof ventanaWhatsApp.closed == 'undefined') {
-            const container = document.getElementById('toastContainer');
-            if (container) {
-                const alertaDiv = document.createElement('div');
-                alertaDiv.className = 'bg-emerald-600 text-white p-4 rounded-2xl shadow-2xl flex flex-col gap-2 pointer-events-auto mt-2';
-                alertaDiv.innerHTML = `
-                    <span class="font-bold text-xs">⚠️ ¡Tu pago y reporte se guardaron con éxito!</span>
-                    <span class="text-[11px]">El navegador bloqueó la apertura automática. Haz clic abajo para enviar tu pedido:</span>
-                    <a href="${urlWhatsApp}" target="_blank" class="bg-white text-emerald-700 font-extrabold text-xs py-2 px-3 rounded-xl text-center shadow transition hover:bg-slate-100">
-                        💬 Abrir WhatsApp con el Detalle del Pedido ↗
-                    </a>
-                `;
-                container.appendChild(alertaDiv);
-            }
-        }
+        // Creamos un enlace invisible simulando un clic real para sortear el bloqueo de móviles
+        const linkTemp = document.createElement('a');
+        linkTemp.href = urlWhatsApp;
+        linkTemp.target = '_blank';
+        linkTemp.rel = 'noopener noreferrer';
+        document.body.appendChild(linkTemp);
+        linkTemp.click();
+        document.body.removeChild(linkTemp);
 
     } catch (err) {
         showToast('Error al conectar con el servidor', 'error');
