@@ -2840,3 +2840,92 @@ function generarPDFBolsaConfeccionConsolidada() {
     cerrarBolsaConfeccion();
     showToast('¡PDF consolidado generado con éxito!', 'success');
 }
+
+
+// Abrir la ventana de reporte detallado del cliente
+async function openClientReportModal() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) {
+        mostrarNotificacion('Debes iniciar sesión para ver tu reporte de pedidos', 'error');
+        openAuthModal();
+        return;
+    }
+
+    const modal = document.getElementById('clientReportModal');
+    const container = document.getElementById('clientReportContainer');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Consultando base de datos...</div>';
+
+    try {
+        const res = await fetch(`https://tu-backend.onrender.com/api/pagos/cliente/${encodeURIComponent(currentUser.nombre)}`);
+        const pagos = await res.json();
+
+        if (pagos.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">No tienes pedidos ni comprobantes registrados todavía.</div>';
+            return;
+        }
+
+        let html = '';
+        pagos.forEach(pago => {
+            let badgeColor = pago.estado === 'Aprobado' ? 'bg-emerald-100 text-emerald-700' : (pago.estado === 'Rechazado' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800');
+            
+            html += `
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div>
+                            <span class="font-black text-slate-900 text-sm">Orden: ${pago.orden}</span>
+                            <span class="block text-[10px] text-slate-400">Fecha: ${new Date(pago.creado_en).toLocaleString()}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${badgeColor}">${pago.estado}</span>
+                            <span class="font-black text-rose-600 text-sm">S/ ${Number(pago.total).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs space-y-1.5">
+                        <p class="font-bold text-slate-700">🛒 Detalle de Prendas Solicitadas:</p>
+                        <div class="bg-white rounded-xl p-2.5 border border-slate-200 space-y-2">
+            `;
+
+            if (pago.detalles_pedido && pago.detalles_pedido.length > 0) {
+                pago.detalles_pedido.forEach(item => {
+                    html += `
+                        <div class="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
+                            <div class="flex items-center gap-2">
+                                <img src="${item.imagen || item.imagen_url || 'placeholder.jpg'}" class="w-8 h-8 rounded-lg object-cover border">
+                                <div>
+                                    <p class="font-bold text-slate-800">${item.titulo || item.modelo}</p>
+                                    <p class="text-[10px] text-slate-500">Talla: <b>${item.talla}</b> | Color: <b>${item.color}</b> | Cant: <b>${item.cantidad || 1}</b></p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-slate-900">S/ ${(Number(item.precio_remate || item.precio || 0) * (item.cantidad || 1)).toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<p class="text-[11px] text-slate-400 italic">Pedido general validado por WhatsApp / Yape.</p>`;
+            }
+
+            html += `
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-1 text-[11px] text-slate-500">
+                        <span>Método: <strong class="text-purple-700">${pago.metodo}</strong></span>
+                        <a href="${pago.imagen_voucher}" target="_blank" class="text-rose-600 hover:underline font-bold">Ver Comprobante Subido ↗</a>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al cargar el reporte detallado.</div>';
+    }
+}
+
+function closeClientReportModal() {
+    const modal = document.getElementById('clientReportModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}

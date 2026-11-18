@@ -96,6 +96,11 @@
                         <i data-lucide="file-text" class="w-3.5 h-3.5 text-purple-600"></i> 
                         <span class="hidden xs:inline">Mis Pagos</span>
                     </button>
+                    <!-- ⬇️ PEGA AQUÍ EL BOTÓN "MI REPORTE" ⬇️ -->
+                    <button onclick="openClientReportModal()" class="flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 sm:py-2 rounded-xl font-bold text-[11px] sm:text-xs transition cursor-pointer border border-rose-200 shrink-0">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-rose-600"></i> 
+                        <span class="hidden xs:inline">Mi Reporte</span>
+                    </button>
 
                     <!-- Account / Admin Button -->
                     <div class="flex items-center gap-1.5">
@@ -631,6 +636,22 @@
             </div>
         </div>
     </aside>
+    <!-- MODAL VENTANA DE REPORTE DETALLADO DE PEDIDOS DEL CLIENTE -->
+    <div id="clientReportModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 my-auto relative modal-animate" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-base font-black text-slate-900 flex items-center gap-2">
+                    <i data-lucide="clipboard-check" class="w-5 h-5 text-rose-600"></i> Mi Reporte Detallado de Pedidos
+                </h3>
+                <button onclick="closeClientReportModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer font-bold">✕</button>
+            </div>
+            <p class="text-xs text-slate-500">Aquí puedes ver el detalle exacto de las prendas que pediste una vez validado tu comprobante y mensaje de WhatsApp.</p>
+            
+            <div class="overflow-x-auto max-h-[55vh] space-y-3" id="clientReportContainer">
+                <div class="text-center py-8 text-xs text-slate-400">Cargando tus reportes...</div>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL DE PAGO Y SUBIDA DE VOUCHER YAPE / PLIN -->
 <div id="voucherModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
