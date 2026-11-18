@@ -2901,8 +2901,7 @@ async function openClientReportModal() {
         return;
     }
 
-    // Tomamos el correo o el nombre como clave de búsqueda
-    const identificadorCliente = currentUser.email || currentUser.nombre;
+    const identificadorCliente = currentUser.nombre || currentUser.email;
 
     const modal = document.getElementById('clientReportModal');
     const container = document.getElementById('clientReportContainer');
@@ -2911,12 +2910,17 @@ async function openClientReportModal() {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     if (container) {
-        container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Cargando tu reporte personal...</div>';
+        container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Consultando base de datos...</div>';
     }
 
     try {
-        const res = await fetch(`${API_URL}/pagos/cliente/${encodeURIComponent(identificadorCliente)}`);
-        const pagos = await res.json();
+        let res = await fetch(`${API_URL}/pagos/cliente/${encodeURIComponent(identificadorCliente)}`);
+        let pagos = await res.json();
+
+        if ((!Array.isArray(pagos) || pagos.length === 0) && currentUser.email) {
+            res = await fetch(`${API_URL}/pagos/cliente/${encodeURIComponent(currentUser.email)}`);
+            pagos = await res.json();
+        }
 
         if (!container) return;
 
@@ -2980,7 +2984,7 @@ async function openClientReportModal() {
         container.innerHTML = html;
     } catch (err) {
         if (container) {
-            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al conectar con el servidor para cargar tu reporte.</div>';
+            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al conectar con el servidor para cargar el reporte.</div>';
         }
     }
 }
