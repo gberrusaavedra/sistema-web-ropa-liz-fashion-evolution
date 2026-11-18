@@ -2846,20 +2846,34 @@ function generarPDFBolsaConfeccionConsolidada() {
 async function openClientReportModal() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     if (!currentUser) {
-        mostrarNotificacion('Debes iniciar sesión para ver tu reporte de pedidos', 'error');
-        openAuthModal();
+        // Usamos alert o la función de notificación que tengas definida en tu script
+        if (typeof mostrarNotificacion === 'function') {
+            mostrarNotificacion('Debes iniciar sesión para ver tu reporte de pedidos', 'error');
+        } else if (typeof showToast === 'function') {
+            showToast('Debes iniciar sesión para ver tu reporte de pedidos', 'error');
+        } else {
+            alert('Debes iniciar sesión para ver tu reporte de pedidos');
+        }
+        
+        if (typeof openAuthModal === 'function') openAuthModal();
         return;
     }
 
     const modal = document.getElementById('clientReportModal');
     const container = document.getElementById('clientReportContainer');
+    if (!modal) return;
+    
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Consultando base de datos...</div>';
+    if (container) {
+        container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Consultando base de datos...</div>';
+    }
 
     try {
-        const res = await fetch(`https://tu-backend.onrender.com/api/pagos/cliente/${encodeURIComponent(currentUser.nombre)}`);
+        const res = await fetch(`https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/pagos/cliente/${encodeURIComponent(currentUser.nombre)}`);
         const pagos = await res.json();
+
+        if (!container) return;
 
         if (pagos.length === 0) {
             container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">No tienes pedidos ni comprobantes registrados todavía.</div>';
@@ -2920,12 +2934,16 @@ async function openClientReportModal() {
 
         container.innerHTML = html;
     } catch (err) {
-        container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al cargar el reporte detallado.</div>';
+        if (container) {
+            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al cargar el reporte detallado.</div>';
+        }
     }
 }
 
 function closeClientReportModal() {
     const modal = document.getElementById('clientReportModal');
-    modal.classList.remove('flex');
-    modal.classList.add('hidden');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
 }
