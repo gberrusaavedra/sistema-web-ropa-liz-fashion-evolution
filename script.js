@@ -2196,12 +2196,20 @@ async function handleSubirVoucher(e) {
     });
 
     let total = 0;
-    state.cart.forEach(item => {
+    let detalleProductosMsg = "";
+
+    // RECORREMOS CADA PRENDA DE LA BOLSA PARA ARMAR EL DETALLE COMPLETO
+    state.cart.forEach((item, index) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
+            const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
             const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
             total += precioAplicado * item.qty;
+
+            detalleProductosMsg += `${index + 1}. *[${prodCode}] ${p.name}*\n`;
+            detalleProductosMsg += `   • Color: *${item.color || 'Único'}* | Talla: *${item.size}* | Cant: *${item.qty}*\n`;
+            detalleProductosMsg += `   • Subtotal: ${formatPrice(precioAplicado * item.qty)} ${totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? '(Precio Mayor)' : ''}\n\n`;
         }
     });
 
@@ -2234,12 +2242,15 @@ async function handleSubirVoucher(e) {
         closeVoucherModal();
         toggleCartDrawer(false);
 
-        let msg = `🛍️ *NUEVO PAGO POR ${selectedPaymentMethod.toUpperCase()}* 🛍️\n`;
+        // MENSAJE DETALLADO AUTOMÁTICO PARA WHATSAPP
+        let msg = `✅ *¡PAGO YA FUE CANCELADO - VERIFICAR!* ✅\n`;
+        msg += `🛍️ *Método:* ${selectedPaymentMethod.toUpperCase()}\n`;
         msg += `🧾 *Orden:* ${ordenCode}\n`;
-        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n`;
-        msg += `💰 *Total Pagado:* ${formatPrice(total)}\n`;
-        msg += `✅ *Estado:* Voucher subido correctamente, pendiente de validación.\n\n`;
-        msg += `¡Acabo de realizar el pago y subir mi captura para coordinar el envío!`;
+        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n\n`;
+        msg += `📋 *Detalle de la Bolsa Comprada:*\n\n`;
+        msg += detalleProductosMsg;
+        msg += `💰 *TOTAL PAGADO: ${formatPrice(total)}*\n\n`;
+        msg += `📌 *Estado:* El pago ya fue cancelado y el comprobante ha sido subido con éxito. Por favor verificar para proceder con el envío.`;
 
         state.cart = [];
         renderCart();
