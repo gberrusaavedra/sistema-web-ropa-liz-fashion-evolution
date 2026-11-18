@@ -2196,20 +2196,12 @@ async function handleSubirVoucher(e) {
     });
 
     let total = 0;
-    let detalleProductosMsg = "";
-
-    // RECORREMOS CADA PRENDA DE LA BOLSA PARA ARMAR EL DETALLE COMPLETO
-    state.cart.forEach((item, index) => {
+    state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
-            const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
             const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
             total += precioAplicado * item.qty;
-
-            detalleProductosMsg += `${index + 1}. *[${prodCode}] ${p.name}*\n`;
-            detalleProductosMsg += `   • Color: *${item.color || 'Único'}* | Talla: *${item.size}* | Cant: *${item.qty}*\n`;
-            detalleProductosMsg += `   • Subtotal: ${formatPrice(precioAplicado * item.qty)} ${totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? '(Precio Mayor)' : ''}\n\n`;
         }
     });
 
@@ -2237,28 +2229,17 @@ async function handleSubirVoucher(e) {
             showToast(data.error || 'Este comprobante ya fue utilizado anteriormente.', 'error');
             return;
         }
-// GUARDAR EN EL HISTORIAL Y REPORTE DE CLIENTES AUTOMÁTICAMENTE
-    registrarCompraCliente({
-        items: state.cart,
-        subtotal: total,
-        descuento: 0,
-        total: total,
-        metodoPago: selectedPaymentMethod,
-        voucherImg: voucherBase64Temp
-    });
+
         showToast('¡Voucher enviado con éxito para validación!', 'success');
         closeVoucherModal();
         toggleCartDrawer(false);
 
-        // MENSAJE DETALLADO AUTOMÁTICO PARA WHATSAPP
-        let msg = `✅ *¡PAGO YA FUE CANCELADO - VERIFICAR!* ✅\n`;
-        msg += `🛍️ *Método:* ${selectedPaymentMethod.toUpperCase()}\n`;
+        let msg = `🛍️ *NUEVO PAGO POR ${selectedPaymentMethod.toUpperCase()}* 🛍️\n`;
         msg += `🧾 *Orden:* ${ordenCode}\n`;
-        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n\n`;
-        msg += `📋 *Detalle de la Bolsa Comprada:*\n\n`;
-        msg += detalleProductosMsg;
-        msg += `💰 *TOTAL PAGADO: ${formatPrice(total)}*\n\n`;
-        msg += `📌 *Estado:* El pago ya fue cancelado y el comprobante ha sido subido con éxito. Por favor verificar para proceder con el envío.`;
+        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n`;
+        msg += `💰 *Total Pagado:* ${formatPrice(total)}\n`;
+        msg += `✅ *Estado:* Voucher subido correctamente, pendiente de validación.\n\n`;
+        msg += `¡Acabo de realizar el pago y subir mi captura para coordinar el envío!`;
 
         state.cart = [];
         renderCart();
@@ -2858,117 +2839,4 @@ function generarPDFBolsaConfeccionConsolidada() {
     actualizarBadgeBolsaConfeccion();
     cerrarBolsaConfeccion();
     showToast('¡PDF consolidado generado con éxito!', 'success');
-}
-
-
-// ==========================================================================
-// SISTEMA DE GUARDADO DE COMPRAS Y REPORTES DE CLIENTES (LIZ FASHION EVOLUTION)
-// ==========================================================================
-
-function obtenerTodasLasComprasClientes() {
-    try {
-        return JSON.parse(localStorage.getItem('liz_fashion_compras_clientes')) || [];
-    } catch (e) {
-        return [];
-    }
-}
-
-function registrarCompraCliente(pedidoData) {
-    const compras = obtenerTodasLasComprasClientes();
-    
-    // Obtenemos el usuario activo de forma segura usando tu función de sesión existente
-    let activeUser = null;
-    try {
-        if (typeof getSession === 'function') {
-            activeUser = getSession();
-        } else if (localStorage.getItem('liz_current_user')) {
-            activeUser = JSON.parse(localStorage.getItem('liz_current_user'));
-        }
-    } catch (e) {
-        activeUser = null;
-    }
-    
-    const nuevaCompra = {
-        idOrden: '#RMT-' + Math.floor(1000 + Math.random() * 9000),
-        fecha: new Date().toLocaleString('es-PE'),
-        usuario: activeUser ? (activeUser.user || activeUser.nombre || 'Cliente') : 'Cliente Invitado',
-        email: activeUser ? (activeUser.email || 'No registrado') : 'No registrado',
-        telefono: activeUser ? (activeUser.telefono || 'No registrado') : 'No registrado',
-        items: pedidoData.items || (typeof state !== 'undefined' ? state.cart : []) || [],
-        subtotal: pedidoData.subtotal || 0,
-        descuento: pedidoData.descuento || 0,
-        total: pedidoData.total || 0,
-        metodoPago: pedidoData.metodoPago || 'Yape',
-        voucherImg: pedidoData.voucherImg || null,
-        estado: 'Pendiente de Verificación'
-    };
-
-    compras.unshift(nuevaCompra);
-    localStorage.setItem('liz_fashion_compras_clientes', JSON.stringify(compras));
-    return nuevaCompra.idOrden;
-}
-
-function openClientPaymentsModal() {
-    let activeUser = null;
-    try {
-        if (typeof getSession === 'function') {
-            activeUser = getSession();
-        } else if (localStorage.getItem('liz_current_user')) {
-            activeUser = JSON.parse(localStorage.getItem('liz_current_user'));
-        }
-    } catch (e) {
-        activeUser = null;
-    }
-    
-    if (!activeUser) {
-        alert("Por favor inicia sesión para ver tus pagos y compras.");
-        if (typeof openAuthModal === 'function') openAuthModal();
-        return;
-    }
-
-    const tbody = document.getElementById('tablaClientPaymentsBody');
-    if (!tbody) return;
-
-    const nombreUsuario = activeUser.user || activeUser.nombre || '';
-    const emailUsuario = activeUser.email || '';
-
-    const comprasUsuario = obtenerTodasLasComprasClientes().filter(c => 
-        (nombreUsuario && c.usuario === nombreUsuario) || (emailUsuario && c.email === emailUsuario)
-    );
-
-    if (comprasUsuario.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">Aún no tienes compras o pagos registrados.</td></tr>`;
-    } else {
-        tbody.innerHTML = comprasUsuario.map(c => `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="p-3 font-mono font-bold text-slate-900">${c.idOrden}</td>
-                <td class="p-3 font-semibold text-slate-700">${c.metodoPago}</td>
-                <td class="p-3 font-extrabold text-rose-600">S/ ${parseFloat(c.total).toFixed(2)}</td>
-                <td class="p-3 text-center">
-                    ${c.voucherImg ? `<img src="${c.voucherImg}" class="w-10 h-10 object-cover rounded-lg mx-auto border cursor-pointer shadow-xs" onclick="window.open('${c.voucherImg}')" title="Ver voucher">` : '<span class="text-slate-400 text-[10px]">Sin voucher</span>'}
-                </td>
-                <td class="p-3 text-center">
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                        c.estado === 'Aprobado' ? 'bg-emerald-100 text-emerald-800' : 
-                        c.estado === 'Rechazado' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
-                    }">${c.estado}</span>
-                </td>
-            </tr>
-        `).join('');
-    }
-
-    const modal = document.getElementById('clientPaymentsModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-function closeClientPaymentsModal() {
-    const modal = document.getElementById('clientPaymentsModal');
-    if (modal) {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-    }
 }
