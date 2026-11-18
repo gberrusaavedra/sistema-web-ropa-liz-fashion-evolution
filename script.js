@@ -2986,3 +2986,110 @@ function closeClientReportModal() {
         modal.classList.add('hidden');
     }
 }
+
+
+
+
+
+// =====================================================================
+// PANEL DE ADMINISTRADOR: REPORTE GENERAL DE TODOS LOS CLIENTES
+// =====================================================================
+async function openAdminAllReportsModal() {
+    const { isAdmin } = getSession();
+    if (!isAdmin) {
+        showToast('Acceso exclusivo para el Administrador', 'error');
+        return;
+    }
+
+    const modal = document.getElementById('adminAllReportsModal');
+    const container = document.getElementById('adminAllReportsContainer');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    if (container) {
+        container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">Cargando todos los reportes de clientes desde Neon...</div>';
+    }
+
+    try {
+        const { token } = getSession();
+        const res = await fetch(`${API_URL}/pagos`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const pagos = await res.json();
+
+        if (!container) return;
+
+        if (!Array.isArray(pagos) || pagos.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">No hay pagos ni reportes registrados en el sistema todavía.</div>';
+            return;
+        }
+
+        let html = '';
+        pagos.forEach(pago => {
+            let badgeColor = pago.estado === 'Aprobado' ? 'bg-emerald-100 text-emerald-700' : (pago.estado === 'Rechazado' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800');
+            
+            html += `
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs mb-3">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div>
+                            <span class="font-black text-slate-900 text-sm">Orden: ${pago.orden}</span>
+                            <span class="block text-xs font-bold text-purple-700">Cliente: ${pago.cliente || 'Anónimo'} (${pago.telefono || 'Sin teléfono'})</span>
+                            <span class="block text-[10px] text-slate-400">Fecha: ${new Date(pago.creado_en).toLocaleString()}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${badgeColor}">${pago.estado}</span>
+                            <span class="font-black text-rose-600 text-sm">S/ ${Number(pago.total).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs space-y-1.5">
+                        <p class="font-bold text-slate-700">🛒 Detalle de Prendas Solicitadas:</p>
+                        <div class="bg-white rounded-xl p-2.5 border border-slate-200 space-y-2">
+            `;
+
+            if (pago.detalles_pedido && Array.isArray(pago.detalles_pedido) && pago.detalles_pedido.length > 0) {
+                pago.detalles_pedido.forEach(item => {
+                    html += `
+                        <div class="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5 last:border-0 last:pb-0">
+                            <div class="flex items-center gap-2">
+                                <img src="${item.imagen || item.imagen_url || 'placeholder.jpg'}" class="w-8 h-8 rounded-lg object-cover border">
+                                <div>
+                                    <p class="font-bold text-slate-800">${item.titulo || item.modelo}</p>
+                                    <p class="text-[10px] text-slate-500">Talla: <b>${item.talla || 'Única'}</b> | Color: <b>${item.color || 'Estándar'}</b> | Cant: <b>${item.cantidad || 1}</b></p>
+                                </div>
+                            </div>
+                            <span class="font-bold text-slate-900">S/ ${(Number(item.precio_remate || item.precio || 0) * (item.cantidad || 1)).toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<p class="text-[11px] text-slate-400 italic">Pedido general validado por WhatsApp / Yape.</p>`;
+            }
+
+            html += `
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-1 text-[11px] text-slate-500">
+                        <span>Método de Pago: <strong class="text-purple-700">${pago.metodo}</strong></span>
+                        <a href="${pago.imagen_voucher}" target="_blank" class="text-rose-600 hover:underline font-bold">Ver Comprobante del Cliente ↗</a>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (err) {
+        if (container) {
+            container.innerHTML = '<div class="text-center py-6 text-xs text-rose-600">Error al cargar el reporte general de administrador.</div>';
+        }
+    }
+}
+
+function closeAdminAllReportsModal() {
+    const modal = document.getElementById('adminAllReportsModal');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+}
