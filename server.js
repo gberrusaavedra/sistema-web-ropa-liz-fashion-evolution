@@ -474,14 +474,11 @@ app.delete('/api/confeccion/pedidos', soloAdmin, async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
 // =====================================================================
-// MÓDULO DE MERCADO PAGO
+// MÓDULO DE MERCADO PAGO (UBICADO CORRECTAMENTE ANTES DEL PUERTO)
 // =====================================================================
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 
-// Configura tus credenciales (puedes colocarlas en tus variables de entorno en Render)
 const clientMP = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-tu-access-token-de-prueba-o-produccion' });
 
 app.post('/api/crear-preferencia-mp', async (req, res) => {
@@ -490,7 +487,6 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
 
         const preference = new Preference(clientMP);
         
-        // Mapeamos los ítems del carrito al formato que exige Mercado Pago
         const itemsMP = items.map(item => ({
             title: `${item.titulo} (Talla: ${item.talla} - Color: ${item.color})`,
             unit_price: Number(item.precio_remate),
@@ -515,7 +511,6 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
             }
         });
 
-        // Retornamos el link de pago (init_point para producción o sandbox_init_point para pruebas)
         res.json({ 
             init_point: result.init_point,
             sandbox_init_point: result.sandbox_init_point 
@@ -525,3 +520,9 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// =====================================================================
+// INICIO DEL SERVIDOR
+// =====================================================================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
