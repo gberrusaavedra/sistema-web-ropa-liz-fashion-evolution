@@ -1151,37 +1151,34 @@ function slideImage(productId, direction) {
 }
 
 async function fetchOfferTime() {
-    let targetTime = localStorage.getItem('liz_offer_end');
-    
-    if (targetTime && Number(targetTime) > new Date().getTime()) {
-        startCountdown(Number(targetTime));
-    }
-
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
+        // Consultamos siempre directamente al servidor de Neon la hora oficial de la oferta
         const res = await fetch(`${API_URL}/oferta-tiempo`, { signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (res.ok) {
             const data = await res.json();
             if (data && data.offer_end_time && Number(data.offer_end_time) > new Date().getTime()) {
-                targetTime = Number(data.offer_end_time);
+                const targetTime = Number(data.offer_end_time);
                 localStorage.setItem('liz_offer_end', targetTime);
-                startCountdown(Number(targetTime));
+                startCountdown(targetTime);
                 return;
             }
         }
     } catch (err) {
-        console.warn('Render está despertando o sin conexión. Usando horario local.');
+        console.warn('Usando respaldo local por latencia de Render.');
     }
 
+    // Si fallara la red, leemos el valor sincronizado del almacenamiento local del dispositivo
+    let targetTime = localStorage.getItem('liz_offer_end');
     if (!targetTime || Number(targetTime) <= new Date().getTime()) {
         targetTime = new Date().getTime() + (24 * 60 * 60 * 1000);
         localStorage.setItem('liz_offer_end', targetTime);
-        startCountdown(Number(targetTime));
     }
+    startCountdown(Number(targetTime));
 }
 
 function startCountdown(endTime) {
