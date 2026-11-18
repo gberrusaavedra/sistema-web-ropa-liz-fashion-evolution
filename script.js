@@ -2388,9 +2388,30 @@ async function cambiarEstadoPago(id, estado) {
                 if (!numeroLimpio.startsWith('51') && numeroLimpio.length === 9) {
                     numeroLimpio = '51' + numeroLimpio;
                 }
-                window.open(`https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+
+                // Generamos el enlace universal de WhatsApp
+                const urlWhatsApp = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+
+                // Mostramos un aviso flotante interactivo con un botón directo para abrir WhatsApp sin bloqueos
+                const container = document.getElementById('toastContainer');
+                if (container) {
+                    const alertaDiv = document.createElement('div');
+                    alertaDiv.className = 'bg-slate-900 border-2 border-emerald-500 text-white p-4 rounded-3xl shadow-2xl flex flex-col gap-2.5 pointer-events-auto mt-2';
+                    alertaDiv.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-black text-xs text-emerald-400">✅ ¡Pago ${estado} con éxito!</span>
+                            <button onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-tight">Haz clic en el botón para notificar al cliente (${pagoActualizado.cliente}) por WhatsApp:</p>
+                        <a href="${urlWhatsApp}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3 px-4 rounded-2xl text-center shadow-lg transition flex items-center justify-center gap-2">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar Notificación a WhatsApp 💬
+                        </a>
+                    `;
+                    container.appendChild(alertaDiv);
+                    lucide.createIcons();
+                }
             } else {
-                showToast('Estado actualizado, pero no se abrió WhatsApp por falta de número.', 'warning');
+                showToast('Estado actualizado, pero no se generó WhatsApp por falta de número.', 'warning');
             }
 
         } else {
