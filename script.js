@@ -2875,19 +2875,30 @@ function obtenerTodasLasComprasClientes() {
 
 function registrarCompraCliente(pedidoData) {
     const compras = obtenerTodasLasComprasClientes();
-    const activeUser = currentUser || (localStorage.getItem('liz_current_user') ? JSON.parse(localStorage.getItem('liz_current_user')) : null);
+    
+    // Obtenemos el usuario activo de forma segura usando tu función de sesión existente
+    let activeUser = null;
+    try {
+        if (typeof getSession === 'function') {
+            activeUser = getSession();
+        } else if (localStorage.getItem('liz_current_user')) {
+            activeUser = JSON.parse(localStorage.getItem('liz_current_user'));
+        }
+    } catch (e) {
+        activeUser = null;
+    }
     
     const nuevaCompra = {
         idOrden: '#RMT-' + Math.floor(1000 + Math.random() * 9000),
         fecha: new Date().toLocaleString('es-PE'),
-        usuario: activeUser ? activeUser.user : 'Cliente Invitado',
-        email: activeUser ? activeUser.email : 'No registrado',
-        telefono: activeUser ? activeUser.telefono : 'No registrado',
-        items: pedidoData.items || cart || [],
+        usuario: activeUser ? (activeUser.user || activeUser.nombre || 'Cliente') : 'Cliente Invitado',
+        email: activeUser ? (activeUser.email || 'No registrado') : 'No registrado',
+        telefono: activeUser ? (activeUser.telefono || 'No registrado') : 'No registrado',
+        items: pedidoData.items || (typeof state !== 'undefined' ? state.cart : []) || [],
         subtotal: pedidoData.subtotal || 0,
         descuento: pedidoData.descuento || 0,
         total: pedidoData.total || 0,
-        metodoPago: pedidoData.metodoPago || selectedPaymentMethod || 'Yape',
+        metodoPago: pedidoData.metodoPago || 'Yape',
         voucherImg: pedidoData.voucherImg || null,
         estado: 'Pendiente de Verificación'
     };
@@ -2898,7 +2909,16 @@ function registrarCompraCliente(pedidoData) {
 }
 
 function openClientPaymentsModal() {
-    const activeUser = currentUser || (localStorage.getItem('liz_current_user') ? JSON.parse(localStorage.getItem('liz_current_user')) : null);
+    let activeUser = null;
+    try {
+        if (typeof getSession === 'function') {
+            activeUser = getSession();
+        } else if (localStorage.getItem('liz_current_user')) {
+            activeUser = JSON.parse(localStorage.getItem('liz_current_user'));
+        }
+    } catch (e) {
+        activeUser = null;
+    }
     
     if (!activeUser) {
         alert("Por favor inicia sesión para ver tus pagos y compras.");
@@ -2909,7 +2929,12 @@ function openClientPaymentsModal() {
     const tbody = document.getElementById('tablaClientPaymentsBody');
     if (!tbody) return;
 
-    const comprasUsuario = obtenerTodasLasComprasClientes().filter(c => c.usuario === activeUser.user || c.email === activeUser.email);
+    const nombreUsuario = activeUser.user || activeUser.nombre || '';
+    const emailUsuario = activeUser.email || '';
+
+    const comprasUsuario = obtenerTodasLasComprasClientes().filter(c => 
+        (nombreUsuario && c.usuario === nombreUsuario) || (emailUsuario && c.email === emailUsuario)
+    );
 
     if (comprasUsuario.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 italic">Aún no tienes compras o pagos registrados.</td></tr>`;
