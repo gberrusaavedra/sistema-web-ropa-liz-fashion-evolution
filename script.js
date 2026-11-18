@@ -2661,7 +2661,7 @@ function renderizarBolsaConfeccionItems() {
     });
 
     let total = 0;
-    container.innerHTML = bolbolsaConfeccionItems.map((item, idx) => {
+    container.innerHTML = bolsaConfeccionItems.map((item, idx) => {
         const cantidadEsteModelo = conteoModelos[item.modelo];
         let precioAplicado = item.precio;
         let esPrecioMayor = false;
