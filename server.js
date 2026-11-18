@@ -476,3 +476,52 @@ app.delete('/api/confeccion/pedidos', soloAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+// =====================================================================
+// MÓDULO DE MERCADO PAGO
+// =====================================================================
+const { MercadoPagoConfig, Preference } = require('mercadopago');
+
+// Configura tus credenciales (puedes colocarlas en tus variables de entorno en Render)
+const clientMP = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-tu-access-token-de-prueba-o-produccion' });
+
+app.post('/api/crear-preferencia-mp', async (req, res) => {
+    try {
+        const { items, cliente, telefono, orden } = req.body;
+
+        const preference = new Preference(clientMP);
+        
+        // Mapeamos los ítems del carrito al formato que exige Mercado Pago
+        const itemsMP = items.map(item => ({
+            title: `${item.titulo} (Talla: ${item.talla} - Color: ${item.color})`,
+            unit_price: Number(item.precio_remate),
+            quantity: Number(item.cantidad),
+            currency_id: 'PEN'
+        }));
+
+        const result = await preference.create({
+            body: {
+                items: itemsMP,
+                payer: {
+                    name: cliente || 'Cliente Liz Fashion',
+                    phone: { number: telefono || '' }
+                },
+                back_urls: {
+                    success: "https://tu-dominio-en-render.onrender.com/?status=success",
+                    failure: "https://tu-dominio-en-render.onrender.com/?status=failure",
+                    pending: "https://tu-dominio-en-render.onrender.com/?status=pending"
+                },
+                auto_return: "approved",
+                external_reference: orden
+            }
+        });
+
+        // Retornamos el link de pago (init_point para producción o sandbox_init_point para pruebas)
+        res.json({ 
+            init_point: result.init_point,
+            sandbox_init_point: result.sandbox_init_point 
+        });
+    } catch (err) {
+        console.error("Error al crear preferencia de Mercado Pago:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
