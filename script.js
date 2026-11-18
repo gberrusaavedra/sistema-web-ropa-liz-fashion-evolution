@@ -2272,14 +2272,24 @@ async function handleSubirVoucher(e) {
         // Generamos el enlace universal de WhatsApp
         const urlWhatsApp = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
 
-        // Simulamos un clic real para abrir WhatsApp de forma automática sin bloqueos
-        const linkTemp = document.createElement('a');
-        linkTemp.href = urlWhatsApp;
-        linkTemp.target = '_blank';
-        linkTemp.rel = 'noopener noreferrer';
-        document.body.appendChild(linkTemp);
-        linkTemp.click();
-        document.body.removeChild(linkTemp);
+        // Mostramos un botón flotante táctil gigante y directo para saltarnos las restricciones móviles
+        const container = document.getElementById('toastContainer');
+        if (container) {
+            const alertaDiv = document.createElement('div');
+            alertaDiv.className = 'bg-slate-900 border-2 border-emerald-500 text-white p-4 rounded-3xl shadow-2xl flex flex-col gap-3 pointer-events-auto mt-2 animate-bounce';
+            alertaDiv.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-black text-xs text-emerald-400">🎉 ¡Pedido y Reporte Guardados!</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">El navegador requiere un toque para abrir WhatsApp con todo tu detalle:</p>
+                <a href="${urlWhatsApp}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3.5 px-4 rounded-2xl text-center shadow-lg transition flex items-center justify-center gap-2">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar Detalle Completo a WhatsApp 💬
+                </a>
+            `;
+            container.appendChild(alertaDiv);
+            lucide.createIcons();
+        }
 
     } catch (err) {
         showToast('Error al conectar con el servidor', 'error');
