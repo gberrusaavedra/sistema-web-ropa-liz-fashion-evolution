@@ -2188,33 +2188,40 @@ async function handleSubirVoucher(e) {
     let total = 0;
     const detallesParaBD = [];
 
-    // Recorremos la bolsa de compras para calcular subtotales y armar el detalle exacto
     state.cart.forEach(item => {
-        const p = PRODUCTS.find(prod => prod.id === item.productId);
-        if (p) {
-            const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
-            const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
-            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
-            total += precioAplicado * item.qty;
+        const p = PRODUCTS.find(prod => String(prod.id) === String(item.productId));
+        if (!p) return;
 
-            detallesParaBD.push({
-                codigo: prodCode,
-                titulo: p.name,
-                precio_remate: precioAplicado,
-                talla: item.size,
-                color: item.color || 'Único',
-                cantidad: item.qty,
-                imagen: p.image || p.imagen_url
-            });
-        }
+        const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
+        const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId] || item.qty;
+        const tieneDescuentoMayor = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR;
+        const precioAplicado = tieneDescuentoMayor
+            ? Number(p.precioMayor || (p.salePrice * 0.85))
+            : Number(p.salePrice);
+
+        total += precioAplicado * item.qty;
+
+        detallesParaBD.push({
+            codigo: prodCode,
+            titulo: p.name,
+            precio_remate: precioAplicado,
+            talla: item.size || 'Única',
+            color: item.color || 'Único',
+            cantidad: item.qty,
+            imagen: p.image || p.imagen_url || ''
+        });
     });
+
+    if (detallesParaBD.length === 0) {
+        showToast('No se encontraron prendas válidas en la bolsa.', 'error');
+        return;
+    }
 
     const ordenCode = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
     const hashImagen = await generarHashImagen(voucherBase64Temp);
     const { user } = getSession();
 
     try {
-        // Guardamos en la base de datos de Neon el pago y el detalle de las prendas
         const res = await fetch(`${API_URL}/pagos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2240,7 +2247,6 @@ async function handleSubirVoucher(e) {
         closeVoucherModal();
         toggleCartDrawer(false);
 
-        // --- CONSTRUCCIÓN DEL MENSAJE DE CONFIRMACIÓN Y DETALLE TOTAL PARA WHATSAPP ---
         let msg = `🛍️ *NUEVO PAGO Y PEDIDO (${selectedPaymentMethod.toUpperCase()})* 🛍️\n`;
         msg += `🧾 *Orden:* ${ordenCode}\n`;
         msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n\n`;
@@ -2249,30 +2255,25 @@ async function handleSubirVoucher(e) {
         detallesParaBD.forEach((item, index) => {
             msg += `${index + 1}. *[${item.codigo}] ${item.titulo}*\n`;
             msg += `   • Color: *${item.color}* | Talla: *${item.talla}* | Cant: *${item.cantidad}*\n`;
-            msg += `   • Subtotal: S/ ${(item.precio_remate * item.cantidad).toFixed(2)}\n\n`;
+            msg += `   • Subtotal: ${formatPrice(item.precio_remate * item.cantidad)}\n\n`;
         });
 
         msg += `💰 *TOTAL GENERAL PAGADO: ${formatPrice(total)}*\n\n`;
         msg += `✅ *Confirmación:* Mi comprobante ha sido enviado y el reporte detallado ya se encuentra registrado en la web. ¡Quedo a la espera de la confirmación de envío!`;
 
-        // Vaciamos el carrito local
         state.cart = [];
+        voucherBase64Temp = '';
         renderCart();
 
-        // Generamos el enlace universal de WhatsApp
         const urlWhatsApp = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
+        const popup = window.open(urlWhatsApp, '_blank', 'noopener,noreferrer');
 
-        // Simulamos un clic real para abrir WhatsApp de forma automática sin bloqueos
-        const linkTemp = document.createElement('a');
-        linkTemp.href = urlWhatsApp;
-        linkTemp.target = '_blank';
-        linkTemp.rel = 'noopener noreferrer';
-        document.body.appendChild(linkTemp);
-        linkTemp.click();
-        document.body.removeChild(linkTemp);
-
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            window.location.href = urlWhatsApp;
+        }
     } catch (err) {
-        showToast('Error al conectar con el servidor', 'error');
+        console.error('Error en handleSubirVoucher:', err);
+        showToast('Ocurrió un error al procesar o enviar el pedido.', 'error');
     }
 }
 async function abrirAdminVouchersModal() {
