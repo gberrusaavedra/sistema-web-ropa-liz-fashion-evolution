@@ -3138,20 +3138,42 @@ function pagarConMercadoPago() {
     const totalFormateado = formatPrice(totalConComision);
     document.getElementById('mpModalTotalBadge').textContent = `Total (+5%): ${totalFormateado}`;
     document.getElementById('mpMontoInstruccion').textContent = totalFormateado;
-    
+
+    const destacadoEl = document.getElementById('mpMontoDestacado');
+    if (destacadoEl) destacadoEl.textContent = totalFormateado;
+
     const desgloseEl = document.getElementById('mpDesgloseComision');
     if (desgloseEl) {
         desgloseEl.textContent = `Bolsa: ${formatPrice(subtotalBolsa)} + 5% (${formatPrice(comisionMP)})`;
     }
-
-    // Cargamos tu link de Mercado Pago dentro del iframe del modal
-    document.getElementById('iframeMercadoPago').src = 'https://link.mercadopago.com.pe/guadalupesaavedra';
 
     // Cerramos el cajón lateral del carrito y abrimos el modal central
     toggleCartDrawer(false);
     const modal = document.getElementById('mercadoPagoModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+
+    abrirVentanaMercadoPago();
+}
+
+function abrirVentanaMercadoPago() {
+    const url = 'https://link.mercadopago.com.pe/guadalupesaavedra';[cite: 12, 16]
+    const popup = window.open(
+        url,
+        'MercadoPagoCheckout',
+        'width=540,height=740,scrollbars=yes,resizable=yes'
+    );
+    if (!popup) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+}
+
+function cerrarModalMercadoPago() {
+    const modal = document.getElementById('mercadoPagoModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 
 async function confirmarPagoMercadoPagoEnBD() {
