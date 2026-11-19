@@ -1174,10 +1174,27 @@
             <span id="mpDesgloseComision" class="text-[11px] font-semibold text-amber-800">Subtotal: S/ 0.00 + 5% comisión</span>
         </div>
 
-      1177 <!-- Ventana de Mercado Pago incrustada dentro de tu web -->
-1178 <div class="flex-1 w-full bg-slate-50 relative">
-1179     <iframe id="iframeMercadoPago" src="" class="w-full h-full border-0" allow="payment *"></iframe>
-1180 </div>
+      <!-- Panel de acción dentro del modal (evita el bloqueo de iframe de Mercado Pago) -->
+<div class="flex-1 w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-4">
+    <div class="w-16 h-16 rounded-2xl bg-[#009EE3]/15 text-[#009EE3] flex items-center justify-center text-3xl font-black">
+        💳
+    </div>
+    <div class="space-y-1 max-w-md">
+        <h4 class="text-base font-black text-slate-900">Completa tu pago en Mercado Pago</h4>
+        <p class="text-xs text-slate-600">
+            Por seguridad de Mercado Pago, la pasarela se abrirá en una ventana aparte. Ingresa el monto total con el 5% incluido:
+        </p>
+        <p id="mpMontoDestacado" class="text-2xl font-black text-[#009EE3] pt-1">S/ 0.00</p>
+    </div>
+
+    <button type="button" onclick="abrirVentanaMercadoPago()" class="bg-[#009EE3] hover:bg-[#0082BD] text-white font-black px-6 py-3.5 rounded-xl shadow-lg text-xs sm:text-sm transition cursor-pointer">
+        🚀 Abrir Pasarela de Mercado Pago
+    </button>
+
+    <a href="https://link.mercadopago.com.pe/guadalupesaavedra" target="_blank" rel="noopener noreferrer" class="text-[11px] font-bold text-slate-500 hover:text-[#009EE3] underline">
+        ¿El bloqueador de ventanas impidió abrirlo? Haz clic aquí
+    </a>
+</div>
         <!-- Pie del Modal para registrar el pedido en Neon tras pagar -->
         <div class="bg-slate-900 text-white px-5 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
             <span class="text-xs text-slate-300">¿Ya completaste tu pago arriba? Regístralo en tu historial:</span>
