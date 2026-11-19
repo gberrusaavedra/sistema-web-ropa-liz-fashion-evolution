@@ -627,16 +627,16 @@
                         🔵 Plin
                     </button>
                 </div>
-<button onclick="pagarConMercadoPago()" class="w-full bg-[#009EE3] hover:bg-[#0082BD] text-white font-bold py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition cursor-pointer mt-2">
-        💳 Pagar con Mercado Pago (Tarjetas)
-    </button>
+
                 <button onclick="procederPagoYapePlin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition cursor-pointer">
                     <i data-lucide="smartphone" class="w-5 h-5"></i> Pagar con <span id="paymentMethodLabel">Yape</span> y Subir Voucher
                 </button>
                 <button onclick="sendOrderToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition cursor-pointer">
                     <i data-lucide="message-circle" class="w-5 h-5"></i> Pedir por WhatsApp
                 </button>
-               
+                <button onclick="simulateCheckout()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i> Simular Reserva Rápida
+                </button>
             </div>
         </div>
     </aside>
@@ -1152,57 +1152,6 @@
 
         <div class="pt-4 border-t border-slate-100 flex justify-end">
             <button onclick="closeClientReportModal()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer">Cerrar Ventana</button>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL INTERNO DE PAGO CON MERCADO PAGO -->
-<div id="mercadoPagoModal" onclick="cerrarModalMercadoPago()" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl max-w-3xl w-full h-[88vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 relative modal-animate" onclick="event.stopPropagation()">
-        
-        <!-- Cabecera del Modal -->
-        <div class="bg-[#009EE3] text-white px-5 py-3.5 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-2.5">
-                <span class="font-black text-base tracking-tight">💳 Pasarela Segura Mercado Pago</span>
-                <span id="mpModalTotalBadge" class="bg-white text-[#009EE3] text-xs font-black px-2.5 py-0.5 rounded-full">Total (+5%): S/ 0.00</span>
-            </div>
-            <button onclick="cerrarModalMercadoPago()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center font-bold cursor-pointer transition">✕</button>
-        </div>
-
-        <!-- AQUÍ VA EL BLOQUE QUE PREGUNTASTE (Aviso del monto exacto + 5%) -->
-        <div class="bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2 shrink-0">
-            <span>💡 Ingresa este monto exacto (<strong id="mpMontoInstruccion">S/ 0.00</strong>) en la ventana inferior:</span>
-            <span id="mpDesgloseComision" class="text-[11px] font-semibold text-amber-800">Subtotal: S/ 0.00 + 5% comisión</span>
-        </div>
-
-        <!-- Panel de acción dentro del modal (evita el bloqueo de iframe de Mercado Pago) -->
-        <div class="flex-1 w-full bg-slate-50 flex flex-col items-center justify-center p-6 text-center space-y-4">
-            <div class="w-16 h-16 rounded-2xl bg-[#009EE3]/15 text-[#009EE3] flex items-center justify-center text-3xl font-black">
-                💳
-            </div>
-            <div class="space-y-1 max-w-md">
-                <h4 class="text-base font-black text-slate-900">Completa tu pago en Mercado Pago</h4>
-                <p class="text-xs text-slate-600">
-                    Por seguridad de Mercado Pago, la pasarela se abrirá en una ventana aparte. Ingresa el monto total con el 5% incluido:
-                </p>
-                <p id="mpMontoDestacado" class="text-2xl font-black text-[#009EE3] pt-1">S/ 0.00</p>
-            </div>
-
-            <button type="button" onclick="abrirVentanaMercadoPago()" class="bg-[#009EE3] hover:bg-[#0082BD] text-white font-black px-6 py-3.5 rounded-xl shadow-lg text-xs sm:text-sm transition cursor-pointer">
-                🚀 Abrir Pasarela de Mercado Pago
-            </button>
-
-            <a href="https://link.mercadopago.com.pe/guadalupesaavedra" target="_blank" rel="noopener noreferrer" class="text-[11px] font-bold text-slate-500 hover:text-[#009EE3] underline">
-                ¿El bloqueador de ventanas impidió abrirlo? Haz clic aquí
-            </a>
-        </div>
-
-        <!-- Pie del Modal para registrar el pedido en Neon tras pagar -->
-        <div class="bg-slate-900 text-white px-5 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <span class="text-xs text-slate-300">¿Ya completaste tu pago arriba? Regístralo en tu historial:</span>
-            <button onclick="confirmarPagoMercadoPagoEnBD()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-4 py-2 rounded-xl text-xs transition cursor-pointer shadow-md">
-                ✅ Ya pagué, Registrar mi Pedido
-            </button>
         </div>
     </div>
 </div>

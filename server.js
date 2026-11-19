@@ -474,11 +474,14 @@ app.delete('/api/confeccion/pedidos', soloAdmin, async (req, res) => {
     }
 });
 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
 // =====================================================================
-// MÓDULO DE MERCADO PAGO (UBICADO CORRECTAMENTE ANTES DEL PUERTO)
+// MÓDULO DE MERCADO PAGO
 // =====================================================================
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 
+// Configura tus credenciales (puedes colocarlas en tus variables de entorno en Render)
 const clientMP = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-tu-access-token-de-prueba-o-produccion' });
 
 app.post('/api/crear-preferencia-mp', async (req, res) => {
@@ -487,6 +490,7 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
 
         const preference = new Preference(clientMP);
         
+        // Mapeamos los ítems del carrito al formato que exige Mercado Pago
         const itemsMP = items.map(item => ({
             title: `${item.titulo} (Talla: ${item.talla} - Color: ${item.color})`,
             unit_price: Number(item.precio_remate),
@@ -511,6 +515,7 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
             }
         });
 
+        // Retornamos el link de pago (init_point para producción o sandbox_init_point para pruebas)
         res.json({ 
             init_point: result.init_point,
             sandbox_init_point: result.sandbox_init_point 
@@ -518,39 +523,5 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
     } catch (err) {
         console.error("Error al crear preferencia de Mercado Pago:", err);
         res.status(500).json({ error: err.message });
-    }
-});
-
-// =====================================================================
-// INICIO DEL SERVIDOR
-// =====================================================================
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
-
-// =====================================================================
-// WEBHOOK DE MERCADO PAGO (NOTIFICACIONES AUTOMÁTICAS)
-// =====================================================================
-app.post('/api/webhook-mp', async (req, res) => {
-    try {
-        const evento = req.body || {};
-        const tipo = evento.type || req.query.type || evento.topic || req.query.topic || 'desconocido';
-        const dataId = evento.data?.id || req.query['data.id'] || req.query.id || null;
-
-        console.log('Webhook Mercado Pago recibido:', { tipo, dataId });
-
-        // Si llega una notificación de pago y tenemos referencia/orden, podemos actualizar en Neon
-        const referenciaOrden = evento.external_reference || req.query.external_reference || null;
-        if (referenciaOrden && (tipo === 'payment' || evento.action === 'payment.created' || evento.action === 'payment.updated')) {
-            await pool.query(
-                `UPDATE pagos_yape_plin SET estado = 'Aprobado' WHERE orden = $1 AND metodo ILIKE '%Mercado Pago%'`,
-                [String(referenciaOrden)]
-            );
-        }
-
-        // Mercado Pago exige responder con estado 200/201 para confirmar recepción
-        res.status(200).json({ recibido: true, tipo, id: dataId });
-    } catch (err) {
-        console.error('Error en /api/webhook-mp:', err);
-        res.status(200).json({ recibido: true, error: err.message });
     }
 });
