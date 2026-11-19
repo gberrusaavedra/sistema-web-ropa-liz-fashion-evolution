@@ -526,3 +526,31 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
 // =====================================================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
+// =====================================================================
+// WEBHOOK DE MERCADO PAGO (NOTIFICACIONES AUTOMÁTICAS)
+// =====================================================================
+app.post('/api/webhook-mp', async (req, res) => {
+    try {
+        const evento = req.body || {};
+        const tipo = evento.type || req.query.type || evento.topic || req.query.topic || 'desconocido';
+        const dataId = evento.data?.id || req.query['data.id'] || req.query.id || null;
+
+        console.log('Webhook Mercado Pago recibido:', { tipo, dataId });
+
+        // Si llega una notificación de pago y tenemos referencia/orden, podemos actualizar en Neon
+        const referenciaOrden = evento.external_reference || req.query.external_reference || null;
+        if (referenciaOrden && (tipo === 'payment' || evento.action === 'payment.created' || evento.action === 'payment.updated')) {
+            await pool.query(
+                `UPDATE pagos_yape_plin SET estado = 'Aprobado' WHERE orden = $1 AND metodo ILIKE '%Mercado Pago%'`,
+                [String(referenciaOrden)]
+            );
+        }
+
+        // Mercado Pago exige responder con estado 200/201 para confirmar recepción
+        res.status(200).json({ recibido: true, tipo, id: dataId });
+    } catch (err) {
+        console.error('Error en /api/webhook-mp:', err);
+        res.status(200).json({ recibido: true, error: err.message });
+    }
+});
