@@ -34,6 +34,16 @@
     <!-- Librería jsPDF para generación de comprobantes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#FF8C00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Liz Fashion">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+
+
+
 <body class="bg-[#FDFBF7] text-slate-900 font-sans antialiased selection:bg-rose-600 selection:text-white">
 
     <!-- Top Announcement Bar Adaptado -->
@@ -1153,6 +1163,15 @@
         </div>
     </div>
 </div>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Web App registrada:', reg.scope))
+        .catch(err => console.error('Error SW:', err));
+    });
+  }
+</script>
     <!-- Lógica unificada -->
     <script src="script.js"></script>
 </body>
