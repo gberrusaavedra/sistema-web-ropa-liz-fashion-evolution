@@ -3113,54 +3113,23 @@ async function pagarConMercadoPago() {
         return;
     }
 
-    const { user } = getSession();
     const cantidadesPorProducto = {};
     state.cart.forEach(item => {
         cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
     });
 
-    const itemsParaMP = [];
+    let total = 0;
     state.cart.forEach(item => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
-            const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
-            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
-
-            itemsParaMP.push({
-                codigo: prodCode,
-                titulo: p.name,
-                precio_remate: precioAplicado,
-                talla: item.size,
-                color: item.color || 'Único',
-                cantidad: item.qty
-            });
+            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR
+                ? (p.precioMayor || (p.salePrice * 0.85))
+                : p.salePrice;
+            total += precioAplicado * item.qty;
         }
     });
 
-    const ordenCode = `MP-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    try {
-        showToast('Conectando con Mercado Pago...', 'success');
-        
-        const res = await fetch(`${API_URL}/crear-preferencia-mp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                items: itemsParaMP,
-                cliente: user ? user.nombre : 'Cliente Invitado',
-                telefono: user ? (user.telefono || '') : '',
-                orden: ordenCode
-            })
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo crear la preferencia de pago');
-
-        // Redirige al usuario de forma automática a la pasarela de pago segura de Mercado Pago
-        window.location.href = data.init_point;
-
-    } catch (err) {
-        showToast('Error al procesar Mercado Pago: ' + err.message, 'error');
-    }
+    showToast(`Redirigiendo a Mercado Pago — Total: ${formatPrice(total)}`, 'success');
+    window.open('https://link.mercadopago.com.pe/guadalupesaavedra', '_blank', 'noopener,noreferrer');
 }
