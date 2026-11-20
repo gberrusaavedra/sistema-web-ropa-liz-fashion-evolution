@@ -806,7 +806,7 @@ function renderProductGrid(productsList) {
 
         return `
             <article class="group bg-white rounded-2xl border border-slate-200/95 shadow-xs hover:shadow-xl hover:border-rose-200 transition-all duration-300 flex flex-col">
-                <div class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img shrink-0">
+<div ${imagesList.length > 1 ? `onmouseenter="slideImage(${product.id}, 1)"` : ''} class="relative w-full h-80 sm:h-96 bg-slate-100 overflow-hidden group/img shrink-0">
                     <div id="slider-${product.id}" class="h-full flex transition-transform duration-300 ease-out" style="width: ${imagesList.length * 100}%; transform: translateX(-${(currentImgIdx * (100 / imagesList.length))}%);">
                         ${imagesList.map((imgUrl, imgIdx) => `
                             <div class="h-full relative bg-slate-100" style="width: ${100 / imagesList.length}%;">
@@ -1749,7 +1749,7 @@ function renderCatalogoConfeccion() {
             <div class="bg-white border border-slate-200 hover:border-rose-200 rounded-2xl p-4 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between">
                 <div>
                     <!-- Carrusel interactivo con flechas y contador -->
-                    <div class="relative group/confimg mb-2">
+                    <div ${imgs.length > 1 ? `onmouseenter="slideConfeccionImage(${p.id}, 1)"` : ''} class="relative group/confimg mb-2">
                         <img src="${imgs[currentIdx]}" alt="${p.modelo}" class="w-full h-48 object-cover rounded-xl border border-slate-100 transition-all" onerror="this.src='https://placehold.co/500x500/1e293b/ffffff?text=Prenda'">
                         ${imgs.length > 1 ? `
                             <button type="button" onclick="slideConfeccionImage(${p.id}, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-slate-900/70 hover:bg-rose-600 text-white flex items-center justify-center text-xs font-bold shadow cursor-pointer transition">❮</button>
