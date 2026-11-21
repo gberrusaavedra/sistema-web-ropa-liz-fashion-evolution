@@ -2574,15 +2574,15 @@ function guardarComprobanteUsadoEstricto(hashImagen, huellaVisual, nroOperacion)
 
 async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, montoEsperado) {
     if (!base64Str || !base64Str.startsWith('data:image/')) {
-        return { valido: false, error: 'El comprobante debe ser una imagen válida (JPG o PNG).' };
+        return { valido: false, error: 'Solo se aceptan imágenes JPG o PNG.' };
     }
 
-    // 1. Verificar proporción vertical de captura de celular y presencia del fondo morado oficial Yape
+    // 1. Verificar formato vertical de captura móvil y color según método (Yape o Plin)
     const checkVisual = await new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
-            if (img.width < 220 || img.height < 380 || img.height <= img.width) {
-                resolve({ ok: false, motivo: 'La imagen no tiene formato de captura de pantalla móvil oficial.' });
+            if (img.height <= img.width || img.height < 350) {
+                resolve({ ok: false, motivo: 'Rechazado: la imagen no es una captura vertical de comprobante Yape/Plin.' });
                 return;
             }
             const canvas = document.createElement('canvas');
@@ -2592,18 +2592,33 @@ async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, mon
             ctx.drawImage(img, 0, 0, 60, 100);
             const px = ctx.getImageData(0, 0, 60, 100).data;
             let morados = 0;
+            let celestesAzules = 0;
             const totalPx = 60 * 100;
+
             for (let i = 0; i < px.length; i += 4) {
                 const r = px[i], g = px[i + 1], b = px[i + 2];
-                if (r > 75 && r < 165 && g < 65 && b > 85 && b < 175) morados++;
+                if (r >= 65 && r <= 185 && g <= 85 && b >= 75 && b <= 200 && b > g + 35) {
+                    morados++;
+                }
+                if (b >= 110 && g >= 90 && r <= 140 && (b + g) > r * 1.6) {
+                    celestesAzules++;
+                }
             }
-            if ((morados / totalPx) < 0.12) {
-                resolve({ ok: false, motivo: 'La captura no corresponde a la interfaz oficial de Yape/Plin.' });
-                return;
+
+            if (metodoEsperado === 'Plin') {
+                if ((celestesAzules / totalPx) < 0.04 && (morados / totalPx) < 0.10) {
+                    resolve({ ok: false, motivo: 'Rechazado: esta imagen no parece una captura válida de Plin.' });
+                    return;
+                }
+            } else {
+                if ((morados / totalPx) < 0.15) {
+                    resolve({ ok: false, motivo: 'Rechazado: esta imagen no es una captura oficial de Yape.' });
+                    return;
+                }
             }
             resolve({ ok: true });
         };
-        img.onerror = () => resolve({ ok: false, motivo: 'No se pudo procesar la imagen del comprobante.' });
+        img.onerror = () => resolve({ ok: false, motivo: 'No se pudo leer la imagen del comprobante.' });
         img.src = base64Str;
     });
 
@@ -2611,9 +2626,9 @@ async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, mon
         return { valido: false, error: checkVisual.motivo };
     }
 
-    // 2. OCR estricto sobre el comprobante
+    // 2. OCR estricto del comprobante para Yape y Plin
     if (typeof Tesseract === 'undefined') {
-        return { valido: false, error: 'Falta cargar Tesseract.js en index.html para validar el comprobante.' };
+        return { valido: false, error: 'No cargó Tesseract.js. Revisa la etiqueta <script> en index.html.' };
     }
 
     const ocrResult = await Tesseract.recognize(base64Str, 'spa');
@@ -2621,57 +2636,47 @@ async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, mon
     const textoLimpio = rawText.replace(/\s+/g, ' ').trim();
     const textoLower = textoLimpio.toLowerCase();
 
-    // A) Debe contener encabezado y estructura oficial de transacción
-    const tieneCabeceraOficial = /yapeaste|te\s*yapearon|datos\s*de\s*la\s*transacci[oó]n/i.test(textoLimpio);
-    if (!tieneCabeceraOficial) {
-        return { valido: false, error: 'Comprobante rechazado: no se detecta una constancia oficial de Yape/Plin.' };
+    const tieneEstructura = /yapeaste|yapearon|plin|transferencia|transacci[oó]n|operaci[oó]n|destino/i.test(textoLimpio);
+    if (!tieneEstructura) {
+        return { valido: false, error: 'Rechazado: la imagen no muestra los datos de una transacción de Yape o Plin.' };
     }
 
-    // B) Debe ir dirigido EXCLUSIVAMENTE a "Liz Berru" o "Liz Ber*"
-    const tieneDestinatarioValido = /liz\s*ber(ru|\*|\b)/i.test(textoLimpio);
-    if (!tieneDestinatarioValido) {
-        return { valido: false, error: 'Comprobante rechazado: el destinatario debe ser "Liz Berru" o "Liz Ber*".' };
+    // Debe ir dirigido a "Liz Berru" o "Liz Ber*"
+    const tieneDestinatario = /liz\s*ber(ru|\*|\b)/i.test(textoLimpio);
+    if (!tieneDestinatario) {
+        return { valido: false, error: 'Rechazado: el comprobante no está dirigido a Liz Berru / Liz Ber*.' };
     }
 
-    // C) Validar Destino (Yape o Plin) y datos específicos de cada uno
     if (metodoEsperado === 'Plin') {
-        if (!/destino\s*[:\-]?\s*plin/i.test(textoLimpio) && !/\bplin\b/i.test(textoLimpio)) {
-            return { valido: false, error: 'Seleccionaste Plin, pero el comprobante no indica Destino: Plin.' };
+        if (!/\bplin\b/i.test(textoLimpio)) {
+            return { valido: false, error: 'Rechazado: el comprobante no corresponde a Plin.' };
         }
     } else {
-        if (!/destino\s*[:\-]?\s*yape/i.test(textoLimpio)) {
-            return { valido: false, error: 'Seleccionaste Yape, pero el comprobante no indica Destino: Yape.' };
+        if (!/yape/i.test(textoLimpio)) {
+            return { valido: false, error: 'Rechazado: el comprobante no corresponde a Destino: Yape.' };
         }
-        // En Yape a Liz Ber* debe aparecer el celular terminado en 548 y el código de seguridad de 3 dígitos
-        if (!/548\b/.test(textoLimpio)) {
-            return { valido: false, error: 'Comprobante Yape rechazado: el número de destino no termina en 548.' };
-        }
-        if (!/c[oó]digo\s*de\s*seguridad/i.test(textoLimpio)) {
-            return { valido: false, error: 'Comprobante Yape alterado o incompleto: falta el Código de seguridad.' };
+        if (!/548/.test(textoLimpio) && !/c[oó]digo\s*de\s*seguridad/i.test(textoLimpio)) {
+            return { valido: false, error: 'Rechazado: el comprobante de Yape no muestra los datos de seguridad/destino válidos.' };
         }
     }
 
-    // D) Extraer Nro. de operación (obligatorio y único)
-    const matchOp = textoLimpio.match(/nro\.?\s*de\s*operaci[oó]n\s*[:\-]?\s*(\d{6,10})/i);
+    const matchOp = textoLimpio.match(/(?:operaci[oó]n|n[ro°]+[^0-9]{0,15})\s*(\d{5,12})/i);
     if (!matchOp || !matchOp[1]) {
-        return { valido: false, error: 'Comprobante rechazado: no se pudo leer un Nro. de operación válido.' };
+        return { valido: false, error: `Rechazado: no se detecta el Nro. de operación del comprobante de ${metodoEsperado}.` };
     }
     const nroOperacion = matchOp[1].trim();
 
-    // E) Verificar que el monto del comprobante coincida con el total a pagar
     const matchMonto = textoLimpio.match(/s\/\s*(\d+(?:[.,]\d{1,2})?)/i);
-    if (!matchMonto || !matchMonto[1]) {
-        return { valido: false, error: 'Comprobante rechazado: no se pudo leer el monto en soles (S/).' };
-    }
-    const montoLeido = parseFloat(matchMonto[1].replace(',', '.'));
-    if (isNaN(montoLeido) || Math.abs(montoLeido - Number(montoEsperado)) > 0.05) {
-        return {
-            valido: false,
-            error: `El monto del voucher (S/ ${isNaN(montoLeido) ? '?' : montoLeido.toFixed(2)}) no coincide con el total del pedido (S/ ${Number(montoEsperado).toFixed(2)}).`
-        };
+    if (matchMonto && matchMonto[1]) {
+        const montoLeido = parseFloat(matchMonto[1].replace(',', '.'));
+        if (!isNaN(montoLeido) && Math.abs(montoLeido - Number(montoEsperado)) > 0.05) {
+            return {
+                valido: false,
+                error: `Rechazado: el monto del comprobante (S/ ${montoLeido.toFixed(2)}) no coincide con el total (S/ ${Number(montoEsperado).toFixed(2)}).`
+            };
+        }
     }
 
-    // F) Verificar fecha actual (evita subir capturas viejas de días o meses anteriores)
     const ahora = new Date();
     const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     const dia = String(ahora.getDate()).padStart(2, '0');
@@ -2680,14 +2685,10 @@ async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, mon
     const anio = String(ahora.getFullYear());
     const regexFechaHoy = new RegExp(`(?:${dia}|${diaSinCero})\\s*${mes}\\.?\\s*${anio}`, 'i');
     if (!regexFechaHoy.test(textoLower)) {
-        return { valido: false, error: 'Comprobante rechazado: la fecha del pago no corresponde al día de hoy.' };
+        return { valido: false, error: 'Rechazado: la fecha del comprobante no corresponde a hoy.' };
     }
 
-    return {
-        valido: true,
-        nroOperacion,
-        montoLeido
-    };
+    return { valido: true, nroOperacion };
 }
 
 async function handleSubirVoucher(e) {
