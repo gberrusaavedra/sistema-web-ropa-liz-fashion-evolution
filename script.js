@@ -2177,6 +2177,304 @@ async function generarHashImagen(base64Str) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function generarHuellaVisualVoucher(base64Str) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 16;
+            canvas.height = 16;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 16, 16);
+            const data = ctx.getImageData(0, 0, 16, 16).data;
+            const grises = [];
+            for (let i = 0; i < data.length; i += 4) {
+                grises.push(Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]));
+            }
+            const promedio = grises.reduce((a, b) => a + b, 0) / grises.length;
+            resolve(grises.map(g => (g >= promedio ? '1' : '0')).join(''));
+        };
+        img.onerror = () => resolve('');
+        img.src = base64Str;
+    });
+}
+
+function obtenerHistorialComprobantesEstrictos() {
+    try {
+        return JSON.parse(localStorage.getItem('liz_vouchers_estrictos_v1') || '{"hashes":[],"huellas":[],"operaciones":[]}');
+    } catch {
+        return { hashes: [], huellas: [], operaciones: [] };
+    }
+}
+
+function guardarComprobanteUsadoEstricto(hashImagen, huellaVisual, nroOperacion) {
+    const hist = obtenerHistorialComprobantesEstrictos();
+    if (hashImagen && !hist.hashes.includes(hashImagen)) hist.hashes.push(hashImagen);
+    if (huellaVisual && !hist.huellas.includes(huellaVisual)) hist.huellas.push(huellaVisual);
+    if (nroOperacion && !hist.operaciones.includes(nroOperacion)) hist.operaciones.push(nroOperacion);
+    localStorage.setItem('liz_vouchers_estrictos_v1', JSON.stringify(hist));
+}
+
+async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, montoEsperado) {
+    if (!base64Str || !base64Str.startsWith('data:image/')) {
+        return { valido: false, error: 'El comprobante debe ser una imagen válida (JPG o PNG).' };
+    }
+
+    // 1. Verificar proporción vertical de captura de celular y presencia del fondo morado oficial Yape
+    const checkVisual = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            if (img.width < 220 || img.height < 380 || img.height <= img.width) {
+                resolve({ ok: false, motivo: 'La imagen no tiene formato de captura de pantalla móvil oficial.' });
+                return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = 60;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 60, 100);
+            const px = ctx.getImageData(0, 0, 60, 100).data;
+            let morados = 0;
+            const totalPx = 60 * 100;
+            for (let i = 0; i < px.length; i += 4) {
+                const r = px[i], g = px[i + 1], b = px[i + 2];
+                if (r > 75 && r < 165 && g < 65 && b > 85 && b < 175) morados++;
+            }
+            if ((morados / totalPx) < 0.12) {
+                resolve({ ok: false, motivo: 'La captura no corresponde a la interfaz oficial de Yape/Plin.' });
+                return;
+            }
+            resolve({ ok: true });
+        };
+        img.onerror = () => resolve({ ok: false, motivo: 'No se pudo procesar la imagen del comprobante.' });
+        img.src = base64Str;
+    });
+
+    if (!checkVisual.ok) {
+        return { valido: false, error: checkVisual.motivo };
+    }
+
+    // 2. OCR estricto sobre el comprobante
+    if (typeof Tesseract === 'undefined') {
+        return { valido: false, error: 'Falta cargar Tesseract.js en index.html para validar el comprobante.' };
+    }
+
+    const ocrResult = await Tesseract.recognize(base64Str, 'spa');
+    const rawText = ocrResult?.data?.text || '';
+    const textoLimpio = rawText.replace(/\s+/g, ' ').trim();
+    const textoLower = textoLimpio.toLowerCase();
+
+    // A) Debe contener encabezado y estructura oficial de transacción
+    const tieneCabeceraOficial = /yapeaste|te\s*yapearon|datos\s*de\s*la\s*transacci[oó]n/i.test(textoLimpio);
+    if (!tieneCabeceraOficial) {
+        return { valido: false, error: 'Comprobante rechazado: no se detecta una constancia oficial de Yape/Plin.' };
+    }
+
+    // B) Debe ir dirigido EXCLUSIVAMENTE a "Liz Berru" o "Liz Ber*"
+    const tieneDestinatarioValido = /liz\s*ber(ru|\*|\b)/i.test(textoLimpio);
+    if (!tieneDestinatarioValido) {
+        return { valido: false, error: 'Comprobante rechazado: el destinatario debe ser "Liz Berru" o "Liz Ber*".' };
+    }
+
+    // C) Validar Destino (Yape o Plin) y datos específicos de cada uno
+    if (metodoEsperado === 'Plin') {
+        if (!/destino\s*[:\-]?\s*plin/i.test(textoLimpio) && !/\bplin\b/i.test(textoLimpio)) {
+            return { valido: false, error: 'Seleccionaste Plin, pero el comprobante no indica Destino: Plin.' };
+        }
+    } else {
+        if (!/destino\s*[:\-]?\s*yape/i.test(textoLimpio)) {
+            return { valido: false, error: 'Seleccionaste Yape, pero el comprobante no indica Destino: Yape.' };
+        }
+        // En Yape a Liz Ber* debe aparecer el celular terminado en 548 y el código de seguridad de 3 dígitos
+        if (!/548\b/.test(textoLimpio)) {
+            return { valido: false, error: 'Comprobante Yape rechazado: el número de destino no termina en 548.' };
+        }
+        if (!/c[oó]digo\s*de\s*seguridad/i.test(textoLimpio)) {
+            return { valido: false, error: 'Comprobante Yape alterado o incompleto: falta el Código de seguridad.' };
+        }
+    }
+
+    // D) Extraer Nro. de operación (obligatorio y único)
+    const matchOp = textoLimpio.match(/nro\.?\s*de\s*operaci[oó]n\s*[:\-]?\s*(\d{6,10})/i);
+    if (!matchOp || !matchOp[1]) {
+        return { valido: false, error: 'Comprobante rechazado: no se pudo leer un Nro. de operación válido.' };
+    }
+    const nroOperacion = matchOp[1].trim();
+
+    // E) Verificar que el monto del comprobante coincida con el total a pagar
+    const matchMonto = textoLimpio.match(/s\/\s*(\d+(?:[.,]\d{1,2})?)/i);
+    if (!matchMonto || !matchMonto[1]) {
+        return { valido: false, error: 'Comprobante rechazado: no se pudo leer el monto en soles (S/).' };
+    }
+    const montoLeido = parseFloat(matchMonto[1].replace(',', '.'));
+    if (isNaN(montoLeido) || Math.abs(montoLeido - Number(montoEsperado)) > 0.05) {
+        return {
+            valido: false,
+            error: `El monto del voucher (S/ ${isNaN(montoLeido) ? '?' : montoLeido.toFixed(2)}) no coincide con el total del pedido (S/ ${Number(montoEsperado).toFixed(2)}).`
+        };
+    }
+
+    // F) Verificar fecha actual (evita subir capturas viejas de días o meses anteriores)
+    const ahora = new Date();
+    const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const dia = String(ahora.getDate()).padStart(2, '0');
+    const diaSinCero = String(ahora.getDate());
+    const mes = meses[ahora.getMonth()];
+    const anio = String(ahora.getFullYear());
+    const regexFechaHoy = new RegExp(`(?:${dia}|${diaSinCero})\\s*${mes}\\.?\\s*${anio}`, 'i');
+    if (!regexFechaHoy.test(textoLower)) {
+        return { valido: false, error: 'Comprobante rechazado: la fecha del pago no corresponde al día de hoy.' };
+    }
+
+    return {
+        valido: true,
+        nroOperacion,
+        montoLeido
+    };
+}
+
+async function handleSubirVoucher(e) {
+    e.preventDefault();
+    if (!voucherBase64Temp) {
+        showToast('Sube la captura de tu voucher', 'error');
+        return;
+    }
+
+    const cantidadesPorProducto = {};
+    state.cart.forEach(item => {
+        cantidadesPorProducto[item.productId] = (cantidadesPorProducto[item.productId] || 0) + item.qty;
+    });
+
+    let total = 0;
+    const detallesParaBD = [];
+
+    state.cart.forEach(item => {
+        const p = PRODUCTS.find(prod => String(prod.id) === String(item.productId));
+        if (!p) return;
+
+        const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
+        const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId] || item.qty;
+        const tieneDescuentoMayor = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR;
+        const precioAplicado = tieneDescuentoMayor
+            ? Number(p.precioMayor || (p.salePrice * 0.85))
+            : Number(p.salePrice);
+
+        total += precioAplicado * item.qty;
+
+        detallesParaBD.push({
+            codigo: prodCode,
+            titulo: p.name,
+            precio_remate: precioAplicado,
+            talla: item.size || 'Única',
+            color: item.color || 'Único',
+            cantidad: item.qty,
+            imagen: p.image || p.imagen_url || ''
+        });
+    });
+
+    if (detallesParaBD.length === 0) {
+        showToast('No se encontraron prendas válidas en la bolsa.', 'error');
+        return;
+    }
+
+    const submitBtn = document.getElementById('voucherSubmitBtn');
+    const textoOriginalBtn = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Validando comprobante...';
+    }
+
+    try {
+        // 1. Validación estricta del voucher (destinatario Liz Berru / Liz Ber*, celular 548, destino, monto, fecha y nro. operación)
+        const validacion = await validarAutenticidadVoucherYapePlin(voucherBase64Temp, selectedPaymentMethod, total);
+        if (!validacion.valido) {
+            showToast(validacion.error, 'error');
+            return;
+        }
+
+        const hashImagen = await generarHashImagen(voucherBase64Temp);
+        const huellaVisual = await generarHuellaVisualVoucher(voucherBase64Temp);
+        const nroOperacion = validacion.nroOperacion;
+
+        // 2. Bloqueo estricto: nunca permitir subir más de una vez la misma imagen o el mismo Nro. de operación
+        const usados = obtenerHistorialComprobantesEstrictos();
+        if (
+            usados.hashes.includes(hashImagen) ||
+            (huellaVisual && usados.huellas.includes(huellaVisual)) ||
+            usados.operaciones.includes(nroOperacion)
+        ) {
+            showToast(`Este comprobante o Nro. de operación (${nroOperacion}) ya fue utilizado y no puede repetirse.`, 'error');
+            return;
+        }
+
+        const ordenCode = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+        const { user } = getSession();
+
+        const res = await fetch(`${API_URL}/pagos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orden: ordenCode,
+                cliente: user ? user.nombre : 'Cliente Invitado',
+                telefono: user ? (user.telefono || '') : '',
+                total,
+                metodo: selectedPaymentMethod,
+                nro_operacion: nroOperacion,
+                imagen_voucher: voucherBase64Temp,
+                hash_imagen: hashImagen,
+                huella_visual: huellaVisual,
+                detalles_pedido: detallesParaBD
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.error || 'Este comprobante o número de operación ya fue utilizado anteriormente.', 'error');
+            return;
+        }
+
+        guardarComprobanteUsadoEstricto(hashImagen, huellaVisual, nroOperacion);
+
+        showToast('¡Voucher validado y guardado con éxito!', 'success');
+        closeVoucherModal();
+        toggleCartDrawer(false);
+
+        let msg = `🛍️ *NUEVO PAGO Y PEDIDO (${selectedPaymentMethod.toUpperCase()})* 🛍️\n`;
+        msg += `🧾 *Orden:* ${ordenCode}\n`;
+        msg += `🔢 *Nro. Operación:* ${nroOperacion}\n`;
+        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n\n`;
+        msg += `📋 *Detalle Total de la Bolsa de Compras:*\n`;
+
+        detallesParaBD.forEach((item, index) => {
+            msg += `${index + 1}. *[${item.codigo}] ${item.titulo}*\n`;
+            msg += `   • Color: *${item.color}* | Talla: *${item.talla}* | Cant: *${item.cantidad}*\n`;
+            msg += `   • Subtotal: ${formatPrice(item.precio_remate * item.cantidad)}\n\n`;
+        });
+
+        msg += `💰 *TOTAL GENERAL PAGADO: ${formatPrice(total)}*\n\n`;
+        msg += `✅ *Confirmación:* Mi comprobante ha sido validado y el reporte detallado ya se encuentra registrado en la web. ¡Quedo a la espera de la confirmación de envío!`;
+
+        state.cart = [];
+        voucherBase64Temp = '';
+        renderCart();
+
+        const urlWhatsApp = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
+        const popup = window.open(urlWhatsApp, '_blank', 'noopener,noreferrer');
+
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            window.location.href = urlWhatsApp;
+        }
+    } catch (err) {
+        console.error('Error en handleSubirVoucher:', err);
+        showToast('Ocurrió un error al validar o enviar el pedido.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = textoOriginalBtn;
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const voucherInput = document.getElementById('voucherFile');
     if (voucherInput) {

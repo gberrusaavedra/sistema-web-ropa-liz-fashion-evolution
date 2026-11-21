@@ -310,21 +310,33 @@ app.get('/api/pagos', soloAdmin, async (req, res) => {
 });
 
 app.post('/api/pagos', async (req, res) => {
-    const { orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen, detalles_pedido } = req.body;
+    const { orden, cliente, telefono, total, metodo, nro_operacion, imagen_voucher, hash_imagen, huella_visual, detalles_pedido } = req.body;
     try {
-        const check = await pool.query('SELECT id FROM pagos_yape_plin WHERE hash_imagen = $1', [hash_imagen]);
+        const opLimpia = nro_operacion ? String(nro_operacion).trim() : null;
+        const huellaLimpia = huella_visual ? String(huella_visual).trim() : null;
+
+        const check = await pool.query(
+            `SELECT id FROM pagos_yape_plin 
+             WHERE hash_imagen = $1 
+                OR ($2::text IS NOT NULL AND huella_visual = $2)
+                OR ($3::text IS NOT NULL AND nro_operacion = $3)`,
+            [hash_imagen, huellaLimpia, opLimpia]
+        );
         if (check.rows.length > 0) {
-            return res.status(400).json({ error: 'Este comprobante de pago ya fue utilizado anteriormente. No se permite subir dos veces la misma captura.' });
+            return res.status(409).json({ error: 'Este comprobante o Nro. de operación ya fue utilizado anteriormente. No se permite subir más de una vez.' });
         }
 
         const result = await pool.query(
-            `INSERT INTO pagos_yape_plin (orden, cliente, telefono, total, metodo, imagen_voucher, hash_imagen, detalles_pedido)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-            [orden, cliente || 'Cliente Web', telefono || '', total, metodo, imagen_voucher, hash_imagen, JSON.stringify(detalles_pedido || [])]
+            `INSERT INTO pagos_yape_plin (orden, cliente, telefono, total, metodo, nro_operacion, imagen_voucher, hash_imagen, huella_visual, detalles_pedido)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+            [orden, cliente || 'Cliente Web', telefono || '', total, metodo, opLimpia, imagen_voucher, hash_imagen, huellaLimpia, JSON.stringify(detalles_pedido || [])]
         );
         res.json(result.rows[0]);
     } catch (err) {
-        res.status(400).json({ error: 'El comprobante ya está registrado en el sistema.' });
+        if (err && err.code === '23505') {
+            return res.status(409).json({ error: 'Este comprobante o número de operación ya está registrado en el sistema y no puede repetirse.' });
+        }
+        res.status(400).json({ error: 'El comprobante ya está registrado en el sistema o hubo un error al guardarlo.' });
     }
 });
 
