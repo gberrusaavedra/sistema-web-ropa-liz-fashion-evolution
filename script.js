@@ -2493,7 +2493,7 @@ async function handleSubirVoucher(e) {
         }
 
         guardarComprobanteUsadoEstricto(hashImagen, huellaVisual, nroOperacion);
-
+        await descontarStockPorPedido(detallesParaBD);
         showToast('¡Voucher validado y guardado con éxito!', 'success');
         closeVoucherModal();
         toggleCartDrawer(false);
@@ -3794,3 +3794,92 @@ function closeAdminAllReportsModal() {
     }
 }
 
+async function descontarStockPorPedido(detallesPedido) {
+    if (!Array.isArray(detallesPedido) || detallesPedido.length === 0) return;
+
+    const { token } = getSession();
+    const productosActualizadosIds = new Set();
+
+    detallesPedido.forEach(item => {
+        const product = PRODUCTS.find(p =>
+            (item.codigo && (p.code === item.codigo || `LIZ-${String(p.id).padStart(4, '0')}` === item.codigo)) ||
+            p.name === item.titulo
+        );
+        if (!product) return;
+
+        const qtyToDeduct = Math.max(1, Number(item.cantidad) || 1);
+        const sizeKey = item.talla;
+        const colorKey = (item.color || '').trim().toLowerCase();
+
+        // 1. Buscar variante por color si existe variantDetails
+        let matchedVariantIdx = -1;
+        if (Array.isArray(product.variantDetails) && product.variantDetails.length > 0) {
+            matchedVariantIdx = product.variantDetails.findIndex(v =>
+                String(v.color || '').trim().toLowerCase() === colorKey
+            );
+        }
+
+        // 2. Descontar en la variante del color elegido si aplica
+        if (matchedVariantIdx >= 0 && product.variantDetails[matchedVariantIdx].stockBySize) {
+            const vStock = product.variantDetails[matchedVariantIdx].stockBySize;
+            if (sizeKey && typeof vStock[sizeKey] === 'number') {
+                vStock[sizeKey] = Math.max(0, vStock[sizeKey] - qtyToDeduct);
+            }
+        }
+
+        // 3. Descontar en el stockBySize general del producto
+        if (product.stockBySize && sizeKey && typeof product.stockBySize[sizeKey] === 'number') {
+            product.stockBySize[sizeKey] = Math.max(0, product.stockBySize[sizeKey] - qtyToDeduct);
+        }
+
+        productosActualizadosIds.add(product.id);
+    });
+
+    // Refrescar catálogo y contador global al instante en la web
+    applyFilters();
+    updateGlobalStockCounter();
+
+    // Persistir el nuevo stock en el backend (Render / Neon)
+    for (const prodId of productosActualizadosIds) {
+        const prod = PRODUCTS.find(p => p.id === prodId);
+        if (!prod) continue;
+
+        const aggregatedStock = (Array.isArray(prod.variantDetails) && prod.variantDetails.length > 0)
+            ? prod.variantDetails.reduce((acc, v) => {
+                acc.S += Number(v.stockBySize?.S || 0);
+                acc.M += Number(v.stockBySize?.M || 0);
+                acc.L += Number(v.stockBySize?.L || 0);
+                acc.XL += Number(v.stockBySize?.XL || 0);
+                acc.XXL += Number(v.stockBySize?.XXL || 0);
+                return acc;
+            }, { S: 0, M: 0, L: 0, XL: 0, XXL: 0 })
+            : prod.stockBySize;
+
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+
+            await fetch(`${API_URL}/productos/${prod.id}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({
+                    titulo: prod.name,
+                    categoria: prod.category,
+                    etiqueta: prod.tag,
+                    precio_remate: prod.salePrice,
+                    precio_mayor: prod.precioMayor,
+                    precio_original: prod.regularPrice,
+                    stock_by_size: aggregatedStock,
+                    variant_details: prod.variantDetails || [],
+                    material: prod.material,
+                    colores: prod.colors || [],
+                    descripcion: prod.description,
+                    imagen_url: prod.image,
+                    imagenes: prod.images || [prod.image]
+                })
+            });
+        } catch (err) {
+            console.warn(`No se pudo sincronizar el stock del producto ${prod.id} con el servidor:`, err.message);
+        }
+    }
+}
