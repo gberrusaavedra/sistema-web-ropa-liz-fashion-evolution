@@ -2494,6 +2494,9 @@ async function handleSubirVoucher(e) {
 
         guardarComprobanteUsadoEstricto(hashImagen, huellaVisual, nroOperacion);
         await descontarStockPorPedido(detallesParaBD);
+        await fetchProductsFromDB();
+
+        showToast('¡Voucher validado y guardado con éxito!', 'success');
         showToast('¡Voucher validado y guardado con éxito!', 'success');
         closeVoucherModal();
         toggleCartDrawer(false);
