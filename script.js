@@ -3814,7 +3814,6 @@ async function descontarStockPorPedido(detallesPedido) {
         const sizeKey = item.talla;
         const colorKey = (item.color || '').trim().toLowerCase();
 
-        // 1. Buscar variante por color si existe variantDetails
         let matchedVariantIdx = -1;
         if (Array.isArray(product.variantDetails) && product.variantDetails.length > 0) {
             matchedVariantIdx = product.variantDetails.findIndex(v =>
@@ -3822,7 +3821,6 @@ async function descontarStockPorPedido(detallesPedido) {
             );
         }
 
-        // 2. Descontar en la variante del color elegido si aplica
         if (matchedVariantIdx >= 0 && product.variantDetails[matchedVariantIdx].stockBySize) {
             const vStock = product.variantDetails[matchedVariantIdx].stockBySize;
             if (sizeKey && typeof vStock[sizeKey] === 'number') {
@@ -3830,7 +3828,6 @@ async function descontarStockPorPedido(detallesPedido) {
             }
         }
 
-        // 3. Descontar en el stockBySize general del producto
         if (product.stockBySize && sizeKey && typeof product.stockBySize[sizeKey] === 'number') {
             product.stockBySize[sizeKey] = Math.max(0, product.stockBySize[sizeKey] - qtyToDeduct);
         }
@@ -3838,11 +3835,9 @@ async function descontarStockPorPedido(detallesPedido) {
         productosActualizadosIds.add(product.id);
     });
 
-    // Refrescar catálogo y contador global al instante en la web
     applyFilters();
     updateGlobalStockCounter();
 
-    // Persistir el nuevo stock en el backend (Render / Neon)
     for (const prodId of productosActualizadosIds) {
         const prod = PRODUCTS.find(p => p.id === prodId);
         if (!prod) continue;
@@ -3870,7 +3865,7 @@ async function descontarStockPorPedido(detallesPedido) {
                     categoria: prod.category,
                     etiqueta: prod.tag,
                     precio_remate: prod.salePrice,
-                    precio_mayor: prod.precioMayor,
+                    precio_mayor: Number(prod.precioMayor) || 0,
                     precio_original: prod.regularPrice,
                     stock_by_size: aggregatedStock,
                     variant_details: prod.variantDetails || [],
