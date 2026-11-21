@@ -252,7 +252,9 @@ async function fetchProductsFromDB() {
                 const parsedColors = p.colores
                     ? (Array.isArray(p.colores) ? p.colores : String(p.colores).split(',').map(c => c.trim()).filter(Boolean))
                     : ['Corinto', 'Negro', 'Rojo', 'Beige'];
-
+                const mayorBD = (p.precio_mayor !== null && p.precio_mayor !== undefined && p.precio_mayor !== '')
+        ? Number(p.precio_mayor)
+        : 0;
                 return {
                     id: p.id,
                     code: `LIZ-${String(p.id).padStart(4, '0')}`,
@@ -261,7 +263,7 @@ async function fetchProductsFromDB() {
                     tag: p.etiqueta || 'Remate Final',
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
-                    precioMayor: p.precio_mayor ? Number(p.precio_mayor) : (Number(p.precio_remate) * 0.85),
+                    precioMayor: mayorBD,
                     image: parsedImages[0],
                     images: parsedImages,
                     variantDetails: parsedVariants,
@@ -459,7 +461,7 @@ function openProductFormModal(product = null) {
     setVal('formCategory', product ? (product.category || 'Polos/Camisetas') : 'Polos/Camisetas');
     setVal('formTag', product ? (product.tag || 'Normal') : 'Normal');
     setVal('formSalePrice', product ? product.salePrice : '');
-    setVal('formPrecioMayor', product && product.precioMayor ? product.precioMayor : '');
+    setVal('formPrecioMayor', (product && product.precioMayor !== undefined && product.precioMayor !== null) ? product.precioMayor : 0);
     setVal('formRegularPrice', product ? product.regularPrice : '');
     setVal('formDescription', product ? (product.description || '') : '');
     setVal('formMaterial', product ? (product.material || '') : '');
@@ -548,15 +550,17 @@ async function handleSaveProduct(e) {
 
     const tagVal = document.getElementById('formTag').value;
     const baseSalePrice = parseFloat(document.getElementById('formSalePrice').value) || 0;
-    const precioMayorVal = parseFloat(document.getElementById('formPrecioMayor').value) || (baseSalePrice * 0.85);
+    const rawMayor = document.getElementById('formPrecioMayor').value;
+const parsedMayor = parseFloat(rawMayor);
+const precioMayorVal = !isNaN(parsedMayor) ? parsedMayor : 0;
     const regularPriceVal = tagVal === 'Normal' ? baseSalePrice : (parseFloat(document.getElementById('formRegularPrice').value) || baseSalePrice);
-
+const minMayorVal = Math.max(1, parseInt(document.getElementById('formMinMayor')?.value, 10) || MIN_UNIDADES_MAYOR);
     const payload = {
         titulo: document.getElementById('formName').value.trim(),
         categoria: document.getElementById('formCategory').value,
         etiqueta: tagVal,
         precio_remate: baseSalePrice,
-        precio_mayor: precioMayorVal,
+        min_unidades_mayor: minMayorVal,
         precio_original: regularPriceVal,
         stock_by_size: aggregatedStock,
         variant_details: variantDetails,
@@ -1047,8 +1051,8 @@ function renderCart() {
         const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
         let precioAplicado = p.salePrice;
         let esPrecioMayor = false;
-
-        if (totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR) {
+        const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+       if (totalUnidadesEsteProducto >= minReq) {
             precioAplicado = p.precioMayor || (p.salePrice * 0.85);
             esPrecioMayor = true;
         }
@@ -1065,7 +1069,7 @@ function renderCart() {
                     
                     ${esPrecioMayor 
                         ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Descuento por mayor aplicado (Llevas ${totalUnidadesEsteProducto} unds)!</span>` 
-                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${MIN_UNIDADES_MAYOR - totalUnidadesEsteProducto} unds más de este modelo para activar precio por mayor</span>`
+                       : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${minReq - totalUnidadesEsteProducto} unds más de este modelo para activar precio por mayor</span>`
                     }
 
                     <div class="text-sm font-black text-rose-600 mt-1">${formatPrice(precioAplicado * item.qty)} ${esPrecioMayor ? '<span class="text-[10px] font-bold text-rose-500">(Precio Mayor)</span>' : ''}</div>
@@ -1103,8 +1107,8 @@ function sendOrderToWhatsApp() {
     state.cart.forEach((item, i) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
-        const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
-        let precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
+            const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+       let precioAplicado = totalUnidadesEsteProducto >= minReq ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
         
         total += precioAplicado * item.qty;
         msg += `${i + 1}. *[${prodCode}] ${p.name}*\n`;
@@ -1657,7 +1661,7 @@ async function guardarPrendaConfeccion(e) {
     const id = document.getElementById('confPrendaId').value;
     const modelo = document.getElementById('confModelo').value.trim();
     const precio = parseFloat(document.getElementById('confPrecio').value);
-    const precioMayor = parseFloat(document.getElementById('confPrecioMayor').value) || (precio * 0.85);
+   const confMinMayorVal = Math.max(1, parseInt(document.getElementById('confMinMayor')?.value, 10) || MIN_UNIDADES_MAYOR);
     const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
     const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
 
@@ -1704,7 +1708,7 @@ async function guardarPrendaConfeccion(e) {
             body: JSON.stringify({
                 modelo,
                 precio,
-                precio_mayor: precioMayor,
+                min_unidades_mayor: confMinMayorVal,
                 colores,
                 tallas,
                 imagen: imagenesFinales[0],
@@ -1848,7 +1852,9 @@ function editarPrendaConfeccion(id) {
     document.getElementById('confPrendaId').value = p.id;
     document.getElementById('confModelo').value = p.modelo;
     document.getElementById('confPrecio').value = p.precio;
-    document.getElementById('confPrecioMayor').value = p.precioMayor || '';
+    if (document.getElementById('confMinMayor')) {
+        document.getElementById('confMinMayor').value = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+    }
     document.getElementById('confColores').value = p.colores.join(', ');
     document.getElementById('confTallas').value = p.tallas.join(', ');
     document.getElementById('confImagenUrl').value = '';
@@ -3351,7 +3357,7 @@ function agregarPrendaBolsaConfeccion(id) {
         color: colorSeleccionado,
         talla: tallaSeleccionada,
         precio: prenda.precio,
-        precioMayor: prenda.precioMayor || (prenda.precio * 0.85), // <-- AQUÍ ESTABA FALTANDO PASAR ESTE VALOR
+      minUnidadesMayor: prenda.minUnidadesMayor || MIN_UNIDADES_MAYOR,
         imagen: prenda.imagenes && prenda.imagenes.length > 0 ? prenda.imagenes[0] : prenda.imagen
     });
 
@@ -3402,18 +3408,18 @@ function renderizarBolsaConfeccionItems() {
 
     let total = 0;
     container.innerHTML = bolsaConfeccionItems.map((item, idx) => {
-        const cantidadEsteModelo = conteoModelos[item.modelo];
+       const cantidadEsteModelo = conteoModelos[item.modelo];
         let precioAplicado = item.precio;
         let esPrecioMayor = false;
+        const minReqConf = item.minUnidadesMayor || MIN_UNIDADES_MAYOR;
 
-        if (cantidadEsteModelo >= MIN_UNIDADES_MAYOR) {
+        if (cantidadEsteModelo >= minReqConf) {
             precioAplicado = item.precioMayor || (item.precio * 0.85);
             esPrecioMayor = true;
         }
+            total += precioAplicado;
 
-        total += precioAplicado;
-
-        return `
+            return `
             <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border ${esPrecioMayor ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'}">
                 <img src="${item.imagen}" class="w-14 h-16 object-cover rounded-xl border shrink-0" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Prenda'">
                 <div class="flex-1">
@@ -3422,7 +3428,7 @@ function renderizarBolsaConfeccionItems() {
                     
                     ${esPrecioMayor 
                         ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Precio por mayor aplicado (${cantidadEsteModelo} unds)!</span>` 
-                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${MIN_UNIDADES_MAYOR - cantidadEsteModelo} unds más de este modelo para activar precio por mayor</span>`
+                       : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${minReqConf - cantidadEsteModelo} unds más de este modelo para activar precio por mayor</span>`
                     }
 
                     <p class="text-xs font-black text-rose-600 mt-1">S/ ${precioAplicado.toFixed(2)} ${esPrecioMayor ? '<span class="text-[9px] text-rose-500">(Al por mayor)</span>' : ''}</p>
@@ -3460,9 +3466,9 @@ function enviarBolsaConfeccionWhatsApp() {
     bolsaConfeccionItems.forEach((item, index) => {
         const cantidadEsteModelo = conteoModelos[item.modelo];
         let precioAplicado = item.precio;
-        let esPrecioMayor = false;
+      const minReqConf = item.minUnidadesMayor || MIN_UNIDADES_MAYOR;
 
-        if (cantidadEsteModelo >= MIN_UNIDADES_MAYOR) {
+        if (cantidadEsteModelo >= minReqConf) {
             precioAplicado = item.precioMayor || (item.precio * 0.85);
             esPrecioMayor = true;
         }
