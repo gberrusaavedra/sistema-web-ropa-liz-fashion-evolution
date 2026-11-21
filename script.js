@@ -2626,7 +2626,7 @@ async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, mon
         return { valido: false, error: checkVisual.motivo };
     }
 
-    // 2. OCR estricto del comprobante para Yape y Plin
+    // 2. OCR estricto del comprobante para Yape y Plin (Soles y Dólares)
     if (typeof Tesseract === 'undefined') {
         return { valido: false, error: 'No cargó Tesseract.js. Revisa la etiqueta <script> en index.html.' };
     }
@@ -2666,13 +2666,21 @@ async function validarAutenticidadVoucherYapePlin(base64Str, metodoEsperado, mon
     }
     const nroOperacion = matchOp[1].trim();
 
-    const matchMonto = textoLimpio.match(/s\/\s*(\d+(?:[.,]\d{1,2})?)/i);
+    // Validar monto en Soles (S/) o Dólares ($ / USD) según la moneda activa
+    const esUSD = (typeof state !== 'undefined' && state.currency === 'USD');
+    const tasa = typeof EXCHANGE_RATE !== 'undefined' ? EXCHANGE_RATE : 0.27;
+    const montoObjetivo = esUSD ? Number(montoEsperado) * tasa : Number(montoEsperado);
+
+    const matchMonto = textoLimpio.match(/(?:s\/|\$|usd|pen)\s*(\d+(?:[.,]\d{1,2})?)/i);
     if (matchMonto && matchMonto[1]) {
         const montoLeido = parseFloat(matchMonto[1].replace(',', '.'));
-        if (!isNaN(montoLeido) && Math.abs(montoLeido - Number(montoEsperado)) > 0.05) {
+        const tolerancia = esUSD ? 0.15 : 0.10;
+        if (!isNaN(montoLeido) && Math.abs(montoLeido - montoObjetivo) > tolerancia) {
+            const etiquetaEsperada = esUSD ? `$ ${montoObjetivo.toFixed(2)} USD` : `S/ ${montoObjetivo.toFixed(2)}`;
+            const etiquetaLeida = esUSD ? `$ ${montoLeido.toFixed(2)}` : `S/ ${montoLeido.toFixed(2)}`;
             return {
                 valido: false,
-                error: `Rechazado: el monto del comprobante (S/ ${montoLeido.toFixed(2)}) no coincide con el total (S/ ${Number(montoEsperado).toFixed(2)}).`
+                error: `Rechazado: el monto del comprobante (${etiquetaLeida}) no coincide con el total (${etiquetaEsperada}).`
             };
         }
     }
