@@ -311,11 +311,15 @@ app.get('/api/pagos', soloAdmin, async (req, res) => {
 
 app.post('/api/pagos', async (req, res) => {
     const { orden, cliente, telefono, total, metodo, nro_operacion, imagen_voucher, hash_imagen, huella_visual, detalles_pedido } = req.body;
+    const client = await pool.connect();
+
     try {
+        await client.query('BEGIN');
+
         const opLimpia = nro_operacion ? String(nro_operacion).trim() : null;
         const huellaLimpia = huella_visual ? String(huella_visual).trim() : null;
 
-        const check = await pool.query(
+        const check = await client.query(
             `SELECT id FROM pagos_yape_plin 
              WHERE hash_imagen = $1 
                 OR ($2::text IS NOT NULL AND huella_visual = $2)
@@ -323,31 +327,83 @@ app.post('/api/pagos', async (req, res) => {
             [hash_imagen, huellaLimpia, opLimpia]
         );
         if (check.rows.length > 0) {
+            await client.query('ROLLBACK');
             return res.status(409).json({ error: 'Este comprobante o Nro. de operación ya fue utilizado anteriormente. No se permite subir más de una vez.' });
         }
 
-        const result = await pool.query(
+        const listaDetalles = Array.isArray(detalles_pedido) ? detalles_pedido : [];
+
+        // Descontar stock en la tabla productos de Neon por cada prenda elegida
+        for (const item of listaDetalles) {
+            const qtyToDeduct = Math.max(1, Number(item.cantidad) || 1);
+            const sizeKey = item.talla;
+            const colorKey = String(item.color || '').trim().toLowerCase();
+
+            let prodRow = null;
+            if (item.codigo && String(item.codigo).startsWith('LIZ-')) {
+                const parsedId = parseInt(String(item.codigo).replace('LIZ-', ''), 10);
+                if (!isNaN(parsedId)) {
+                    const byId = await client.query('SELECT * FROM productos WHERE id = $1', [parsedId]);
+                    if (byId.rows.length > 0) prodRow = byId.rows[0];
+                }
+            }
+            if (!prodRow && item.titulo) {
+                const byTitle = await client.query('SELECT * FROM productos WHERE LOWER(TRIM(titulo)) = LOWER(TRIM($1)) LIMIT 1', [item.titulo]);
+                if (byTitle.rows.length > 0) prodRow = byTitle.rows[0];
+            }
+
+            if (!prodRow) continue;
+
+            let variants = typeof prodRow.variant_details === 'string'
+                ? JSON.parse(prodRow.variant_details)
+                : (Array.isArray(prodRow.variant_details) ? prodRow.variant_details : []);
+
+            let stockBySize = typeof prodRow.stock_by_size === 'string'
+                ? JSON.parse(prodRow.stock_by_size)
+                : (prodRow.stock_by_size && typeof prodRow.stock_by_size === 'object' ? prodRow.stock_by_size : { S: 0, M: 0, L: 0, XL: 0, XXL: 0 });
+
+            if (variants.length > 0) {
+                const vIdx = variants.findIndex(v => String(v.color || '').trim().toLowerCase() === colorKey);
+                if (vIdx >= 0 && variants[vIdx].stockBySize && sizeKey) {
+                    const actual = Number(variants[vIdx].stockBySize[sizeKey] || 0);
+                    variants[vIdx].stockBySize[sizeKey] = Math.max(0, actual - qtyToDeduct);
+                }
+                // Recalcular stock_by_size total desde las variantes
+                stockBySize = variants.reduce((acc, v) => {
+                    acc.S = Number(acc.S || 0) + Number(v.stockBySize?.S || 0);
+                    acc.M = Number(acc.M || 0) + Number(v.stockBySize?.M || 0);
+                    acc.L = Number(acc.L || 0) + Number(v.stockBySize?.L || 0);
+                    acc.XL = Number(acc.XL || 0) + Number(v.stockBySize?.XL || 0);
+                    acc.XXL = Number(acc.XXL || 0) + Number(v.stockBySize?.XXL || 0);
+                    return acc;
+                }, { S: 0, M: 0, L: 0, XL: 0, XXL: 0 });
+            } else if (sizeKey) {
+                const actual = Number(stockBySize[sizeKey] || 0);
+                stockBySize[sizeKey] = Math.max(0, actual - qtyToDeduct);
+            }
+
+            await client.query(
+                `UPDATE productos SET stock_by_size = $1, variant_details = $2 WHERE id = $3`,
+                [JSON.stringify(stockBySize), JSON.stringify(variants), prodRow.id]
+            );
+        }
+
+        const result = await client.query(
             `INSERT INTO pagos_yape_plin (orden, cliente, telefono, total, metodo, nro_operacion, imagen_voucher, hash_imagen, huella_visual, detalles_pedido)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-            [orden, cliente || 'Cliente Web', telefono || '', total, metodo, opLimpia, imagen_voucher, hash_imagen, huellaLimpia, JSON.stringify(detalles_pedido || [])]
+            [orden, cliente || 'Cliente Web', telefono || '', total, metodo, opLimpia, imagen_voucher, hash_imagen, huellaLimpia, JSON.stringify(listaDetalles)]
         );
+
+        await client.query('COMMIT');
         res.json(result.rows[0]);
     } catch (err) {
+        await client.query('ROLLBACK');
         if (err && err.code === '23505') {
             return res.status(409).json({ error: 'Este comprobante o número de operación ya está registrado en el sistema y no puede repetirse.' });
         }
         res.status(400).json({ error: 'El comprobante ya está registrado en el sistema o hubo un error al guardarlo.' });
-    }
-});
-
-app.put('/api/pagos/:id/estado', soloAdmin, async (req, res) => {
-    const { id } = req.params;
-    const { estado } = req.body;
-    try {
-        const result = await pool.query('UPDATE pagos_yape_plin SET estado = $1 WHERE id = $2 RETURNING *', [estado, id]);
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
     }
 });
 
