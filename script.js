@@ -748,6 +748,8 @@ function applyFilters() {
         const currentStockMap = (p.variantDetails && p.variantDetails[currentImgIdx]) 
             ? p.variantDetails[currentImgIdx].stockBySize 
             : p.stockBySize;
+            const { isAdmin: esAdminFiltro } = getSession();
+        if (!esAdminFiltro && getTotalStock(p) <= 0) return false;
 
         if (state.category !== 'Todos' && p.category !== state.category) return false;
         if (state.promoTag !== 'Todos' && p.tag !== state.promoTag) return false;
