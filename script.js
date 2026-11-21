@@ -1051,11 +1051,12 @@ function renderCart() {
         const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
         let precioAplicado = p.salePrice;
         let esPrecioMayor = false;
-        const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
-       if (totalUnidadesEsteProducto >= minReq) {
-            precioAplicado = p.precioMayor || (p.salePrice * 0.85);
-            esPrecioMayor = true;
-        }
+       const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+            const tienePrecioMayor = Number(p.precioMayor) > 0;
+            if (tienePrecioMayor && totalUnidadesEsteProducto >= minReq) {
+                precioAplicado = Number(p.precioMayor);
+                esPrecioMayor = true;
+            }
 
         saleTotal += precioAplicado * item.qty;
 
@@ -1107,13 +1108,14 @@ function sendOrderToWhatsApp() {
     state.cart.forEach((item, i) => {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
-            const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
-       let precioAplicado = totalUnidadesEsteProducto >= minReq ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
-        
+        const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+        const tienePrecioMayor = Number(p.precioMayor) > 0;
+        const aplicaMayor = tienePrecioMayor && totalUnidadesEsteProducto >= minReq;
+        let precioAplicado = aplicaMayor ? Number(p.precioMayor) : p.salePrice;
         total += precioAplicado * item.qty;
         msg += `${i + 1}. *[${prodCode}] ${p.name}*\n`;
         msg += `   • Color: *${item.color || 'Único'}* | Talla: *${item.size}* | Cant: *${item.qty}*\n`;
-        msg += `   • Subtotal: ${formatPrice(precioAplicado * item.qty)} ${totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? '(Precio Mayor)' : ''}\n`;
+       msg += `   • Subtotal: ${formatPrice(precioAplicado * item.qty)} ${aplicaMayor ? '(Precio Mayor)' : ''}\n`;
     });
     msg += `\n💰 *TOTAL: ${formatPrice(total)}*`;
     window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -1343,7 +1345,7 @@ async function sincronizarDatosConfeccionDB() {
                         id: p.id,
                         modelo: p.modelo,
                         precio: Number(p.precio),
-                        precioMayor: p.precio_mayor ? Number(p.precio_mayor) : (Number(p.precio) * 0.85),
+                       precioMayor: p.precio_mayor ? Number(p.precio_mayor) : 0,
                         colores: cols,
                         tallas: tlls,
                         imagen: p.imagen || (imgs[0] || ''),
@@ -2151,7 +2153,9 @@ function procederPagoYapePlin() {
         const p = PRODUCTS.find(prod => prod.id === item.productId);
         if (p) {
             const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId];
-            const precioAplicado = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR ? (p.precioMayor || (p.salePrice * 0.85)) : p.salePrice;
+                const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+        const tienePrecioMayor = Number(p.precioMayor) > 0;
+        const precioAplicado = (tienePrecioMayor && totalUnidadesEsteProducto >= minReq) ? Number(p.precioMayor) : p.salePrice;
             total += precioAplicado * item.qty;
         }
     });
@@ -2356,7 +2360,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const p = PRODUCTS.find(prod => String(prod.id) === String(item.productId));
                     if (!p) return;
                     const cantMod = cantidadesPorProducto[item.productId] || item.qty;
-                    const precio = cantMod >= MIN_UNIDADES_MAYOR ? Number(p.precioMayor || (p.salePrice * 0.85)) : Number(p.salePrice);
+                   const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+                    const tienePrecioMayor = Number(p.precioMayor) > 0;
+                    const precio = (tienePrecioMayor && cantMod >= minReq) ? Number(p.precioMayor) : Number(p.salePrice);
                     totalActual += precio * item.qty;
                 });
 
@@ -2420,11 +2426,12 @@ async function handleSubirVoucher(e) {
 
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId] || item.qty;
-        const tieneDescuentoMayor = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR;
+        const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+        const tienePrecioMayor = Number(p.precioMayor) > 0;
+        const tieneDescuentoMayor = tienePrecioMayor && totalUnidadesEsteProducto >= minReq;
         const precioAplicado = tieneDescuentoMayor
-            ? Number(p.precioMayor || (p.salePrice * 0.85))
+            ? Number(p.precioMayor)
             : Number(p.salePrice);
-
         total += precioAplicado * item.qty;
 
         detallesParaBD.push({
@@ -2729,11 +2736,12 @@ async function handleSubirVoucher(e) {
 
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId] || item.qty;
-        const tieneDescuentoMayor = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR;
+        const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+        const tienePrecioMayor = Number(p.precioMayor) > 0;
+        const tieneDescuentoMayor = tienePrecioMayor && totalUnidadesEsteProducto >= minReq;
         const precioAplicado = tieneDescuentoMayor
-            ? Number(p.precioMayor || (p.salePrice * 0.85))
+            ? Number(p.precioMayor)
             : Number(p.salePrice);
-
         total += precioAplicado * item.qty;
 
         detallesParaBD.push({
@@ -2892,9 +2900,11 @@ async function handleSubirVoucher(e) {
 
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId] || item.qty;
-        const tieneDescuentoMayor = totalUnidadesEsteProducto >= MIN_UNIDADES_MAYOR;
+        const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+        const tienePrecioMayor = Number(p.precioMayor) > 0;
+        const tieneDescuentoMayor = tienePrecioMayor && totalUnidadesEsteProducto >= minReq;
         const precioAplicado = tieneDescuentoMayor
-            ? Number(p.precioMayor || (p.salePrice * 0.85))
+            ? Number(p.precioMayor)
             : Number(p.salePrice);
 
         total += precioAplicado * item.qty;
@@ -3412,11 +3422,12 @@ function renderizarBolsaConfeccionItems() {
         let precioAplicado = item.precio;
         let esPrecioMayor = false;
         const minReqConf = item.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+            const tienePrecioMayorConf = Number(item.precioMayor) > 0;
 
-        if (cantidadEsteModelo >= minReqConf) {
-            precioAplicado = item.precioMayor || (item.precio * 0.85);
-            esPrecioMayor = true;
-        }
+            if (tienePrecioMayorConf && cantidadEsteModelo >= minReqConf) {
+                precioAplicado = Number(item.precioMayor);
+                esPrecioMayor = true;
+            }
             total += precioAplicado;
 
             return `
@@ -3465,11 +3476,13 @@ function enviarBolsaConfeccionWhatsApp() {
 
     bolsaConfeccionItems.forEach((item, index) => {
         const cantidadEsteModelo = conteoModelos[item.modelo];
-        let precioAplicado = item.precio;
-      const minReqConf = item.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+       let precioAplicado = item.precio;
+        let esPrecioMayor = false;
+        const minReqConf = item.minUnidadesMayor || MIN_UNIDADES_MAYOR;
+        const tienePrecioMayorConf = Number(item.precioMayor) > 0;
 
-        if (cantidadEsteModelo >= minReqConf) {
-            precioAplicado = item.precioMayor || (item.precio * 0.85);
+        if (tienePrecioMayorConf && cantidadEsteModelo >= minReqConf) {
+            precioAplicado = Number(item.precioMayor);
             esPrecioMayor = true;
         }
 
