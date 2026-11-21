@@ -302,12 +302,37 @@ function toggleOfferFields() {
 }
 
 async function handleImageFilesSelection(e) {
-    const inputVal = document.getElementById('formImageUrl').value.trim();
-    if (inputVal) {
-        tempUploadedImages = inputVal.split(',').map(u => u.trim()).filter(Boolean);
-    } else {
-        tempUploadedImages = [];
+    const files = e && e.target && e.target.files ? Array.from(e.target.files) : [];
+    const urlInput = document.getElementById('formImageUrl');
+
+    if (files.length > 0) {
+        const nuevosLinks = [];
+
+        for (const file of files) {
+            const linkGenerado = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (evt) => resolve(evt.target.result);
+                reader.readAsDataURL(file);
+            });
+            nuevosLinks.push(linkGenerado);
+        }
+
+        const actuales = urlInput && urlInput.value.trim()
+            ? urlInput.value.split(',').map(u => u.trim()).filter(Boolean)
+            : [];
+
+        tempUploadedImages = [...actuales, ...nuevosLinks];
+        if (urlInput) {
+            urlInput.value = tempUploadedImages.join(', ');
+        }
+        e.target.value = '';
+    } else if (urlInput) {
+        tempUploadedImages = urlInput.value
+            .split(',')
+            .map(u => u.trim())
+            .filter(Boolean);
     }
+
     renderDynamicVariantsInputs();
 }
 
