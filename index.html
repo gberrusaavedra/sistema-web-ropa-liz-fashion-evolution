@@ -1178,9 +1178,15 @@
             <input type="hidden" id="canje-edit-id">
             <div class="canje-grid-inputs">
                 <input type="text" id="canje-nombre" placeholder="Nombre de la prenda o premio">
-                <input type="url" id="canje-imagen" placeholder="URL de la imagen">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <input type="text" id="canje-imagen" placeholder="URL de la imagen o sube una foto">
+                    <input type="file" id="canje-imagen-file" accept="image/*" onchange="seleccionarArchivoCanje(event)" style="font-size: 12px;">
+                </div>
                 <input type="number" id="canje-puntos" placeholder="Puntos requeridos (ej. 10)" min="1">
                 <input type="number" id="canje-adicional" placeholder="Pago adicional opcional S/ (ej. 15.00)" step="0.01" min="0">
+            </div>
+            <div id="canje-preview-box" style="display: none; margin: 8px 0;">
+                <img id="canje-preview-img" src="" alt="Vista previa" style="width: 72px; height: 72px; object-fit: cover; border-radius: 10px; border: 1px solid #cbd5e1;">
             </div>
             <button type="button" class="btn-guardar-canje" onclick="guardarProductoCanje()">Guardar Producto</button>
             <button type="button" class="btn-cancelar-edit" id="btn-cancelar-edit" style="display:none;" onclick="limpiarFormCanje()">Cancelar Edición</button>
@@ -1198,7 +1204,6 @@
                 </table>
             </div>
         </div>
-
         <!-- Catálogo de Canje -->
         <div id="lista-productos-canje" class="canje-cards-grid"></div>
     </div>
