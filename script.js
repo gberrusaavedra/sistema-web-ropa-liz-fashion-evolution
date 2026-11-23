@@ -3905,6 +3905,80 @@ async function descontarStockPorPedido(detallesPedido) {
 }
 // cacumulador de puntos de clentes
 const API_CANJES_URL = 'https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/canjes';
+let archivoCanjeBase64Pendiente = '';
+let adicionalEditadoManualmente = false;
+
+function cambiarModoImagenCanje() {
+    const tipoEl = document.getElementById('canje-tipo-imagen');
+    const urlInput = document.getElementById('canje-imagen');
+    const fileInput = document.getElementById('canje-imagen-file');
+    if (!tipoEl || !urlInput || !fileInput) return;
+
+    const modo = tipoEl.value;
+    if (modo === 'url') {
+        urlInput.style.display = 'block';
+        fileInput.style.display = 'none';
+        fileInput.value = '';
+        archivoCanjeBase64Pendiente = '';
+    } else if (modo === 'archivo') {
+        urlInput.style.display = 'none';
+        fileInput.style.display = 'block';
+        urlInput.value = '';
+    } else {
+        urlInput.style.display = 'none';
+        fileInput.style.display = 'none';
+    }
+}
+
+function sincronizarAdicionalPorPuntos() {
+    if (adicionalEditadoManualmente) return;
+    const ptsInput = document.getElementById('canje-puntos');
+    const addInput = document.getElementById('canje-adicional');
+    if (!ptsInput || !addInput) return;
+
+    const pts = parseInt(ptsInput.value, 10);
+    addInput.value = (!isNaN(pts) && pts > 0) ? (pts * 1).toFixed(2) : '';
+}
+
+function leerArchivoComoBase64Comprimido(file, maxAncho = 700, calidad = 0.75) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const scale = img.width > maxAncho ? maxAncho / img.width : 1;
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', calidad));
+            };
+            img.onerror = () => resolve(e.target.result);
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function seleccionarArchivoCanje(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const base64 = await leerArchivoComoBase64Comprimido(file);
+    archivoCanjeBase64Pendiente = base64;
+
+    const inputUrl = document.getElementById('canje-imagen');
+    if (inputUrl) inputUrl.value = base64;
+
+    const previewBox = document.getElementById('canje-preview-box');
+    const previewImg = document.getElementById('canje-preview-img');
+    if (previewBox && previewImg) {
+        previewImg.src = base64;
+        previewBox.style.display = 'block';
+    }
+}
 
 function obtenerUsuarioCanjeActual() {
     if (typeof getSession === 'function') {
@@ -3942,6 +4016,14 @@ function abrirModalCanjes() {
     const panelAdmin = document.getElementById('admin-canje-panel');
     if (panelAdmin) {
         panelAdmin.style.display = esAdmin ? 'block' : 'none';
+    }
+
+    const addInput = document.getElementById('canje-adicional');
+    if (addInput && !addInput.dataset.boundManual) {
+        addInput.dataset.boundManual = '1';
+        addInput.addEventListener('input', () => {
+            adicionalEditadoManualmente = addInput.value.trim() !== '';
+        });
     }
 
     actualizarVistaPuntos();
@@ -3983,7 +4065,8 @@ async function cargarProductosCanje() {
         }
 
         contenedor.innerHTML = productos.map(p => {
-            const tieneAdicional = parseFloat(p.precio_adicional) > 0;
+            const montoAdicionalBase = parseFloat(p.precio_adicional) || 0;
+            const tieneAdicional = montoAdicionalBase > 0;
             return `
             <div class="canje-card">
                 <img src="${p.imagen_url}" alt="${p.nombre}">
@@ -3993,11 +4076,12 @@ async function cargarProductosCanje() {
                     <div class="canje-adicional-box">
                         <label>
                             <input type="checkbox" id="chk-adicional-${p.id}">
-                            Pagar adicional: <strong>S/ ${parseFloat(p.precio_adicional).toFixed(2)}</strong>
+                            Pagar adicional: S/
+                            <input type="number" id="monto-adicional-${p.id}" value="${montoAdicionalBase.toFixed(2)}" step="0.50" min="0" style="width: 72px; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold;">
                         </label>
                     </div>
                 ` : ''}
-                <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${p.puntos_requeridos}, ${p.precio_adicional})">
+                <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${p.puntos_requeridos}, ${montoAdicionalBase})">
                     Canjear Ahora
                 </button>
                 ${esAdmin ? `
@@ -4014,46 +4098,116 @@ async function cargarProductosCanje() {
 
 async function guardarProductoCanje() {
     const id = document.getElementById('canje-edit-id').value;
-    const payload = {
-        nombre: document.getElementById('canje-nombre').value.trim(),
-        imagen_url: document.getElementById('canje-imagen').value.trim(),
-        puntos_requeridos: parseInt(document.getElementById('canje-puntos').value, 10),
-        precio_adicional: parseFloat(document.getElementById('canje-adicional').value) || 0
-    };
+    const nombre = document.getElementById('canje-nombre').value.trim();
+    const tipoEl = document.getElementById('canje-tipo-imagen');
+    const puntosReq = parseInt(document.getElementById('canje-puntos').value, 10);
+    const inputAdicional = document.getElementById('canje-adicional');
+    const fileInput = document.getElementById('canje-imagen-file');
+    const urlInput = document.getElementById('canje-imagen');
 
-    if (!payload.nombre || !payload.imagen_url || !payload.puntos_requeridos) {
-        alert('Completa nombre, URL de imagen y puntos.');
+    let tipoElegido = tipoEl ? tipoEl.value : '';
+    if (!tipoElegido) {
+        const resp = prompt('¿Cómo deseas ingresar la imagen? Escribe URL o ARCHIVO:', (fileInput && fileInput.files && fileInput.files[0]) ? 'ARCHIVO' : 'URL');
+        if (!resp) return;
+        tipoElegido = resp.trim().toLowerCase().startsWith('a') ? 'archivo' : 'url';
+        if (tipoEl) {
+            tipoEl.value = tipoElegido;
+            cambiarModoImagenCanje();
+        }
+    }
+
+    let imagenUrl = '';
+    if (tipoElegido === 'archivo') {
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            imagenUrl = await leerArchivoComoBase64Comprimido(fileInput.files[0]);
+            archivoCanjeBase64Pendiente = imagenUrl;
+        } else {
+            imagenUrl = archivoCanjeBase64Pendiente || (urlInput ? urlInput.value.trim() : '');
+        }
+    } else {
+        imagenUrl = urlInput ? urlInput.value.trim() : '';
+    }
+
+    if (!nombre || !imagenUrl || !puntosReq || puntosReq < 1) {
+        alert('Completa el nombre, elige URL o archivo de imagen y los puntos requeridos.');
         return;
     }
+
+    const rawAdicional = inputAdicional ? inputAdicional.value.trim() : '';
+    const precioAdicional = rawAdicional !== '' ? (parseFloat(rawAdicional) || 0) : (puntosReq * 1);
+
+    const payload = {
+        nombre,
+        imagen_url: imagenUrl,
+        puntos_requeridos: puntosReq,
+        precio_adicional: precioAdicional
+    };
 
     const url = id ? `${API_CANJES_URL}/productos/${id}` : `${API_CANJES_URL}/productos`;
     const method = id ? 'PUT' : 'POST';
 
-    await fetch(url, {
+    const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
 
+    if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'No se pudo guardar el producto de canje.');
+        return;
+    }
+
     limpiarFormCanje();
     cargarProductosCanje();
+    alert('Producto canjeable guardado.');
 }
 
 function prepararEdicionCanje(producto) {
+    archivoCanjeBase64Pendiente = producto.imagen_url || '';
+    adicionalEditadoManualmente = true;
     document.getElementById('titulo-form-canje').textContent = `Editando: ${producto.nombre}`;
     document.getElementById('canje-edit-id').value = producto.id;
     document.getElementById('canje-nombre').value = producto.nombre;
+
+    const esBase64 = typeof producto.imagen_url === 'string' && producto.imagen_url.startsWith('data:image');
+    const tipoEl = document.getElementById('canje-tipo-imagen');
+    if (tipoEl) {
+        tipoEl.value = esBase64 ? 'archivo' : 'url';
+        cambiarModoImagenCanje();
+    }
+
     document.getElementById('canje-imagen').value = producto.imagen_url;
     document.getElementById('canje-puntos').value = producto.puntos_requeridos;
     document.getElementById('canje-adicional').value = producto.precio_adicional;
     document.getElementById('btn-cancelar-edit').style.display = 'inline-block';
+
+    const previewBox = document.getElementById('canje-preview-box');
+    const previewImg = document.getElementById('canje-preview-img');
+    if (previewBox && previewImg && producto.imagen_url) {
+        previewImg.src = producto.imagen_url;
+        previewBox.style.display = 'block';
+    }
 }
 
 function limpiarFormCanje() {
+    archivoCanjeBase64Pendiente = '';
+    adicionalEditadoManualmente = false;
     document.getElementById('titulo-form-canje').textContent = 'Administrar Producto Canjeable';
     document.getElementById('canje-edit-id').value = '';
     document.getElementById('canje-nombre').value = '';
+
+    const tipoEl = document.getElementById('canje-tipo-imagen');
+    if (tipoEl) tipoEl.value = '';
+    cambiarModoImagenCanje();
+
     document.getElementById('canje-imagen').value = '';
+    const fileInput = document.getElementById('canje-imagen-file');
+    if (fileInput) fileInput.value = '';
+    const previewBox = document.getElementById('canje-preview-box');
+    const previewImg = document.getElementById('canje-preview-img');
+    if (previewBox) previewBox.style.display = 'none';
+    if (previewImg) previewImg.src = '';
     document.getElementById('canje-puntos').value = '';
     document.getElementById('canje-adicional').value = '';
     document.getElementById('btn-cancelar-edit').style.display = 'none';
@@ -4071,11 +4225,13 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
     }
 
     const chk = document.getElementById(`chk-adicional-${productoId}`);
+    const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
     const pagarAdicional = chk ? chk.checked : false;
+    const montoEditable = inputMonto ? (parseFloat(inputMonto.value) || 0) : (parseFloat(precioAdicional) || 0);
     let metodoPago = 'Solo Puntos';
 
-    if (pagarAdicional && parseFloat(precioAdicional) > 0) {
-        metodoPago = prompt(`Vas a pagar S/ ${parseFloat(precioAdicional).toFixed(2)} adicional. Escribe método (Yape / Plin / Mercado Pago):`, 'Yape');
+    if (pagarAdicional && montoEditable > 0) {
+        metodoPago = prompt(`Vas a pagar S/ ${montoEditable.toFixed(2)} adicional. Escribe método (Yape / Plin / Mercado Pago):`, 'Yape');
         if (!metodoPago) return;
     }
 
@@ -4086,6 +4242,7 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
             usuario_id: usuario.id,
             producto_canje_id: productoId,
             pagar_adicional: pagarAdicional,
+            monto_adicional: montoEditable,
             metodo_pago: metodoPago
         })
     });
