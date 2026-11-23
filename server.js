@@ -593,3 +593,100 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// contador de puntos de venta 
+app.get('/api/canjes/productos', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM productos_canje WHERE activo = TRUE ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/canjes/productos', async (req, res) => {
+    const { nombre, imagen_url, puntos_requeridos, precio_adicional, stock } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO productos_canje (nombre, imagen_url, puntos_requeridos, precio_adicional, stock) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [nombre, imagen_url, puntos_requeridos, precio_adicional || 0, stock || 10]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/canjes/productos/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nombre, imagen_url, puntos_requeridos, precio_adicional } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE productos_canje SET nombre = $1, imagen_url = $2, puntos_requeridos = $3, precio_adicional = $4 WHERE id = $5 RETURNING *',
+            [nombre, imagen_url, puntos_requeridos, precio_adicional, id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/canjes/sumar-puntos', async (req, res) => {
+    const { usuario_id, cantidad_prendas } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE usuarios SET puntos = COALESCE(puntos, 0) + $1 WHERE id = $2 RETURNING puntos',
+            [cantidad_prendas, usuario_id]
+        );
+        res.json({ puntos_actuales: result.rows[0].puntos });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/canjes/procesar', async (req, res) => {
+    const { usuario_id, producto_canje_id, pagar_adicional, metodo_pago } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const userRes = await client.query('SELECT puntos FROM usuarios WHERE id = $1', [usuario_id]);
+        const prodRes = await client.query('SELECT * FROM productos_canje WHERE id = $1', [producto_canje_id]);
+
+        const puntosUsuario = userRes.rows[0].puntos || 0;
+        const producto = prodRes.rows[0];
+
+        if (puntosUsuario < producto.puntos_requeridos) {
+            throw new Error('Puntos insuficientes para este producto.');
+        }
+        if (producto.stock <= 0) {
+            throw new Error('Producto sin stock disponible.');
+        }
+
+        const montoPagado = pagar_adicional ? parseFloat(producto.precio_adicional) : 0;
+
+        await client.query('UPDATE usuarios SET puntos = puntos - $1 WHERE id = $2', [producto.puntos_requeridos, usuario_id]);
+        await client.query('UPDATE productos_canje SET stock = stock - 1 WHERE id = $1', [producto_canje_id]);
+        await client.query(
+            'INSERT INTO historial_canjes (usuario_id, producto_canje_id, puntos_usados, monto_adicional_pagado, metodo_pago) VALUES ($1, $2, $3, $4, $5)',
+            [usuario_id, producto_canje_id, producto.puntos_requeridos, montoPagado, pagar_adicional ? metodo_pago : 'Solo Puntos']
+        );
+
+        await client.query('COMMIT');
+        res.json({ success: true, nuevos_puntos: puntosUsuario - producto.puntos_requeridos });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+app.get('/api/canjes/clientes-puntos', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, nombre, email, COALESCE(puntos, 0) AS puntos FROM usuarios ORDER BY puntos DESC, id ASC'
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});

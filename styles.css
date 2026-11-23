@@ -413,3 +413,192 @@
         transform: translateX(0) !important;
     }
 }
+
+
+ /* Control de puntos de clientes */
+ .btn-canje-nav {
+    background-color: #FF8C00;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-canje-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+}
+
+.modal-canje-box {
+    background: #FDFBF7;
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid #002b5c;
+}
+
+.modal-canje-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #F5F2E9;
+    padding-bottom: 12px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.modal-canje-header h2 {
+    color: #002b5c;
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.badge-puntos {
+    background: #002b5c;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+}
+
+.btn-cerrar-canje {
+    background: #d93025;
+    color: #fff;
+    border: none;
+    font-size: 1.4rem;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.admin-canje-form {
+    background: #F5F2E9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px dashed #D96B27;
+}
+
+.canje-grid-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.canje-grid-inputs input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.btn-guardar-canje {
+    background: #002b5c;
+    color: #fff;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.canje-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.canje-card {
+    background: #fff;
+    border: 1px solid #e5e0d8;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.canje-card img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.canje-card h4 {
+    color: #002b5c;
+    margin: 5px 0;
+}
+
+.canje-costo {
+    color: #D96B27;
+    font-weight: bold;
+    font-size: 1.05rem;
+    margin: 6px 0;
+}
+
+.canje-adicional-box {
+    background: #F5F2E9;
+    padding: 6px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin: 8px 0;
+}
+
+.btn-ejecutar-canje {
+    background: #FF8C00;
+    color: #fff;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 6px;
+}
+
+.btn-editar-canje-admin {
+    background: #002b5c;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-top: 6px;
+}
+.tabla-puntos-admin {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.9rem;
+}
+
+.tabla-puntos-admin th,
+.tabla-puntos-admin td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e0d8;
+    text-align: left;
+}
+
+.tabla-puntos-admin th {
+    background: #002b5c;
+    color: #fff;
+}

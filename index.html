@@ -1180,6 +1180,52 @@
     });
   }
 </script>
+
+<!-- Botón en tu menú superior -->
+<button type="button" class="btn-canje-nav" onclick="abrirModalCanjes()">
+    🎁 Canjear Puntos (<span id="nav-user-puntos">0</span> pts)
+</button>
+
+<!-- Modal de Canje de Puntos -->
+<div id="modalCanjes" class="modal-canje-overlay" style="display: none;">
+    <div class="modal-canje-box">
+        <div class="modal-canje-header">
+            <h2>🎁 Zona de Canje - Liz Fashion Evolution</h2>
+            <span class="badge-puntos">Tus Puntos: <strong id="modal-user-puntos">0</strong> pts</span>
+            <button type="button" class="btn-cerrar-canje" onclick="cerrarModalCanjes()">&times;</button>
+        </div>
+
+        <!-- Panel exclusivo Administrador -->
+        <div id="admin-canje-panel" class="admin-canje-form" style="display: none;">
+            <h3 id="titulo-form-canje">Administrar Producto Canjeable</h3>
+            <input type="hidden" id="canje-edit-id">
+            <div class="canje-grid-inputs">
+                <input type="text" id="canje-nombre" placeholder="Nombre de la prenda o premio">
+                <input type="url" id="canje-imagen" placeholder="URL de la imagen">
+                <input type="number" id="canje-puntos" placeholder="Puntos requeridos (ej. 10)" min="1">
+                <input type="number" id="canje-adicional" placeholder="Pago adicional opcional S/ (ej. 15.00)" step="0.01" min="0">
+            </div>
+            <button type="button" class="btn-guardar-canje" onclick="guardarProductoCanje()">Guardar Producto</button>
+            <button type="button" class="btn-cancelar-edit" id="btn-cancelar-edit" style="display:none;" onclick="limpiarFormCanje()">Cancelar Edición</button>
+            <div class="admin-clientes-puntos" style="margin-top: 16px;">
+                <h4>Puntos Acumulados por Cliente</h4>
+                <table class="tabla-puntos-admin">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Correo</th>
+                            <th>Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-clientes-puntos"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Catálogo de Canje -->
+        <div id="lista-productos-canje" class="canje-cards-grid"></div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <!-- Lógica unificada -->
     <script src="script.js"></script>
