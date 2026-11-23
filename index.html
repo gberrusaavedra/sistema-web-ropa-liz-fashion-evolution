@@ -33,16 +33,14 @@
     </script>
     <!-- Librería jsPDF para generación de comprobantes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#FF8C00">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Liz Fashion">
+    <link rel="apple-touch-icon" href="./icon-192.png">
 </head>
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#FF8C00">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Liz Fashion">
-<link rel="apple-touch-icon" href="./icon-192.png">
-
-
-
 
 <body class="bg-[#FDFBF7] text-slate-900 font-sans antialiased selection:bg-rose-600 selection:text-white">
 
@@ -229,7 +227,6 @@
                         <button onclick="abrirModuloConfeccion()" class="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl shadow-lg transition duration-200 flex items-center gap-2 cursor-pointer">
                             <i class="fas fa-cut"></i> Ingresar a Confección
                         </button>
-                        <!-- 👇 AL COSTADO DE INGRESAR A CONFECCIÓN -->
                         <button type="button" class="btn-canje-nav px-5 py-3 rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 cursor-pointer" onclick="abrirModalCanjes()">
                             🎁 Canjear Puntos (<span id="nav-user-puntos">0</span> pts)
                         </button>
@@ -564,8 +561,7 @@
 
    <div>
                 <label class="text-xs font-bold text-slate-700 mb-1">URLs de Imágenes (separadas por comas) *</label>
-                <!-- Eliminamos el input type="file" para evitar archivos locales -->
-                <input type="text" id="formImageUrl" placeholder="https://ejemplo.com/foto1.jpg, https://ejemplo.com/..." ...>
+                <input type="text" id="formImageUrl" placeholder="https://ejemplo.com/foto1.jpg, https://ejemplo.com/...">
                 <input type="file" id="formImageFile" accept="image/*" multiple class="mt-2 block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 cursor-pointer" />
             </div>
                 <!-- Stock por Talla y Color Autoincrementable por Imagen -->
@@ -658,22 +654,28 @@
             </div>
         </div>
     </aside>
+
     <!-- MODAL VENTANA DE REPORTE DETALLADO DE PEDIDOS DEL CLIENTE -->
-    <div id="clientReportModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
-        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 my-auto relative modal-animate" onclick="event.stopPropagation()">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 class="text-base font-black text-slate-900 flex items-center gap-2">
-                    <i data-lucide="clipboard-check" class="w-5 h-5 text-rose-600"></i> Mi Reporte Detallado de Pedidos
-                </h3>
-                <button onclick="closeClientReportModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 cursor-pointer font-bold">✕</button>
+    <div id="clientReportModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[85vh]" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                    <h3 class="font-black text-slate-900 text-lg">📦 Mis Pedidos y Comprobantes</h3>
+                    <p class="text-xs text-slate-500">Historial y estado de tus compras y pagos en Liz Fashion Evolution</p>
+                </div>
+                <button onclick="closeClientReportModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold transition cursor-pointer">✕</button>
             </div>
-            <p class="text-xs text-slate-500">Aquí puedes ver el detalle exacto de las prendas que pediste una vez validado tu comprobante y mensaje de WhatsApp.</p>
             
-            <div class="overflow-x-auto max-h-[55vh] space-y-3" id="clientReportContainer">
+            <div id="clientReportContainer" class="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
                 <div class="text-center py-8 text-xs text-slate-400">Cargando tus reportes...</div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end">
+                <button onclick="closeClientReportModal()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer">Cerrar Ventana</button>
             </div>
         </div>
     </div>
+
 <!-- MODAL VENTANA DE REPORTES GENERALES (EXCLUSIVO ADMINISTRADOR) -->
 <div id="adminAllReportsModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
     <div class="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 my-auto relative modal-animate" onclick="event.stopPropagation()">
@@ -690,6 +692,7 @@
         </div>
     </div>
 </div>
+
     <!-- MODAL DE PAGO Y SUBIDA DE VOUCHER YAPE / PLIN -->
 <div id="voucherModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 modal-animate" onclick="event.stopPropagation()">
@@ -871,7 +874,7 @@
 
   <!-- MODAL DE MÓDULO DE CONFECCIÓN Y REPORTE -->
     <div id="confeccionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-[#FDFBF7] w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-8">
+        <div class="bg-[#FDFBF7] w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-8" onclick="event.stopPropagation()">
             
             <!-- Cabecera del Modal -->
             <div class="relative bg-slate-900 text-white p-6 flex justify-between items-center overflow-hidden border-b border-slate-800">
@@ -1016,10 +1019,12 @@
                                     <label class="block text-xs font-bold text-emerald-700 mb-1">Precio x Mayor (S/)</label>
                                     <input type="number" step="0.01" id="confPrecioMayor" class="w-full p-2.5 bg-emerald-50/50 border border-emerald-200 rounded-xl outline-none focus:border-rose-500 transition font-bold text-emerald-800" placeholder="Ej. 120.00">
                                 </div>
+                            </div>
+
                             <div>
-    <label class="block text-xs font-bold text-slate-700 mb-1">Mín. Unds. x Mayor</label>
-    <input type="number" min="1" step="1" id="confMinMayor" placeholder="3" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
-</div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Mín. Unds. x Mayor</label>
+                                <input type="number" min="1" step="1" id="confMinMayor" placeholder="3" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold">
+                            </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Colores Disponibles (separados por coma)</label>
@@ -1102,7 +1107,7 @@
 
     <!-- MODAL BOLSA DE CONFECCIÓN CONSOLIDADA (Múltiples prendas acumuladas) -->
     <div id="bolsaConfeccionModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 p-6 space-y-4 my-auto relative">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 p-6 space-y-4 my-auto relative" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold">
@@ -1138,6 +1143,7 @@
             </div>
         </div>
     </div>
+
 <!-- MODAL POST-AGREGAR AL CARRITO (PAGAR O SEGUIR COMPRANDO) -->
 <div id="postAddModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-200 space-y-4 modal-animate" onclick="event.stopPropagation()">
@@ -1156,40 +1162,6 @@
         </div>
     </div>
 </div>
-<!-- MODAL DE REPORTE DETALLADO DE PEDIDOS DEL CLIENTE -->
-<div id="clientReportModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 flex flex-col max-h-[85vh]">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
-            <div>
-                <h3 class="font-black text-slate-900 text-lg">📦 Mis Pedidos y Comprobantes</h3>
-                <p class="text-xs text-slate-500">Historial y estado de tus compras y pagos en Liz Fashion Evolution</p>
-            </div>
-            <button onclick="closeClientReportModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold transition cursor-pointer">✕</button>
-        </div>
-        
-        <div id="clientReportContainer" class="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
-            <!-- Aquí se inyectan dinámicamente los reportes del cliente -->
-        </div>
-
-        <div class="pt-4 border-t border-slate-100 flex justify-end">
-            <button onclick="closeClientReportModal()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition cursor-pointer">Cerrar Ventana</button>
-        </div>
-    </div>
-</div>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Web App registrada:', reg.scope))
-        .catch(err => console.error('Error SW:', err));
-    });
-  }
-</script>
-
-<!-- Botón en tu menú superior -->
-<button type="button" class="btn-canje-nav" onclick="abrirModalCanjes()">
-    🎁 Canjear Puntos (<span id="nav-user-puntos">0</span> pts)
-</button>
 
 <!-- Modal de Canje de Puntos -->
 <div id="modalCanjes" class="modal-canje-overlay" style="display: none;">
@@ -1231,8 +1203,18 @@
         <div id="lista-productos-canje" class="canje-cards-grid"></div>
     </div>
 </div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Web App registrada:', reg.scope))
+        .catch(err => console.error('Error SW:', err));
+    });
+  }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- Lógica unificada -->
-    <script src="script.js"></script>
+<!-- Lógica unificada -->
+<script src="script.js"></script>
 </body>
 </html>
