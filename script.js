@@ -1112,6 +1112,7 @@ function sendOrderToWhatsApp() {
         const prodCode = p.code || `LIZ-${String(p.id).padStart(4, '0')}`;
         const minReq = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
         const tienePrecioMayor = Number(p.precioMayor) > 0;
+        const totalUnidadesEsteProducto = cantidadesPorProducto[item.productId] || item.qty;
         const aplicaMayor = tienePrecioMayor && totalUnidadesEsteProducto >= minReq;
         let precioAplicado = aplicaMayor ? Number(p.precioMayor) : p.salePrice;
         total += precioAplicado * item.qty;
@@ -3905,10 +3906,44 @@ async function descontarStockPorPedido(detallesPedido) {
 // cacumulador de puntos de clentes
 const API_CANJES_URL = 'https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/canjes';
 
+function obtenerUsuarioCanjeActual() {
+    if (typeof getSession === 'function') {
+        const sesion = getSession();
+        if (sesion && sesion.user) {
+            return {
+                usuario: sesion.user,
+                esAdmin: Boolean(sesion.isAdmin || sesion.user.rol === 'admin' || sesion.user.isAdmin)
+            };
+        }
+    }
+    const raw = JSON.parse(localStorage.getItem('rs_usuario') || 'null');
+    return {
+        usuario: raw,
+        esAdmin: Boolean(raw && (raw.rol === 'admin' || raw.isAdmin))
+    };
+}
+
+function guardarPuntosEnSesion(nuevosPuntos) {
+    const { usuario } = obtenerUsuarioCanjeActual();
+    if (!usuario) return;
+    usuario.puntos = Number(nuevosPuntos) || 0;
+    window.currentUser = usuario;
+    localStorage.setItem('rs_usuario', JSON.stringify(usuario));
+}
+
 function abrirModalCanjes() {
-    document.getElementById('modalCanjes').style.display = 'flex';
-    const esAdmin = window.currentUser && (window.currentUser.rol === 'admin' || window.currentUser.isAdmin);
-    document.getElementById('admin-canje-panel').style.display = esAdmin ? 'block' : 'none';
+    const modal = document.getElementById('modalCanjes');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    const { usuario, esAdmin } = obtenerUsuarioCanjeActual();
+    if (usuario) window.currentUser = usuario;
+
+    const panelAdmin = document.getElementById('admin-canje-panel');
+    if (panelAdmin) {
+        panelAdmin.style.display = esAdmin ? 'block' : 'none';
+    }
+
     actualizarVistaPuntos();
     cargarProductosCanje();
     if (esAdmin) {
@@ -3917,11 +3952,15 @@ function abrirModalCanjes() {
 }
 
 function cerrarModalCanjes() {
-    document.getElementById('modalCanjes').style.display = 'none';
+    const modal = document.getElementById('modalCanjes');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 function actualizarVistaPuntos() {
-    const pts = window.currentUser ? (window.currentUser.puntos || 0) : 0;
+    const { usuario } = obtenerUsuarioCanjeActual();
+    const pts = usuario ? (Number(usuario.puntos) || 0) : 0;
     const navPts = document.getElementById('nav-user-puntos');
     const modalPts = document.getElementById('modal-user-puntos');
     if (navPts) navPts.textContent = pts;
@@ -3930,36 +3969,47 @@ function actualizarVistaPuntos() {
 
 async function cargarProductosCanje() {
     const contenedor = document.getElementById('lista-productos-canje');
+    if (!contenedor) return;
     contenedor.innerHTML = '<p>Cargando premios...</p>';
-    const res = await fetch(`${API_CANJES_URL}/productos`);
-    const productos = await res.json();
-    const esAdmin = window.currentUser && (window.currentUser.rol === 'admin' || window.currentUser.isAdmin);
 
-    contenedor.innerHTML = productos.map(p => {
-        const tieneAdicional = parseFloat(p.precio_adicional) > 0;
-        return `
-        <div class="canje-card">
-            <img src="${p.imagen_url}" alt="${p.nombre}">
-            <h4>${p.nombre}</h4>
-            <div class="canje-costo">⭐ ${p.puntos_requeridos} Puntos</div>
-            ${tieneAdicional ? `
-                <div class="canje-adicional-box">
-                    <label>
-                        <input type="checkbox" id="chk-adicional-${p.id}">
-                        Pagar adicional: <strong>S/ ${parseFloat(p.precio_adicional).toFixed(2)}</strong>
-                    </label>
-                </div>
-            ` : ''}
-            <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${p.puntos_requeridos}, ${p.precio_adicional})">
-                Canjear Ahora
-            </button>
-            ${esAdmin ? `
-                <button type="button" class="btn-editar-canje-admin" onclick='prepararEdicionCanje(${JSON.stringify(p)})'>
-                    ✏️ Editar Puntos / Precio
+    try {
+        const res = await fetch(`${API_CANJES_URL}/productos`);
+        const productos = await res.json();
+        const { esAdmin } = obtenerUsuarioCanjeActual();
+
+        if (!Array.isArray(productos) || productos.length === 0) {
+            contenedor.innerHTML = '<p>No hay productos de canje registrados todavía.</p>';
+            return;
+        }
+
+        contenedor.innerHTML = productos.map(p => {
+            const tieneAdicional = parseFloat(p.precio_adicional) > 0;
+            return `
+            <div class="canje-card">
+                <img src="${p.imagen_url}" alt="${p.nombre}">
+                <h4>${p.nombre}</h4>
+                <div class="canje-costo">⭐ ${p.puntos_requeridos} Puntos</div>
+                ${tieneAdicional ? `
+                    <div class="canje-adicional-box">
+                        <label>
+                            <input type="checkbox" id="chk-adicional-${p.id}">
+                            Pagar adicional: <strong>S/ ${parseFloat(p.precio_adicional).toFixed(2)}</strong>
+                        </label>
+                    </div>
+                ` : ''}
+                <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${p.puntos_requeridos}, ${p.precio_adicional})">
+                    Canjear Ahora
                 </button>
-            ` : ''}
-        </div>`;
-    }).join('');
+                ${esAdmin ? `
+                    <button type="button" class="btn-editar-canje-admin" onclick='prepararEdicionCanje(${JSON.stringify(p)})'>
+                        ✏️ Editar Puntos / Precio
+                    </button>
+                ` : ''}
+            </div>`;
+        }).join('');
+    } catch (err) {
+        contenedor.innerHTML = '<p>Error al cargar los productos de canje.</p>';
+    }
 }
 
 async function guardarProductoCanje() {
@@ -4010,11 +4060,12 @@ function limpiarFormCanje() {
 }
 
 async function canjearProducto(productoId, puntosReq, precioAdicional) {
-    if (!window.currentUser) {
+    const { usuario } = obtenerUsuarioCanjeActual();
+    if (!usuario) {
         alert('Inicia sesión para canjear tus puntos.');
         return;
     }
-    if ((window.currentUser.puntos || 0) < puntosReq) {
+    if ((Number(usuario.puntos) || 0) < puntosReq) {
         alert(`Te faltan puntos. Necesitas ${puntosReq} pts.`);
         return;
     }
@@ -4032,7 +4083,7 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            usuario_id: window.currentUser.id,
+            usuario_id: usuario.id,
             producto_canje_id: productoId,
             pagar_adicional: pagarAdicional,
             metodo_pago: metodoPago
@@ -4041,9 +4092,10 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
 
     const data = await res.json();
     if (res.ok) {
-        window.currentUser.puntos = data.nuevos_puntos;
+        guardarPuntosEnSesion(data.nuevos_puntos);
         actualizarVistaPuntos();
         cargarProductosCanje();
+        cargarPuntosClientesAdmin();
         alert('¡Canje realizado con éxito!');
     } else {
         alert(data.error || 'No se pudo completar el canje.');
@@ -4051,18 +4103,20 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
 }
 
 async function acumularPuntosPorCompra(cantidadPrendas) {
-    if (!window.currentUser || cantidadPrendas <= 0) return;
+    const { usuario } = obtenerUsuarioCanjeActual();
+    if (!usuario || cantidadPrendas <= 0) return;
+
     const res = await fetch(`${API_CANJES_URL}/sumar-puntos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            usuario_id: window.currentUser.id,
+            usuario_id: usuario.id,
             cantidad_prendas: cantidadPrendas
         })
     });
     const data = await res.json();
     if (res.ok) {
-        window.currentUser.puntos = data.puntos_actuales;
+        guardarPuntosEnSesion(data.puntos_actuales);
         actualizarVistaPuntos();
     }
 }
@@ -4072,14 +4126,22 @@ async function cargarPuntosClientesAdmin() {
     if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="3">Cargando clientes...</td></tr>';
 
-    const res = await fetch(`${API_CANJES_URL}/clientes-puntos`);
-    const clientes = await res.json();
+    try {
+        const res = await fetch(`${API_CANJES_URL}/clientes-puntos`);
+        const clientes = await res.json();
 
-    tbody.innerHTML = clientes.map(c => `
-        <tr>
-            <td>${c.nombre || 'Cliente'}</td>
-            <td>${c.email || '-'}</td>
-            <td><strong>⭐ ${c.puntos} pts</strong></td>
-        </tr>
-    `).join('');
+        tbody.innerHTML = clientes.map(c => `
+            <tr>
+                <td>${c.nombre || 'Cliente'}</td>
+                <td>${c.email || '-'}</td>
+                <td><strong>⭐ ${c.puntos} pts</strong></td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="3">Error al cargar clientes.</td></tr>';
+    }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    actualizarVistaPuntos();
+});
