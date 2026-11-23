@@ -416,7 +416,7 @@
 
 
  /* Control de puntos de clientes */
- .btn-canje-nav {
+.btn-canje-nav {
     background-color: #FF8C00;
     color: #fff;
     border: none;
@@ -499,10 +499,12 @@
     margin-bottom: 12px;
 }
 
-.canje-grid-inputs input {
+.canje-grid-inputs input,
+.canje-grid-inputs select {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 6px;
+    background: #fff;
 }
 
 .btn-guardar-canje {
@@ -519,6 +521,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
+    margin-top: 14px;
 }
 
 .canje-card {
@@ -582,6 +585,7 @@
     cursor: pointer;
     margin-top: 6px;
 }
+
 .tabla-puntos-admin {
     width: 100%;
     border-collapse: collapse;
