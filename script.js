@@ -4049,10 +4049,14 @@ function actualizarVistaPuntos() {
     if (modalPts) modalPts.textContent = pts;
 }
 
+function escaparJsonCanje(obj) {
+    return JSON.stringify(obj).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+}
+
 async function cargarProductosCanje() {
     const contenedor = document.getElementById('lista-productos-canje');
     if (!contenedor) return;
-    contenedor.innerHTML = '<p>Cargando premios...</p>';
+    contenedor.innerHTML = '<p style="text-align:center; padding:12px;">Cargando prendas disponibles para canje...</p>';
 
     try {
         const res = await fetch(`${API_CANJES_URL}/productos`);
@@ -4060,16 +4064,17 @@ async function cargarProductosCanje() {
         const { esAdmin } = obtenerUsuarioCanjeActual();
 
         if (!Array.isArray(productos) || productos.length === 0) {
-            contenedor.innerHTML = '<p>No hay productos de canje registrados todavía.</p>';
+            contenedor.innerHTML = '<p style="text-align:center; padding:12px;">Aún no hay prendas disponibles para canjear.</p>';
             return;
         }
 
         contenedor.innerHTML = productos.map(p => {
             const montoAdicionalBase = parseFloat(p.precio_adicional) || 0;
             const tieneAdicional = montoAdicionalBase > 0;
+            const productoSafe = escaparJsonCanje(p);
             return `
             <div class="canje-card">
-                <img src="${p.imagen_url}" alt="${p.nombre}">
+                <img src="${p.imagen_url || 'https://placehold.co/300x300?text=Canje'}" alt="${p.nombre}">
                 <h4>${p.nombre}</h4>
                 <div class="canje-costo">⭐ ${p.puntos_requeridos} Puntos</div>
                 ${tieneAdicional ? `
@@ -4082,17 +4087,17 @@ async function cargarProductosCanje() {
                     </div>
                 ` : ''}
                 <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${p.puntos_requeridos}, ${montoAdicionalBase})">
-                    Canjear Ahora
+                    Elegir y Canjear
                 </button>
                 ${esAdmin ? `
-                    <button type="button" class="btn-editar-canje-admin" onclick='prepararEdicionCanje(${JSON.stringify(p)})'>
-                        ✏️ Editar Puntos / Precio
+                    <button type="button" class="btn-editar-canje-admin" onclick='prepararEdicionCanje(JSON.parse(this.dataset.prod))' data-prod='${productoSafe}'>
+                        ✏️ Editar Prenda / Puntos
                     </button>
                 ` : ''}
             </div>`;
         }).join('');
     } catch (err) {
-        contenedor.innerHTML = '<p>Error al cargar los productos de canje.</p>';
+        contenedor.innerHTML = '<p style="text-align:center; padding:12px;">No se pudieron cargar las prendas de canje.</p>';
     }
 }
 
@@ -4154,13 +4159,13 @@ async function guardarProductoCanje() {
 
     if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.error || 'No se pudo guardar el producto de canje.');
+        alert(errData.error || 'No se pudo guardar la prenda de canje.');
         return;
     }
 
     limpiarFormCanje();
     cargarProductosCanje();
-    alert('Producto canjeable guardado.');
+    alert('Prenda canjeable guardada.');
 }
 
 function prepararEdicionCanje(producto) {
