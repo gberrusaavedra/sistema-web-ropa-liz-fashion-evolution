@@ -99,12 +99,34 @@ async function initDB() {
         );
     `);
 
-    // Asegurar compatibilidad si las tablas ya existían sin las columnas nuevas
+   // Asegurar compatibilidad si las tablas ya existían sin las columnas nuevas
     await pool.query(`
         ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
         ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
+        ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS puntos INTEGER DEFAULT 0;
         ALTER TABLE pagos_yape_plin ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
         ALTER TABLE pagos_yape_plin ADD COLUMN IF NOT EXISTS detalles_pedido JSONB DEFAULT '[]'::jsonb;
+
+        CREATE TABLE IF NOT EXISTS productos_canje (
+            id SERIAL PRIMARY KEY,
+            nombre VARCHAR(150) NOT NULL,
+            imagen_url TEXT NOT NULL,
+            puntos_requeridos INTEGER NOT NULL DEFAULT 1,
+            precio_adicional NUMERIC(10, 2) DEFAULT 0.00,
+            stock INTEGER DEFAULT 10,
+            activo BOOLEAN DEFAULT TRUE,
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS historial_canjes (
+            id SERIAL PRIMARY KEY,
+            usuario_id INTEGER REFERENCES usuarios(id),
+            producto_canje_id INTEGER REFERENCES productos_canje(id),
+            puntos_usados INTEGER NOT NULL,
+            monto_adicional_pagado NUMERIC(10, 2) DEFAULT 0.00,
+            metodo_pago VARCHAR(50) DEFAULT 'Solo Puntos',
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     `);
 
     await pool.query(`
