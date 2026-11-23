@@ -3903,7 +3903,7 @@ async function descontarStockPorPedido(detallesPedido) {
     }
 }
 // cacumulador de puntos de clentes
-const API_CANJES_URL = 'https://TU-BACKEND-EN-RENDER.onrender.com/api/canjes';
+const API_CANJES_URL = 'https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/canjes';
 
 function abrirModalCanjes() {
     document.getElementById('modalCanjes').style.display = 'flex';
