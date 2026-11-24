@@ -674,7 +674,7 @@ app.post('/api/canjes/sumar-puntos', async (req, res) => {
 });
 
 app.post('/api/canjes/procesar', async (req, res) => {
-    const { usuario_id, producto_canje_id, pagar_adicional, monto_adicional, metodo_pago } = req.body;
+    const { usuario_id, producto_canje_id, pagar_adicional, monto_adicional, metodo_pago, confirmado_con_comprobante } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -688,11 +688,16 @@ app.post('/api/canjes/procesar', async (req, res) => {
         const producto = prodRes.rows[0];
         const puntosReq = Number(producto.puntos_requeridos) || 0;
 
-        if (!pagar_adicional && puntosUsuario < puntosReq) {
-            throw new Error(`Te faltan puntos (${puntosUsuario}/${puntosReq} pts). Marca "Pagar adicional" para cubrir la diferencia.`);
-        }
         if (producto.activo === false) {
             throw new Error('Esta prenda ya fue canjeada.');
+        }
+
+        if (pagar_adicional && !confirmado_con_comprobante) {
+            throw new Error('Debes subir el comprobante antes de descontar la prenda.');
+        }
+
+        if (!pagar_adicional && puntosUsuario < puntosReq) {
+            throw new Error(`Te faltan puntos (${puntosUsuario}/${puntosReq} pts). Marca "Pagar adicional" para cubrir la diferencia.`);
         }
 
         const puntosADescontar = pagar_adicional ? Math.min(puntosUsuario, puntosReq) : puntosReq;
@@ -700,11 +705,10 @@ app.post('/api/canjes/procesar', async (req, res) => {
         const nuevosPuntos = Math.max(0, puntosUsuario - puntosADescontar);
 
         await client.query('UPDATE usuarios SET puntos = $1 WHERE id = $2', [nuevosPuntos, usuario_id]);
-        // Descuenta/retira la prenda canjeada de la página
         await client.query('UPDATE productos_canje SET stock = GREATEST(0, COALESCE(stock, 1) - 1), activo = FALSE WHERE id = $1', [producto_canje_id]);
         await client.query(
             'INSERT INTO historial_canjes (usuario_id, producto_canje_id, puntos_usados, monto_adicional_pagado, metodo_pago) VALUES ($1, $2, $3, $4, $5)',
-            [usuario_id, producto_canje_id, puntosADescontar, montoPagado, pagar_adicional ? (metodo_pago || 'Mi Pedido / Yape-Plin') : 'Solo Puntos']
+            [usuario_id, producto_canje_id, puntosADescontar, montoPagado, pagar_adicional ? (metodo_pago || 'Yape / Plin Adicional') : 'Solo Puntos']
         );
 
         await client.query('COMMIT');
