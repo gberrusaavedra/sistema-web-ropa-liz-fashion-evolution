@@ -4145,6 +4145,9 @@ async function cargarProductosCanje() {
                     <button type="button" class="btn-editar-canje-admin" onclick="editarProductoCanjePorId(${p.id})">
                         ✏️ Editar Prenda / Puntos
                     </button>
+                    <button type="button" class="btn-eliminar-canje-admin" onclick="eliminarProductoCanje(${p.id}, '${String(p.nombre || '').replace(/'/g, "\\'")}')">
+                        🗑️ Eliminar
+                    </button>
                 ` : ''}
             </div>`;
         }).join('');
@@ -4161,7 +4164,27 @@ function editarProductoCanjePorId(productoId) {
     }
     prepararEdicionCanje(producto);
 }
+async function eliminarProductoCanje(productoId, nombrePrenda) {
+    if (!confirm(`¿Seguro que deseas eliminar "${nombrePrenda}" de la Zona de Canje?`)) {
+        return;
+    }
 
+    const res = await fetch(`${API_CANJES_URL}/productos/${productoId}`, {
+        method: 'DELETE'
+    });
+
+    if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'No se pudo eliminar la prenda canjeable.');
+        return;
+    }
+
+    if (document.getElementById('canje-edit-id').value === String(productoId)) {
+        limpiarFormCanje();
+    }
+    await cargarProductosCanje();
+    alert('Prenda eliminada de la Zona de Canje.');
+}
 async function guardarProductoCanje() {
     const id = document.getElementById('canje-edit-id').value;
     const nombre = document.getElementById('canje-nombre').value.trim();

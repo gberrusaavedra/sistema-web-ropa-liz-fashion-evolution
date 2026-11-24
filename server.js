@@ -650,6 +650,15 @@ app.put('/api/canjes/productos/:id', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+    app.delete('/api/canjes/productos/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('UPDATE productos_canje SET activo = FALSE WHERE id = $1', [id]);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+
 });
 
 app.post('/api/canjes/sumar-puntos', async (req, res) => {
