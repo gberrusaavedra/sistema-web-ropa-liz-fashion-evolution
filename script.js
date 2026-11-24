@@ -4067,8 +4067,13 @@ function calcularMontoAdicionalCliente(producto, puntosCliente, marcadoAdicional
     const ptsReq = Math.max(1, parseInt(producto.puntos_requeridos, 10) || 1);
     const adicionalGuardado = parseFloat(producto.precio_adicional) || 0;
     const tarifa = obtenerTarifaPorPunto(producto);
+    const ptsValidos = Math.max(0, Number(puntosCliente) || 0);
 
     if (marcadoAdicional) {
+        const ptsFaltantes = Math.max(0, ptsReq - ptsValidos);
+        if (ptsFaltantes > 0) {
+            return Number((ptsFaltantes * tarifa).toFixed(2));
+        }
         if (adicionalGuardado === 1 || adicionalGuardado === 2) {
             return Number((ptsReq * adicionalGuardado).toFixed(2));
         }
@@ -4078,7 +4083,6 @@ function calcularMontoAdicionalCliente(producto, puntosCliente, marcadoAdicional
         return Number((ptsReq * tarifa).toFixed(2));
     }
 
-    const ptsValidos = Math.max(0, Number(puntosCliente) || 0);
     return Number((ptsValidos * tarifa).toFixed(2));
 }
 
@@ -4164,6 +4168,7 @@ function editarProductoCanjePorId(productoId) {
     }
     prepararEdicionCanje(producto);
 }
+
 async function eliminarProductoCanje(productoId, nombrePrenda) {
     if (!confirm(`¿Seguro que deseas eliminar "${nombrePrenda}" de la Zona de Canje?`)) {
         return;
@@ -4185,6 +4190,7 @@ async function eliminarProductoCanje(productoId, nombrePrenda) {
     await cargarProductosCanje();
     alert('Prenda eliminada de la Zona de Canje.');
 }
+
 async function guardarProductoCanje() {
     const id = document.getElementById('canje-edit-id').value;
     const nombre = document.getElementById('canje-nombre').value.trim();
@@ -4315,3 +4321,180 @@ function limpiarFormCanje() {
     document.getElementById('canje-adicional').value = '';
     document.getElementById('btn-cancelar-edit').style.display = 'none';
 }
+
+async function canjearProducto(productoId, puntosReq, precioAdicional) {
+    const { usuario } = obtenerUsuarioCanjeActual();
+    if (!usuario) {
+        alert('Inicia sesión para canjear tus puntos.');
+        return;
+    }
+
+    const puntosActuales = Number(usuario.puntos) || 0;
+    const producto = cacheProductosCanje.find(item => Number(item.id) === Number(productoId)) || {};
+    const chk = document.getElementById(`chk-adicional-${productoId}`);
+    const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
+    const pagarAdicional = chk ? chk.checked : false;
+    const montoCalculado = pagarAdicional
+        ? (inputMonto ? (parseFloat(inputMonto.value) || 0) : (parseFloat(precioAdicional) || 0))
+        : 0;
+
+    if (!pagarAdicional && puntosActuales < puntosReq) {
+        alert(`Te faltan puntos. Tienes ${puntosActuales} pts y necesitas ${puntosReq} pts (o marca "Pagar adicional" para cubrir la diferencia).`);
+        return;
+    }
+
+    if (pagarAdicional && montoCalculado <= 0 && puntosActuales < puntosReq) {
+        alert(`Te faltan puntos. Tienes ${puntosActuales} pts y necesitas ${puntosReq} pts.`);
+        return;
+    }
+
+    const res = await fetch(`${API_CANJES_URL}/procesar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            usuario_id: usuario.id,
+            producto_canje_id: productoId,
+            pagar_adicional: pagarAdicional && montoCalculado > 0,
+            monto_adicional: montoCalculado,
+            metodo_pago: (pagarAdicional && montoCalculado > 0) ? 'Carrito / Yape-Plin' : 'Solo Puntos'
+        })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+        alert(data.error || 'No se pudo completar el canje.');
+        return;
+    }
+
+    const puntosUsados = Number(data.puntos_usados) || 0;
+    const puntosRestantes = Number(data.nuevos_puntos) || 0;
+    guardarPuntosEnSesion(puntosRestantes);
+    actualizarVistaPuntos();
+    await cargarProductosCanje();
+    cargarPuntosClientesAdmin();
+
+    const nombrePrenda = producto.nombre || 'Prenda Canjeada';
+    const imagenPrenda = producto.imagen_url || 'https://placehold.co/300x300?text=Canje';
+    const nombreCliente = usuario.nombre || 'Cliente';
+    const telefonoCliente = usuario.telefono || '-';
+
+    if (!pagarAdicional || montoCalculado <= 0) {
+        cerrarModalCanjes();
+
+        const mensajeWhatsApp = [
+            `🎁 *CANJE POR PUNTOS CONFIRMADO - LIZ FASHION EVOLUTION*`,
+            `👤 *Cliente:* ${nombreCliente}`,
+            `📱 *Teléfono:* ${telefonoCliente}`,
+            `👗 *Prenda Canjeada:* ${nombrePrenda}`,
+            `⭐ *Puntos Requeridos:* ${puntosReq} pts`,
+            `🔻 *Puntos Descontados:* -${puntosUsados} pts`,
+            `✨ *Puntos Disponibles Restantes:* ${puntosRestantes} pts`,
+            `💳 *Pago:* 100% Canje con Puntos (S/ 0.00)`
+        ].join('\n');
+
+        const urlWhatsApp = `https://wa.me/51931598799?text=${encodeURIComponent(mensajeWhatsApp)}`;
+        alert(`✅ ¡Canje realizado! Se descontaron ${puntosUsados} pts y la prenda del stock. Ahora se abrirá WhatsApp con tu detalle.`);
+        window.open(urlWhatsApp, '_blank');
+        return;
+    }
+
+    const itemCanjeCarrito = {
+        codigo: `CANJE-${productoId}`,
+        titulo: `${nombrePrenda} [CANJE: -${puntosUsados} pts | Restan: ${puntosRestantes} pts]`,
+        precio_remate: Number(montoCalculado.toFixed(2)),
+        precio_original: Number(montoCalculado.toFixed(2)),
+        talla: 'Única',
+        color: 'Canje Puntos',
+        cantidad: 1,
+        imagen_url: imagenPrenda,
+        es_canje: true,
+        puntos_usados: puntosUsados,
+        puntos_restantes: puntosRestantes
+    };
+
+    if (typeof cart !== 'undefined' && Array.isArray(cart)) {
+        cart.push(itemCanjeCarrito);
+        localStorage.setItem('rs_cart', JSON.stringify(cart));
+        if (typeof updateCartUI === 'function') updateCartUI();
+    } else {
+        const carritoGuardado = JSON.parse(localStorage.getItem('rs_cart') || '[]');
+        carritoGuardado.push(itemCanjeCarrito);
+        localStorage.setItem('rs_cart', JSON.stringify(carritoGuardado));
+    }
+
+    cerrarModalCanjes();
+    alert(`✅ ¡Canje aplicado (-${puntosUsados} pts)! Se abrió "Mi Pedido" con la diferencia de S/ ${montoCalculado.toFixed(2)} para que subas tu captura de pago y envíes el mensaje detallado por WhatsApp.`);
+
+    if (typeof openCart === 'function') {
+        openCart();
+    }
+}
+
+function enviarMensajeAdminCanje() {
+    const { usuario } = obtenerUsuarioCanjeActual();
+    const nombreCliente = usuario ? (usuario.nombre || 'Cliente') : 'Cliente Invitado';
+    const correoCliente = usuario ? (usuario.email || '-') : '-';
+    const telefonoCliente = usuario ? (usuario.telefono || '-') : '-';
+    const puntosCliente = usuario ? (Number(usuario.puntos) || 0) : 0;
+
+    const detalleTexto = prompt(
+        'Escribe tu mensaje para la administradora sobre tus puntos o canjes:',
+        `Hola Liz Admin, soy ${nombreCliente} (${puntosCliente} pts). Quiero consultar sobre mi canje:`
+    );
+    if (!detalleTexto || !detalleTexto.trim()) return;
+
+    const mensajeWhatsApp = [
+        `📩 *MENSAJE PARA ADMINISTRACIÓN - ZONA DE CANJE*`,
+        `👤 *Cliente:* ${nombreCliente}`,
+        `📧 *Correo:* ${correoCliente}`,
+        `📱 *Teléfono:* ${telefonoCliente}`,
+        `⭐ *Puntos Actuales:* ${puntosCliente} pts`,
+        `📝 *Mensaje:* ${detalleTexto.trim()}`
+    ].join('\n');
+
+    window.open(`https://wa.me/51931598799?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+}
+
+async function acumularPuntosPorCompra(cantidadPrendas) {
+    const { usuario } = obtenerUsuarioCanjeActual();
+    if (!usuario || cantidadPrendas <= 0) return;
+
+    const res = await fetch(`${API_CANJES_URL}/sumar-puntos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            usuario_id: usuario.id,
+            cantidad_prendas: cantidadPrendas
+        })
+    });
+    const data = await res.json();
+    if (res.ok) {
+        guardarPuntosEnSesion(data.puntos_actuales);
+        actualizarVistaPuntos();
+    }
+}
+
+async function cargarPuntosClientesAdmin() {
+    const tbody = document.getElementById('tbody-clientes-puntos');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="3">Cargando clientes...</td></tr>';
+
+    try {
+        const res = await fetch(`${API_CANJES_URL}/clientes-puntos`);
+        const clientes = await res.json();
+
+        tbody.innerHTML = clientes.map(c => `
+            <tr>
+                <td>${c.nombre || 'Cliente'}</td>
+                <td>${c.email || '-'}</td>
+                <td><strong>⭐ ${c.puntos} pts</strong></td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="3">Error al cargar clientes.</td></tr>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    actualizarVistaPuntos();
+});
