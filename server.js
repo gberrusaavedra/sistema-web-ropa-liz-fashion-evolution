@@ -129,8 +129,8 @@ async function initDB() {
     `);
 
     await pool.query(`
-        INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol)
-        VALUES ('Liz Berru Saavedra', 'lizfashionevolution@gmail.com', 'liz2026@@', 'piura2026@', 'admin')
+        INSERT INTO usuarios (nombre, email, password, palabra_secreta, rol, telefono)
+        VALUES ('Liz Berru Saavedra', 'lizfashionevolution@gmail.com', 'liz2026@@', 'piura2026@', 'admin', '931598799')
         ON CONFLICT (email) DO NOTHING;
 
         INSERT INTO config_confeccion (id, fecha_inicio, fecha_fin, comunicado)
