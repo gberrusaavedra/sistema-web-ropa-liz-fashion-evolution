@@ -262,6 +262,9 @@ async function fetchProductsFromDB() {
                 const mayorBD = (p.precio_mayor !== null && p.precio_mayor !== undefined && p.precio_mayor !== '')
         ? Number(p.precio_mayor)
         : 0;
+        const minMayorBD = (p.min_unidades_mayor !== null && p.min_unidades_mayor !== undefined && p.min_unidades_mayor !== '')
+                    ? Math.max(1, parseInt(p.min_unidades_mayor, 10))
+                    : MIN_UNIDADES_MAYOR;
                 return {
                     id: p.id,
                     code: `LIZ-${String(p.id).padStart(4, '0')}`,
@@ -271,6 +274,7 @@ async function fetchProductsFromDB() {
                     regularPrice: Number(p.precio_original),
                     salePrice: Number(p.precio_remate),
                     precioMayor: mayorBD,
+                    minUnidadesMayor: minMayorBD,
                     image: parsedImages[0],
                     images: parsedImages,
                     variantDetails: parsedVariants,
@@ -469,6 +473,7 @@ function openProductFormModal(product = null) {
     setVal('formTag', product ? (product.tag || 'Normal') : 'Normal');
     setVal('formSalePrice', product ? product.salePrice : '');
     setVal('formPrecioMayor', (product && product.precioMayor !== undefined && product.precioMayor !== null) ? product.precioMayor : 0);
+    setVal('formMinMayor', (product && product.minUnidadesMayor) ? product.minUnidadesMayor : MIN_UNIDADES_MAYOR);
     setVal('formRegularPrice', product ? product.regularPrice : '');
     setVal('formDescription', product ? (product.description || '') : '');
     setVal('formMaterial', product ? (product.material || '') : '');
@@ -562,11 +567,12 @@ const parsedMayor = parseFloat(rawMayor);
 const precioMayorVal = !isNaN(parsedMayor) ? parsedMayor : 0;
     const regularPriceVal = tagVal === 'Normal' ? baseSalePrice : (parseFloat(document.getElementById('formRegularPrice').value) || baseSalePrice);
 const minMayorVal = Math.max(1, parseInt(document.getElementById('formMinMayor')?.value, 10) || MIN_UNIDADES_MAYOR);
-    const payload = {
+   const payload = {
         titulo: document.getElementById('formName').value.trim(),
         categoria: document.getElementById('formCategory').value,
         etiqueta: tagVal,
         precio_remate: baseSalePrice,
+        precio_mayor: precioMayorVal,
         min_unidades_mayor: minMayorVal,
         precio_original: regularPriceVal,
         stock_by_size: aggregatedStock,
