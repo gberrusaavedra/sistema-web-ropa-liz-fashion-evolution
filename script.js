@@ -4330,42 +4330,7 @@ function abrirModalPagoAdicionalCanje(datos) {
     canjePendientePago = datos;
     voucherCanjeBase64 = '';
 
-    let modal = document.getElementById('modalPagoAdicionalCanje');
-    if (!modal) {
-        const div = document.createElement('div');
-        div.innerHTML = `
-            <div id="modalPagoAdicionalCanje" style="display:flex; position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:2147483647; align-items:center; justify-content:center; padding:16px;">
-                <div style="background:#ffffff; color:#0f172a; width:100%; max-width:440px; border-radius:14px; padding:20px; box-shadow:0 20px 40px rgba(0,0,0,0.4); border:2px solid #002b5c;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <h3 style="margin:0; color:#002b5c; font-size:1.1rem;">💳 Pagar Adicional de Canje</h3>
-                        <button type="button" onclick="cerrarModalPagoAdicionalCanje()" style="background:#e11d48; color:#fff; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold; cursor:pointer;">&times;</button>
-                    </div>
-                    <div id="resumen-pago-adicional-canje" style="background:#f5f2e9; padding:12px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; line-height:1.45;"></div>
-                    <div style="margin-bottom:10px;">
-                        <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Método de pago:</label>
-                        <select id="canje-pago-metodo" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
-                            <option value="Yape">Yape (931 598 799)</option>
-                            <option value="Plin">Plin (931 598 799)</option>
-                        </select>
-                    </div>
-                    <div style="margin-bottom:10px;">
-                        <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Nro. de operación (opcional):</label>
-                        <input type="text" id="canje-pago-operacion" placeholder="Ej. 00481923" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
-                    </div>
-                    <div style="margin-bottom:12px;">
-                        <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Subir comprobante / captura:</label>
-                        <input type="file" id="canje-pago-voucher-file" accept="image/*" onchange="previsualizarVoucherCanje(event)" style="width:100%; font-size:0.85rem;">
-                        <img id="canje-pago-voucher-preview" src="" alt="Comprobante" style="display:none; width:100%; max-height:170px; object-fit:contain; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;">
-                    </div>
-                    <button type="button" onclick="confirmarPagoAdicionalYEnviarWhatsApp()" style="width:100%; background:#d96b27; color:#fff; border:none; padding:11px; border-radius:8px; font-weight:bold; font-size:0.95rem; cursor:pointer;">
-                        ✅ Subir Comprobante y Enviar a WhatsApp
-                    </button>
-                </div>
-            </div>`;
-        document.body.appendChild(div.firstElementChild);
-        modal = document.getElementById('modalPagoAdicionalCanje');
-    }
-
+    const modal = document.getElementById('modalPagoAdicionalCanje');
     const resumen = document.getElementById('resumen-pago-adicional-canje');
     const fileInput = document.getElementById('canje-pago-voucher-file');
     const opInput = document.getElementById('canje-pago-operacion');
@@ -4388,8 +4353,17 @@ function abrirModalPagoAdicionalCanje(datos) {
         `;
     }
 
-    modal.style.zIndex = '2147483647';
-    modal.style.display = 'flex';
+    if (modal) {
+        modal.style.setProperty('z-index', '10050', 'important');
+        modal.style.setProperty('display', 'flex', 'important');
+    }
+}
+
+function cerrarModalPagoAdicionalCanje() {
+    const modal = document.getElementById('modalPagoAdicionalCanje');
+    if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+    }
 }
 async function confirmarPagoAdicionalYEnviarWhatsApp() {
     if (!canjePendientePago) {
