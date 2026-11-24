@@ -2517,31 +2517,47 @@ async function handleSubirVoucher(e) {
         closeVoucherModal();
         toggleCartDrawer(false);
 
-        let msg = `🛍️ *NUEVO PAGO Y PEDIDO (${selectedPaymentMethod.toUpperCase()})* 🛍️\n`;
-        msg += `🧾 *Orden:* ${ordenCode}\n`;
-        msg += `🔢 *Nro. Operación:* ${nroOperacion}\n`;
-        msg += `👤 *Cliente:* ${user ? user.nombre : 'Cliente Invitado'}\n\n`;
-        msg += `📋 *Detalle Total de la Bolsa de Compras:*\n`;
+      const lineasDetalle = detallesParaBD.map((item, index) =>
+            `${index + 1}. [${item.codigo}] ${item.titulo}\n` +
+            `   Color: ${item.color} | Talla: ${item.talla} | Cant: ${item.cantidad}\n` +
+            `   Subtotal: ${formatPrice(item.precio_remate * item.cantidad)}`
+        ).join('\n\n');
 
-        detallesParaBD.forEach((item, index) => {
-            msg += `${index + 1}. *[${item.codigo}] ${item.titulo}*\n`;
-            msg += `   • Color: *${item.color}* | Talla: *${item.talla}* | Cant: *${item.cantidad}*\n`;
-            msg += `   • Subtotal: ${formatPrice(item.precio_remate * item.cantidad)}\n\n`;
-        });
-
-        msg += `💰 *TOTAL GENERAL PAGADO: ${formatPrice(total)}*\n\n`;
-        msg += `✅ *Confirmación:* Mi comprobante ha sido validado y el reporte detallado ya se encuentra registrado en la web. ¡Quedo a la espera de la confirmación de envío!`;
+        const msg = [
+            `NUEVO PAGO Y PEDIDO (${selectedPaymentMethod.toUpperCase()}) - LIZ FASHION EVOLUTION`,
+            `Orden: ${ordenCode}`,
+            `Nro. Operacion: ${nroOperacion}`,
+            `Cliente: ${user ? user.nombre : 'Cliente Invitado'}`,
+            `Telefono: ${user && user.telefono ? user.telefono : '-'}`,
+            '',
+            `Detalle de la Bolsa de Compras:`,
+            lineasDetalle,
+            '',
+            `TOTAL GENERAL PAGADO: ${formatPrice(total)}`,
+            `Confirmacion: Comprobante validado y registrado en la web.`
+        ].join('\n');
 
         state.cart = [];
         voucherBase64Temp = '';
         renderCart();
 
-        const urlWhatsApp = `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(msg)}`;
-        const popup = window.open(urlWhatsApp, '_blank', 'noopener,noreferrer');
+        const numeroAdmin = String(typeof WHATSAPP_PHONE !== 'undefined' ? WHATSAPP_PHONE : '931598799').replace(/\D/g, '');
+        const numeroConCodigo = numeroAdmin.startsWith('51') ? numeroAdmin : `51${numeroAdmin}`;
+        const urlWhatsApp = `https://wa.me/${numeroConCodigo}?text=${encodeURIComponent(msg)}`;
 
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-            window.location.href = urlWhatsApp;
-        }
+        const enlaceTemporal = document.createElement('a');
+        enlaceTemporal.href = urlWhatsApp;
+        enlaceTemporal.target = '_blank';
+        enlaceTemporal.rel = 'noopener noreferrer';
+        document.body.appendChild(enlaceTemporal);
+        enlaceTemporal.click();
+        enlaceTemporal.remove();
+
+        setTimeout(() => {
+            if (!document.hidden) {
+                window.location.href = urlWhatsApp;
+            }
+        }, 700);
     } catch (err) {
         console.error('Error en handleSubirVoucher:', err);
         showToast('Ocurrió un error al validar o enviar el pedido.', 'error');
