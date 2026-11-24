@@ -4686,7 +4686,9 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
     }
 
     const metodo = document.getElementById('canje-pago-metodo')?.value || 'Yape';
-    const numeroDestino = obtenerNumeroPagoCanjeActual();
+    const numeroDestino = typeof obtenerNumeroPagoCanjeActual === 'function'
+        ? obtenerNumeroPagoCanjeActual()
+        : '927026548';
     const nroOperacionInput = document.getElementById('canje-pago-operacion')?.value.trim() || null;
     const tresDigitosInput = document.getElementById('canje-pago-ultimos3')?.value.trim() || '';
 
@@ -4700,22 +4702,26 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
 
     let nroOperacionFinal = nroOperacionInput || null;
     let tresDigitosFinal = tresDigitosInput || 'No detectado';
-    let fechaHoyValidada = obtenerFechaHoyPeruInfo().textoLegible;
+    let fechaHoyValidada = typeof obtenerFechaHoyPeruInfo === 'function'
+        ? obtenerFechaHoyPeruInfo().textoLegible
+        : new Date().toLocaleDateString('es-PE', { timeZone: 'America/Lima' });
 
     try {
-        const validacionOCR = await validarVoucherYapePlinOCR(
-            voucherCanjeBase64,
-            metodo,
-            d.montoAdicional,
-            tresDigitosInput
-        );
-        if (!validacionOCR || !validacionOCR.valido) {
-            alert((validacionOCR && validacionOCR.motivo) || 'Comprobante no válido.');
-            return;
+        if (typeof validarVoucherYapePlinOCR === 'function') {
+            const validacionOCR = await validarVoucherYapePlinOCR(
+                voucherCanjeBase64,
+                metodo,
+                d.montoAdicional,
+                tresDigitosInput
+            );
+            if (!validacionOCR || !validacionOCR.valido) {
+                alert((validacionOCR && validacionOCR.motivo) || 'Comprobante no válido.');
+                return;
+            }
+            nroOperacionFinal = nroOperacionInput || validacionOCR.nroOperacionDetectado || null;
+            tresDigitosFinal = tresDigitosInput || validacionOCR.tresDigitosDetectados || 'No detectado';
+            fechaHoyValidada = validacionOCR.fechaValidada || fechaHoyValidada;
         }
-        nroOperacionFinal = nroOperacionInput || validacionOCR.nroOperacionDetectado || null;
-        tresDigitosFinal = tresDigitosInput || validacionOCR.tresDigitosDetectados || 'No detectado';
-        fechaHoyValidada = validacionOCR.fechaValidada || fechaHoyValidada;
     } catch (errOCR) {
         console.error('Detalle error OCR:', errOCR);
         alert(`No se pudo leer el comprobante: ${errOCR && errOCR.message ? errOCR.message : 'Intenta con otra captura nítida.'}`);
@@ -4723,8 +4729,13 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
     }
 
     try {
-        const hashVoucher = await calcularHashVoucherCanje(voucherCanjeBase64);
-        const baseApiUrl = API_CANJES_URL.replace(/\/canjes\/?$/, '');
+        const hashVoucher = typeof calcularHashVoucherCanje === 'function'
+            ? await calcularHashVoucherCanje(voucherCanjeBase64)
+            : '';
+        const baseCanjes = typeof API_CANJES_URL !== 'undefined'
+            ? API_CANJES_URL
+            : 'https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/canjes';
+        const baseApiUrl = baseCanjes.replace(/\/canjes\/?$/, '');
 
         const resPago = await fetch(`${baseApiUrl}/pagos`, {
             method: 'POST',
@@ -4760,33 +4771,39 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
         }
     } catch (errRed) {
         console.error('Error al registrar comprobante:', errRed);
-        alert(`Error al enviar al servidor: ${errRed && errRed.message ? errRed.message : 'La prenda no fue eliminada.'}`);
+        alert(`No se pudo enviar al servidor: ${errRed && errRed.message ? errRed.message : 'La prenda no fue eliminada.'}`);
         return;
     }
 
     const mensajeWhatsApp = [
-        `🎁 *CANJE CON PAGO ADICIONAL (${metodo.toUpperCase()} VALIDADO) - LIZ FASHION EVOLUTION*`,
+        `🎁 *CANJE CON PAGO ADICIONAL - LIZ FASHION EVOLUTION*`,
         `🧾 *Orden:* ${codigoOrdenCanje}`,
         `📅 *Fecha Validada (Hoy):* ${fechaHoyValidada}`,
         `👤 *Cliente:* ${d.clienteNombre}`,
         `📱 *Teléfono:* ${d.clienteTelefono}`,
-        `👗 *Prenda Solicitada:* ${d.nombrePrenda}`,
+        `👗 *Prenda Canjeada:* ${d.nombrePrenda}`,
         `⭐ *Puntos Requeridos:* ${d.puntosReq} pts`,
-        `💰 *Adicional Pagado:* S/ ${Number(d.montoAdicional).toFixed(2)}`,
+        `🔻 *Puntos Usados:* -${Number(d.puntosUsados) || 0} pts`,
+        `✨ *Puntos Restantes:* ${Number(d.puntosRestantes) || 0} pts`,
+        `💰 *Monto Adicional Pagado:* S/ ${Number(d.montoAdicional).toFixed(2)}`,
         `💳 *Método y Número:* ${metodo} (${numeroDestino})`,
         `🔢 *Nro. Operación:* ${nroOperacionFinal || 'No ingresado'}`,
         `🔐 *Últimos 3 Números / Código:* ${tresDigitosFinal}`,
-        `🧾 *Comprobante:* Validado y enviado a Validar Yape/Plin`
+        `🧾 *Comprobante:* Subido y pendiente de aprobación en Validar Yape/Plin`
     ].join('\n');
 
     const urlWhatsApp = `https://wa.me/51931598799?text=${encodeURIComponent(mensajeWhatsApp)}`;
-    cerrarModalPagoAdicionalCanje();
-    cerrarModalCanjes();
+
+    if (typeof cerrarModalPagoAdicionalCanje === 'function') cerrarModalPagoAdicionalCanje();
+    if (typeof cerrarModalCanjes === 'function') cerrarModalCanjes();
     canjePendientePago = null;
     voucherCanjeBase64 = '';
-    window.open(urlWhatsApp, '_blank');
-}
 
+    const popup = window.open(urlWhatsApp, '_blank', 'noopener,noreferrer');
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        window.location.href = urlWhatsApp;
+    }
+}
 async function canjearProducto(productoId, puntosReq, precioAdicional) {
     try {
         const { usuario } = obtenerUsuarioCanjeActual();
