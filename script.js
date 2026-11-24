@@ -4053,40 +4053,92 @@ function escaparJsonCanje(obj) {
     return JSON.stringify(obj).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 }
 
+function obtenerTarifaPorPunto(producto) {
+    const ptsReq = Math.max(1, parseInt(producto.puntos_requeridos, 10) || 1);
+    const adicionalGuardado = parseFloat(producto.precio_adicional) || 0;
+
+    if (adicionalGuardado === 1 || adicionalGuardado === 2) {
+        return adicionalGuardado;
+    }
+    if (adicionalGuardado > 0) {
+        return adicionalGuardado / ptsReq;
+    }
+    return 1;
+}
+
+function calcularMontoAdicionalCliente(producto, puntosCliente, marcadoAdicional) {
+    const ptsReq = Math.max(1, parseInt(producto.puntos_requeridos, 10) || 1);
+    const adicionalGuardado = parseFloat(producto.precio_adicional) || 0;
+    const tarifa = obtenerTarifaPorPunto(producto);
+
+    if (marcadoAdicional) {
+        if (adicionalGuardado === 1 || adicionalGuardado === 2) {
+            return Number((ptsReq * adicionalGuardado).toFixed(2));
+        }
+        if (adicionalGuardado > 0) {
+            return Number(adicionalGuardado.toFixed(2));
+        }
+        return Number((ptsReq * tarifa).toFixed(2));
+    }
+
+    const ptsValidos = Math.max(0, Number(puntosCliente) || 0);
+    return Number((ptsValidos * tarifa).toFixed(2));
+}
+
+function refrescarMontoAdicionalTarjeta(productoId, productoJsonStr) {
+    const producto = JSON.parse(decodeURIComponent(productoJsonStr));
+    const { usuario } = obtenerUsuarioCanjeActual();
+    const ptsCliente = usuario ? (Number(usuario.puntos) || 0) : 0;
+    const chk = document.getElementById(`chk-adicional-${productoId}`);
+    const spanMonto = document.getElementById(`texto-monto-adicional-${productoId}`);
+    const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
+
+    const marcado = chk ? chk.checked : false;
+    const montoCalculado = calcularMontoAdicionalCliente(producto, ptsCliente, marcado);
+
+    if (spanMonto) spanMonto.textContent = montoCalculado.toFixed(2);
+    if (inputMonto) inputMonto.value = montoCalculado.toFixed(2);
+}
+
 async function cargarProductosCanje() {
     const contenedor = document.getElementById('lista-productos-canje');
     if (!contenedor) return;
-    contenedor.innerHTML = '<p style="text-align:center; padding:12px;">Cargando prendas disponibles para canje...</p>';
+    contenedor.style.display = 'grid';
+    contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px;">Cargando prendas disponibles para canje...</p>';
 
     try {
         const res = await fetch(`${API_CANJES_URL}/productos`);
         const productos = await res.json();
-        const { esAdmin } = obtenerUsuarioCanjeActual();
+        const { usuario, esAdmin } = obtenerUsuarioCanjeActual();
+        const ptsCliente = usuario ? (Number(usuario.puntos) || 0) : 0;
 
         if (!Array.isArray(productos) || productos.length === 0) {
-            contenedor.innerHTML = '<p style="text-align:center; padding:12px;">Aún no hay prendas disponibles para canjear.</p>';
+            contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px; color:#475569;">Aún no hay prendas subidas para canjear. Crea una arriba para que aparezca aquí.</p>';
             return;
         }
 
         contenedor.innerHTML = productos.map(p => {
             const montoAdicionalBase = parseFloat(p.precio_adicional) || 0;
             const tieneAdicional = montoAdicionalBase > 0;
+            const montoInicial = calcularMontoAdicionalCliente(p, ptsCliente, false);
             const productoSafe = escaparJsonCanje(p);
+            const productoEncoded = encodeURIComponent(JSON.stringify(p));
+
             return `
             <div class="canje-card">
-                <img src="${p.imagen_url || 'https://placehold.co/300x300?text=Canje'}" alt="${p.nombre}">
+                <img src="${p.imagen_url || 'https://placehold.co/300x300?text=Prenda'}" alt="${p.nombre}">
                 <h4>${p.nombre}</h4>
                 <div class="canje-costo">⭐ ${p.puntos_requeridos} Puntos</div>
                 ${tieneAdicional ? `
                     <div class="canje-adicional-box">
                         <label>
-                            <input type="checkbox" id="chk-adicional-${p.id}">
-                            Pagar adicional: S/
-                            <input type="number" id="monto-adicional-${p.id}" value="${montoAdicionalBase.toFixed(2)}" step="0.50" min="0" style="width: 72px; padding: 2px 6px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold;">
+                            <input type="checkbox" id="chk-adicional-${p.id}" onchange="refrescarMontoAdicionalTarjeta(${p.id}, '${productoEncoded}')">
+                            Pagar adicional: <strong>S/ <span id="texto-monto-adicional-${p.id}">${montoInicial.toFixed(2)}</span></strong>
+                            <input type="hidden" id="monto-adicional-${p.id}" value="${montoInicial.toFixed(2)}">
                         </label>
                     </div>
                 ` : ''}
-                <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${p.puntos_requeridos}, ${montoAdicionalBase})">
+                <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${p.puntos_requeridos}, ${montoInicial})">
                     Elegir y Canjear
                 </button>
                 ${esAdmin ? `
@@ -4097,7 +4149,7 @@ async function cargarProductosCanje() {
             </div>`;
         }).join('');
     } catch (err) {
-        contenedor.innerHTML = '<p style="text-align:center; padding:12px;">No se pudieron cargar las prendas de canje.</p>';
+        contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px; color:#e11d48;">No se pudieron cargar las prendas de canje.</p>';
     }
 }
 
@@ -4164,7 +4216,7 @@ async function guardarProductoCanje() {
     }
 
     limpiarFormCanje();
-    cargarProductosCanje();
+    await cargarProductosCanje();
     alert('Prenda canjeable guardada.');
 }
 
@@ -4232,11 +4284,11 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
     const chk = document.getElementById(`chk-adicional-${productoId}`);
     const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
     const pagarAdicional = chk ? chk.checked : false;
-    const montoEditable = inputMonto ? (parseFloat(inputMonto.value) || 0) : (parseFloat(precioAdicional) || 0);
+    const montoCalculado = inputMonto ? (parseFloat(inputMonto.value) || 0) : (parseFloat(precioAdicional) || 0);
     let metodoPago = 'Solo Puntos';
 
-    if (pagarAdicional && montoEditable > 0) {
-        metodoPago = prompt(`Vas a pagar S/ ${montoEditable.toFixed(2)} adicional. Escribe método (Yape / Plin / Mercado Pago):`, 'Yape');
+    if (pagarAdicional && montoCalculado > 0) {
+        metodoPago = prompt(`Vas a pagar S/ ${montoCalculado.toFixed(2)} adicional. Escribe método (Yape / Plin / Mercado Pago):`, 'Yape');
         if (!metodoPago) return;
     }
 
@@ -4247,7 +4299,7 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
             usuario_id: usuario.id,
             producto_canje_id: productoId,
             pagar_adicional: pagarAdicional,
-            monto_adicional: montoEditable,
+            monto_adicional: pagarAdicional ? montoCalculado : 0,
             metodo_pago: metodoPago
         })
     });
