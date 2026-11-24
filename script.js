@@ -4126,9 +4126,9 @@ async function cargarProductosCanje() {
                         <input type="hidden" id="monto-adicional-${p.id}" value="${montoDiferencia.toFixed(2)}">
                     </label>
                 </div>
-                <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${ptsReq}, ${montoDiferencia})">
-                    Elegir y Canjear
-                </button>
+                <button type="button" class="btn-ejecutar-canje" onclick="event.preventDefault(); event.stopPropagation(); canjearProducto(${p.id}, ${ptsReq}, ${montoDiferencia})">
+    Elegir y Canjear
+</button>
                 ${esAdmin ? `
                     <button type="button" class="btn-editar-canje-admin" onclick="editarProductoCanjePorId(${p.id})">
                         ✏️ Editar Prenda / Puntos
