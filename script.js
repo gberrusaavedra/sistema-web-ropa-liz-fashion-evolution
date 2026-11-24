@@ -4378,6 +4378,14 @@ function cerrarModalPagoAdicionalCanje() {
         modal.style.setProperty('display', 'none', 'important');
     }
 }
+async function calcularHashVoucherCanje(base64Str) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(base64Str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 async function confirmarPagoAdicionalYEnviarWhatsApp() {
     if (!canjePendientePago) {
         alert('No hay un canje pendiente por confirmar.');
@@ -4385,20 +4393,53 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
     }
 
     const metodo = document.getElementById('canje-pago-metodo')?.value || 'Yape';
-    const nroOperacion = document.getElementById('canje-pago-operacion')?.value.trim() || 'No ingresado';
+    const nroOperacion = document.getElementById('canje-pago-operacion')?.value.trim() || null;
 
     if (!voucherCanjeBase64) {
-        alert('Por favor sube la captura o foto de tu comprobante de pago antes de enviar.');
+        alert('Primero sube la captura o foto de tu comprobante de pago. La prenda no se descontará hasta que lo envíes.');
         return;
     }
 
     const d = canjePendientePago;
     let puntosUsadosFinal = Number(d.puntosUsados) || 0;
     let puntosRestantesFinal = Number(d.puntosRestantes) || 0;
+    const codigoOrdenCanje = `CANJE-${d.productoId}-${Date.now().toString().slice(-5)}`;
 
     try {
+        const hashVoucher = await calcularHashVoucherCanje(voucherCanjeBase64);
+        const baseApiUrl = API_CANJES_URL.replace(/\/canjes\/?$/, '');
+
+        const resPago = await fetch(`${baseApiUrl}/pagos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orden: codigoOrdenCanje,
+                cliente: d.clienteNombre,
+                telefono: d.clienteTelefono && d.clienteTelefono !== '-' ? d.clienteTelefono : '',
+                total: Number(d.montoAdicional) || 0,
+                metodo,
+                nro_operacion: nroOperacion,
+                imagen_voucher: voucherCanjeBase64,
+                hash_imagen: hashVoucher,
+                detalles_pedido: [{
+                    codigo: `CANJE-${d.productoId}`,
+                    titulo: `${d.nombrePrenda} [Canje -${d.puntosReq} pts]`,
+                    talla: 'Única',
+                    color: 'Canje',
+                    cantidad: 1,
+                    precio_remate: Number(d.montoAdicional) || 0
+                }]
+            })
+        });
+
+        const dataPago = await resPago.json().catch(() => ({}));
+        if (!resPago.ok) {
+            alert(dataPago.error || 'No se pudo registrar el comprobante en Validar Yape/Plin.');
+            return;
+        }
+
         if (d.usuarioId) {
-            const res = await fetch(`${API_CANJES_URL}/procesar`, {
+            const resCanje = await fetch(`${API_CANJES_URL}/procesar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -4406,26 +4447,32 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
                     producto_canje_id: d.productoId,
                     pagar_adicional: true,
                     monto_adicional: d.montoAdicional,
-                    metodo_pago: `${metodo} (Op: ${nroOperacion})`
+                    metodo_pago: `${metodo} (Op: ${nroOperacion || 'N/A'})`
                 })
             });
 
-            const data = await res.json().catch(() => ({}));
-            if (res.ok) {
-                puntosUsadosFinal = Number(data.puntos_usados ?? puntosUsadosFinal) || 0;
-                puntosRestantesFinal = Number(data.nuevos_puntos ?? puntosRestantesFinal) || 0;
+            const dataCanje = await resCanje.json().catch(() => ({}));
+            if (resCanje.ok) {
+                puntosUsadosFinal = Number(dataCanje.puntos_usados ?? puntosUsadosFinal) || 0;
+                puntosRestantesFinal = Number(dataCanje.nuevos_puntos ?? puntosRestantesFinal) || 0;
                 if (typeof guardarPuntosEnSesion === 'function') guardarPuntosEnSesion(puntosRestantesFinal);
                 if (typeof actualizarVistaPuntos === 'function') actualizarVistaPuntos();
-                if (typeof cargarProductosCanje === 'function') await cargarProductosCanje();
-                if (typeof cargarPuntosClientesAdmin === 'function') await cargarPuntosClientesAdmin();
             }
+        } else {
+            cacheProductosCanje = cacheProductosCanje.filter(item => Number(item.id) !== Number(d.productoId));
         }
+
+        if (typeof cargarProductosCanje === 'function') await cargarProductosCanje();
+        if (typeof cargarPuntosClientesAdmin === 'function') await cargarPuntosClientesAdmin();
     } catch (e) {
-        console.error('Error al descontar en servidor:', e);
+        console.error('Error al registrar comprobante y canje:', e);
+        alert('Ocurrió un error al enviar el comprobante. Revisa tu conexión e intenta nuevamente.');
+        return;
     }
 
     const mensajeWhatsApp = [
         `🎁 *CANJE CON PAGO ADICIONAL - LIZ FASHION EVOLUTION*`,
+        `🧾 *Orden:* ${codigoOrdenCanje}`,
         `👤 *Cliente:* ${d.clienteNombre}`,
         `📱 *Teléfono:* ${d.clienteTelefono}`,
         `👗 *Prenda Canjeada:* ${d.nombrePrenda}`,
@@ -4434,8 +4481,8 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
         `✨ *Puntos Restantes:* ${puntosRestantesFinal} pts`,
         `💰 *Adicional Pagado:* S/ ${Number(d.montoAdicional).toFixed(2)}`,
         `💳 *Método:* ${metodo}`,
-        `🔢 *Nro. Operación:* ${nroOperacion}`,
-        `🧾 *Comprobante:* Adjuntado en la web`
+        `🔢 *Nro. Operación:* ${nroOperacion || 'No ingresado'}`,
+        `🧾 *Comprobante:* Enviado a Validar Yape/Plin`
     ].join('\n');
 
     const urlWhatsApp = `https://wa.me/51931598799?text=${encodeURIComponent(mensajeWhatsApp)}`;
@@ -4444,6 +4491,93 @@ async function confirmarPagoAdicionalYEnviarWhatsApp() {
     canjePendientePago = null;
     voucherCanjeBase64 = '';
     window.open(urlWhatsApp, '_blank');
+}
+
+async function canjearProducto(productoId, puntosReq, precioAdicional) {
+    try {
+        const { usuario } = obtenerUsuarioCanjeActual();
+        const producto = (Array.isArray(cacheProductosCanje) ? cacheProductosCanje : []).find(
+            item => Number(item.id) === Number(productoId)
+        ) || {};
+        const ptsRequeridos = Math.max(1, parseInt(puntosReq || producto.puntos_requeridos, 10) || 1);
+        const puntosActuales = usuario ? (Number(usuario.puntos) || 0) : 0;
+
+        const chk = document.getElementById(`chk-adicional-${productoId}`);
+        const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
+        const montoCalculado = inputMonto
+            ? (parseFloat(inputMonto.value) || 0)
+            : (parseFloat(precioAdicional) || calcularMontoAdicionalCliente(producto, puntosActuales));
+
+        const quierePagarAdicional = chk ? chk.checked : (puntosActuales < ptsRequeridos || montoCalculado > 0);
+
+        // Canje 100% por puntos: descuenta, retira prenda y abre directo WhatsApp
+        if (usuario && puntosActuales >= ptsRequeridos && (!quierePagarAdicional || montoCalculado <= 0)) {
+            const res = await fetch(`${API_CANJES_URL}/procesar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    usuario_id: usuario.id,
+                    producto_canje_id: productoId,
+                    pagar_adicional: false,
+                    monto_adicional: 0,
+                    metodo_pago: 'Solo Puntos'
+                })
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                alert(data.error || 'No se pudo completar el canje.');
+                return;
+            }
+
+            const puntosRestantes = Number(data.nuevos_puntos) || 0;
+            if (typeof guardarPuntosEnSesion === 'function') guardarPuntosEnSesion(puntosRestantes);
+            if (typeof actualizarVistaPuntos === 'function') actualizarVistaPuntos();
+            if (typeof cargarProductosCanje === 'function') await cargarProductosCanje();
+            if (typeof cargarPuntosClientesAdmin === 'function') await cargarPuntosClientesAdmin();
+            cerrarModalCanjes();
+
+            const mensajeWhatsApp = [
+                `🎁 *CANJE POR PUNTOS REALIZADO - LIZ FASHION EVOLUTION*`,
+                `👤 *Cliente:* ${usuario.nombre || 'Cliente'}`,
+                `📱 *Teléfono:* ${usuario.telefono || '-'}`,
+                `👗 *Prenda Canjeada:* ${producto.nombre || 'Prenda'}`,
+                `⭐ *Puntos Canjeados:* ${ptsRequeridos} pts`,
+                `✨ *Puntos Restantes:* ${puntosRestantes} pts`,
+                `💳 *Pago Adicional:* S/ 0.00 (100% con Puntos)`
+            ].join('\n');
+
+            window.open(`https://wa.me/51931598799?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+            return;
+        }
+
+        // Canje con pago adicional: solo abre la ventana de pago; NO elimina ni descuenta hasta subir comprobante
+        if (!quierePagarAdicional && puntosActuales < ptsRequeridos && chk) {
+            chk.checked = true;
+        }
+
+        const montoFinalPagar = montoCalculado > 0
+            ? montoCalculado
+            : Math.max(1, calcularMontoAdicionalCliente(producto, puntosActuales));
+
+        const puntosUsadosPrevios = usuario ? Math.min(puntosActuales, ptsRequeridos) : 0;
+        const puntosRestantesPrevios = usuario ? Math.max(0, puntosActuales - puntosUsadosPrevios) : 0;
+
+        abrirModalPagoAdicionalCanje({
+            usuarioId: usuario?.id || null,
+            productoId,
+            nombrePrenda: producto.nombre || 'Prenda Canjeada',
+            puntosReq: ptsRequeridos,
+            puntosUsados: puntosUsadosPrevios,
+            puntosRestantes: puntosRestantesPrevios,
+            montoAdicional: montoFinalPagar,
+            clienteNombre: usuario?.nombre || 'Cliente',
+            clienteTelefono: usuario?.telefono || '-'
+        });
+    } catch (err) {
+        console.error('Error en canjearProducto:', err);
+        alert('Ocurrió un inconveniente al abrir la ventana de canje.');
+    }
 }
 
 async function canjearProducto(productoId, puntosReq, precioAdicional) {
