@@ -4331,6 +4331,10 @@ function abrirModalPagoAdicionalCanje(datos) {
     voucherCanjeBase64 = '';
 
     const modal = document.getElementById('modalPagoAdicionalCanje');
+    if (modal && modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
     const resumen = document.getElementById('resumen-pago-adicional-canje');
     const fileInput = document.getElementById('canje-pago-voucher-file');
     const opInput = document.getElementById('canje-pago-operacion');
@@ -4354,8 +4358,17 @@ function abrirModalPagoAdicionalCanje(datos) {
     }
 
     if (modal) {
-        modal.style.setProperty('z-index', '10050', 'important');
+        modal.style.setProperty('position', 'fixed', 'important');
+        modal.style.setProperty('inset', '0', 'important');
+        modal.style.setProperty('z-index', '2147483647', 'important');
         modal.style.setProperty('display', 'flex', 'important');
+    }
+}
+
+function cerrarModalPagoAdicionalCanje() {
+    const modal = document.getElementById('modalPagoAdicionalCanje');
+    if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
     }
 }
 
