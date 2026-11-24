@@ -1366,16 +1366,21 @@ async function sincronizarDatosConfeccionDB() {
                     const cols = typeof p.colores === 'string' ? JSON.parse(p.colores) : (p.colores || []);
                     const tlls = typeof p.tallas === 'string' ? JSON.parse(p.tallas) : (p.tallas || []);
                     const imgs = typeof p.imagenes === 'string' ? JSON.parse(p.imagenes) : (p.imagenes || []);
-                    return {
-                        id: p.id,
-                        modelo: p.modelo,
-                        precio: Number(p.precio),
-                       precioMayor: p.precio_mayor ? Number(p.precio_mayor) : 0,
-                        colores: cols,
-                        tallas: tlls,
-                        imagen: p.imagen || (imgs[0] || ''),
-                        imagenes: Array.isArray(imgs) && imgs.length > 0 ? imgs : (p.imagen ? [p.imagen] : [])
-                    };
+                    const mayorConfBD = (p.precio_mayor !== null && p.precio_mayor !== undefined && p.precio_mayor !== '')
+                    ? Number(p.precio_mayor)
+                    : ((p.precioMayor !== null && p.precioMayor !== undefined && p.precioMayor !== '') ? Number(p.precioMayor) : 0);
+
+                return {
+                    id: p.id,
+                    modelo: p.modelo,
+                    precio: Number(p.precio),
+                    precioMayor: mayorConfBD,
+                    minUnidadesMayor: Number(p.min_unidades_mayor) || MIN_UNIDADES_MAYOR,
+                    colores: cols,
+                    tallas: tlls,
+                    imagen: p.imagen || (imgs[0] || ''),
+                    imagenes: Array.isArray(imgs) && imgs.length > 0 ? imgs : (p.imagen ? [p.imagen] : [])
+                };
                 });
             }
         }
@@ -1688,6 +1693,10 @@ async function guardarPrendaConfeccion(e) {
     const id = document.getElementById('confPrendaId').value;
     const modelo = document.getElementById('confModelo').value.trim();
     const precio = parseFloat(document.getElementById('confPrecio').value);
+    const confPrecioMayorEl = document.getElementById('confPrecioMayor') || document.getElementById('confPrecioPorMayor');
+const precioMayorConfeccion = confPrecioMayorEl && confPrecioMayorEl.value !== ''
+    ? (parseFloat(confPrecioMayorEl.value) || 0)
+    : 0;
    const confMinMayorVal = Math.max(1, parseInt(document.getElementById('confMinMayor')?.value, 10) || MIN_UNIDADES_MAYOR);
     const colores = document.getElementById('confColores').value.split(',').map(c => c.trim()).filter(Boolean);
     const tallas = document.getElementById('confTallas').value.split(',').map(t => t.trim()).filter(Boolean);
@@ -1732,15 +1741,17 @@ async function guardarPrendaConfeccion(e) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-                modelo,
-                precio,
-                min_unidades_mayor: confMinMayorVal,
-                colores,
-                tallas,
-                imagen: imagenesFinales[0],
-                imagenes: imagenesFinales
-            })
+           body: JSON.stringify({
+            modelo,
+            precio,
+            precio_mayor: precioMayorConfeccion,
+            precioMayor: precioMayorConfeccion,
+            min_unidades_mayor: confMinMayorVal,
+            colores,
+            tallas,
+            imagen: imagenesFinales[0],
+            imagenes: imagenesFinales
+        })
         });
 
         if (!res.ok) throw new Error('Error al guardar la prenda en Neon');
@@ -1878,10 +1889,15 @@ function editarPrendaConfeccion(id) {
 
     document.getElementById('confPrendaId').value = p.id;
     document.getElementById('confModelo').value = p.modelo;
-    document.getElementById('confPrecio').value = p.precio;
+   document.getElementById('confPrecio').value = p.precio;
+    const confPrecioMayorEl = document.getElementById('confPrecioMayor') || document.getElementById('confPrecioPorMayor');
+    if (confPrecioMayorEl) {
+        confPrecioMayorEl.value = p.precioMayor || 0;
+    }
     if (document.getElementById('confMinMayor')) {
         document.getElementById('confMinMayor').value = p.minUnidadesMayor || MIN_UNIDADES_MAYOR;
     }
+    
     document.getElementById('confColores').value = p.colores.join(', ');
     document.getElementById('confTallas').value = p.tallas.join(', ');
     document.getElementById('confImagenUrl').value = '';
