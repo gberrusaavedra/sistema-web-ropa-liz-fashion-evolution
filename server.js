@@ -425,7 +425,72 @@ app.post('/api/pagos', async (req, res) => {
         client.release();
     }
 });
+app.put('/api/pagos/:id/estado', soloAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { estado } = req.body;
+    const estadoNormalizado = estado === 'Aprobado' ? 'Aprobado' : (estado === 'Rechazado' ? 'Rechazado' : 'Pendiente');
+    const client = await pool.connect();
 
+    try {
+        await client.query('BEGIN');
+
+        const pagoRes = await client.query('SELECT * FROM pagos_yape_plin WHERE id = $1 FOR UPDATE', [id]);
+        if (pagoRes.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Pago no encontrado.' });
+        }
+
+        const pago = pagoRes.rows[0];
+        await client.query('UPDATE pagos_yape_plin SET estado = $1 WHERE id = $2', [estadoNormalizado, id]);
+
+        if (estadoNormalizado === 'Aprobado' && pago.orden && String(pago.orden).startsWith('CANJE-')) {
+            const partesOrden = String(pago.orden).split('-');
+            const productoCanjeId = parseInt(partesOrden[1], 10);
+
+            if (!isNaN(productoCanjeId)) {
+                const prodRes = await client.query('SELECT * FROM productos_canje WHERE id = $1 FOR UPDATE', [productoCanjeId]);
+                if (prodRes.rows.length > 0) {
+                    const producto = prodRes.rows[0];
+                    const ptsReq = Number(producto.puntos_requeridos) || 0;
+
+                    await client.query(
+                        'UPDATE productos_canje SET stock = GREATEST(0, COALESCE(stock, 1) - 1), activo = FALSE WHERE id = $1',
+                        [productoCanjeId]
+                    );
+
+                    if (pago.cliente) {
+                        const userRes = await client.query(
+                            'SELECT id, puntos FROM usuarios WHERE LOWER(TRIM(nombre)) = LOWER(TRIM($1)) LIMIT 1 FOR UPDATE',
+                            [pago.cliente]
+                        );
+                        if (userRes.rows.length > 0) {
+                            const userId = userRes.rows[0].id;
+                            const ptsActuales = Number(userRes.rows[0].puntos) || 0;
+                            const ptsDescontar = Math.min(ptsActuales, ptsReq);
+                            const ptsNuevos = Math.max(0, ptsActuales - ptsDescontar);
+
+                            await client.query('UPDATE usuarios SET puntos = $1 WHERE id = $2', [ptsNuevos, userId]);
+                            await client.query(
+                                `INSERT INTO historial_canjes (usuario_id, producto_canje_id, puntos_usados, monto_adicional_pagado, metodo_pago)
+                                 VALUES ($1, $2, $3, $4, $5)`,
+                                [userId, productoCanjeId, ptsDescontar, Number(pago.total) || 0, `${pago.metodo} (Aprobado)`]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, estado: estadoNormalizado });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al actualizar estado de pago:', err);
+        res.status(500).json({ error: 'Error al actualizar estado en el servidor.' });
+    } finally {
+        client.release();
+    }
+});
 // =====================================================================
 // MÓDULO DE CONFECCIÓN PERSONALIZADA (CONECTADO A NEON)
 // =====================================================================
