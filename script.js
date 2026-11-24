@@ -3465,15 +3465,16 @@ function agregarPrendaBolsaConfeccion(id) {
     const colorSeleccionado = document.getElementById(`select-color-${id}`).value;
     const tallaSeleccionada = document.getElementById(`select-talla-${id}`).value;
 
-    bolsaConfeccionItems.push({
-        id: prenda.id,
-        modelo: prenda.modelo,
-        color: colorSeleccionado,
-        talla: tallaSeleccionada,
-        precio: prenda.precio,
-      minUnidadesMayor: prenda.minUnidadesMayor || MIN_UNIDADES_MAYOR,
-        imagen: prenda.imagenes && prenda.imagenes.length > 0 ? prenda.imagenes[0] : prenda.imagen
-    });
+   bolsaConfeccionItems.push({
+    id: prenda.id,
+    modelo: prenda.modelo,
+    color: colorSeleccionado,
+    talla: tallaSeleccionada,
+    precio: Number(prenda.precio) || 0,
+    precioMayor: Number(prenda.precioMayor) || 0,
+    minUnidadesMayor: prenda.minUnidadesMayor || MIN_UNIDADES_MAYOR,
+    imagen: prenda.imagenes && prenda.imagenes.length > 0 ? prenda.imagenes[0] : prenda.imagen
+});
 
     actualizarBadgeBolsaConfeccion();
     showToast(`¡"${prenda.modelo}" (${colorSeleccionado} - Talla ${tallaSeleccionada}) agregada a la bolsa!`, 'success');
@@ -3516,44 +3517,48 @@ function renderizarBolsaConfeccionItems() {
     }
 
     const conteoModelos = {};
-    bolsaConfeccionItems.forEach(item => {
-        conteoModelos[item.modelo] = (conteoModelos[item.modelo] || 0) + 1;
-    });
+bolsaConfeccionItems.forEach(item => {
+    const clave = String(item.modelo || '').trim().toLowerCase();
+    conteoModelos[clave] = (conteoModelos[clave] || 0) + 1;
+});
 
-    let total = 0;
-    container.innerHTML = bolsaConfeccionItems.map((item, idx) => {
-       const cantidadEsteModelo = conteoModelos[item.modelo];
-        let precioAplicado = item.precio;
-        let esPrecioMayor = false;
-        const minReqConf = item.minUnidadesMayor || MIN_UNIDADES_MAYOR;
-            const tienePrecioMayorConf = Number(item.precioMayor) > 0;
+let total = 0;
+container.innerHTML = bolsaConfeccionItems.map((item, idx) => {
+    const clave = String(item.modelo || '').trim().toLowerCase();
+    const cantidadEsteModelo = conteoModelos[clave] || 1;
+    const minReqConf = Number(item.minUnidadesMayor) || MIN_UNIDADES_MAYOR;
+    const precioBase = Number(item.precio) || 0;
+    const precioMayorNum = Number(item.precioMayor) || 0;
 
-            if (tienePrecioMayorConf && cantidadEsteModelo >= minReqConf) {
-                precioAplicado = Number(item.precioMayor);
-                esPrecioMayor = true;
-            }
-            total += precioAplicado;
+    const tienePrecioMayorConf = precioMayorNum > 0 && precioMayorNum < precioBase;
+    const esPrecioMayor = tienePrecioMayorConf && cantidadEsteModelo >= minReqConf;
+    const precioAplicado = esPrecioMayor ? precioMayorNum : precioBase;
+    const faltanUnidades = Math.max(0, minReqConf - cantidadEsteModelo);
 
-            return `
-            <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border ${esPrecioMayor ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'}">
-                <img src="${item.imagen}" class="w-14 h-16 object-cover rounded-xl border shrink-0" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Prenda'">
-                <div class="flex-1">
-                    <h5 class="font-bold text-slate-900 text-xs">${item.modelo}</h5>
-                    <span class="text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600 font-semibold inline-block mt-0.5">Color: ${item.color} | Talla: ${item.talla}</span>
-                    
-                    ${esPrecioMayor 
-                        ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Precio por mayor aplicado (${cantidadEsteModelo} unds)!</span>` 
-                       : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${minReqConf - cantidadEsteModelo} unds más de este modelo para activar precio por mayor</span>`
-                    }
+    total += precioAplicado;
 
-                    <p class="text-xs font-black text-rose-600 mt-1">S/ ${precioAplicado.toFixed(2)} ${esPrecioMayor ? '<span class="text-[9px] text-rose-500">(Al por mayor)</span>' : ''}</p>
-                </div>
-                <button onclick="bolsaConfeccionItems.splice(${idx}, 1); actualizarBadgeBolsaConfeccion(); renderizarBolsaConfeccionItems();" class="p-2 text-slate-400 hover:text-rose-600 cursor-pointer transition" title="Quitar prenda">
-                    <i class="fas fa-trash-alt text-xs"></i>
-                </button>
+    return `
+        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border ${esPrecioMayor ? 'border-rose-400 bg-rose-50/20' : 'border-slate-200'}">
+            <img src="${item.imagen}" class="w-14 h-16 object-cover rounded-xl border shrink-0" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Prenda'">
+            <div class="flex-1">
+                <h5 class="font-bold text-slate-900 text-xs">${item.modelo}</h5>
+                <span class="text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600 font-semibold inline-block mt-0.5">Color: ${item.color} | Talla: ${item.talla}</span>
+                
+                ${esPrecioMayor 
+                    ? `<span class="block text-[10px] font-extrabold text-rose-600 mt-1">🎉 ¡Precio por mayor aplicado (${cantidadEsteModelo} unds)!</span>`
+                    : (cantidadEsteModelo >= minReqConf && !tienePrecioMayorConf
+                        ? `<span class="block text-[10px] font-bold text-amber-600 mt-1">⚠️ Sin precio mayorista configurado para este modelo</span>`
+                        : `<span class="block text-[10px] text-slate-400 mt-1">💡 Agrega ${faltanUnidades} und(s) más de este modelo para activar precio por mayor</span>`)
+                }
+
+                <p class="text-xs font-black text-rose-600 mt-1">S/ ${precioAplicado.toFixed(2)} ${esPrecioMayor ? '<span class="text-[9px] text-rose-500">(Al por mayor)</span>' : ''}</p>
             </div>
-        `;
-    }).join('');
+            <button onclick="bolsaConfeccionItems.splice(${idx}, 1); actualizarBadgeBolsaConfeccion(); renderizarBolsaConfeccionItems();" class="p-2 text-slate-400 hover:text-rose-600 cursor-pointer transition" title="Quitar prenda">
+                <i class="fas fa-trash-alt text-xs"></i>
+            </button>
+        </div>
+    `;
+}).join('');
 
     if (totalSpan) totalSpan.textContent = `S/ ${total.toFixed(2)}`;
 }
