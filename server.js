@@ -59,6 +59,8 @@ async function initDB() {
             id SERIAL PRIMARY KEY,
             modelo VARCHAR(255) NOT NULL,
             precio NUMERIC(10, 2) NOT NULL,
+            precio_mayor NUMERIC(10, 2) DEFAULT 0.00,
+            min_unidades_mayor INTEGER DEFAULT 3,
             colores JSONB NOT NULL DEFAULT '[]'::jsonb,
             tallas JSONB NOT NULL DEFAULT '[]'::jsonb,
             imagen TEXT,
@@ -101,6 +103,8 @@ async function initDB() {
 
     await pool.query(`
         ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
+        ALTER TABLE prendas_confeccion ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
+        ALTER TABLE prendas_confeccion ADD COLUMN IF NOT EXISTS min_unidades_mayor INTEGER DEFAULT 3;
         ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
         ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS puntos INTEGER DEFAULT 0;
         ALTER TABLE pagos_yape_plin ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
@@ -552,14 +556,19 @@ app.get('/api/confeccion/prendas', async (req, res) => {
 });
 
 app.post('/api/confeccion/prendas', soloAdmin, async (req, res) => {
-    const { modelo, precio, colores, tallas, imagen, imagenes } = req.body;
+    const { modelo, precio, precio_mayor, precioMayor, min_unidades_mayor, minUnidadesMayor, colores, tallas, imagen, imagenes } = req.body;
+    const mayorFinal = Number(precio_mayor ?? precioMayor ?? 0) || 0;
+    const minFinal = Math.max(1, parseInt(min_unidades_mayor ?? minUnidadesMayor ?? 3, 10) || 3);
+
     try {
         const result = await pool.query(
-            `INSERT INTO prendas_confeccion (modelo, precio, colores, tallas, imagen, imagenes)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            `INSERT INTO prendas_confeccion (modelo, precio, precio_mayor, min_unidades_mayor, colores, tallas, imagen, imagenes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
             [
                 modelo,
                 precio,
+                mayorFinal,
+                minFinal,
                 JSON.stringify(colores || []),
                 JSON.stringify(tallas || []),
                 imagen || (imagenes && imagenes[0]) || '',
@@ -574,15 +583,49 @@ app.post('/api/confeccion/prendas', soloAdmin, async (req, res) => {
 
 app.put('/api/confeccion/prendas/:id', soloAdmin, async (req, res) => {
     const { id } = req.params;
-    const { modelo, precio, colores, tallas, imagen, imagenes } = req.body;
+    const { modelo, precio, precio_mayor, precioMayor, min_unidades_mayor, minUnidadesMayor, colores, tallas, imagen, imagenes } = req.body;
+    const mayorFinal = Number(precio_mayor ?? precioMayor ?? 0) || 0;
+    const minFinal = Math.max(1, parseInt(min_unidades_mayor ?? minUnidadesMayor ?? 3, 10) || 3);
+
     try {
         const result = await pool.query(
             `UPDATE prendas_confeccion
-             SET modelo=$1, precio=$2, colores=$3, tallas=$4, imagen=$5, imagenes=$6
-             WHERE id=$7 RETURNING *`,
+             SET modelo=$1, precio=$2, precio_mayor=$3, min_unidades_mayor=$4, colores=$5, tallas=$6, imagen=$7, imagenes=$8
+             WHERE id=$9 RETURNING *`,
             [
                 modelo,
                 precio,
+                mayorFinal,
+                minFinal,
+                JSON.stringify(colores || []),
+                JSON.stringify(tallas || []),
+                imagen || (imagenes && imagenes[0]) || '',
+                JSON.stringify(imagenes || []),
+                id
+            ]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/confeccion/prendas/:id', soloAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { modelo, precio, precio_mayor, precioMayor, min_unidades_mayor, minUnidadesMayor, colores, tallas, imagen, imagenes } = req.body;
+    const mayorFinal = Number(precio_mayor ?? precioMayor ?? 0) || 0;
+    const minFinal = Math.max(1, parseInt(min_unidades_mayor ?? minUnidadesMayor ?? 3, 10) || 3);
+
+    try {
+        const result = await pool.query(
+            `UPDATE prendas_confeccion
+             SET modelo=$1, precio=$2, precio_mayor=$3, min_unidades_mayor=$4, colores=$5, tallas=$6, imagen=$7, imagenes=$8
+             WHERE id=$9 RETURNING *`,
+            [
+                modelo,
+                precio,
+                mayorFinal,
+                minFinal,
                 JSON.stringify(colores || []),
                 JSON.stringify(tallas || []),
                 imagen || (imagenes && imagenes[0]) || '',
