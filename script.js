@@ -75,8 +75,15 @@ function updateAuthUI() {
             ? 'w-6 h-6 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shrink-0'
             : 'w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs shrink-0';
         
-        btnAuth.onclick = null;
-        btnAuth.classList.remove('cursor-pointer', 'hover:bg-slate-200/80');
+        if (!isAdmin) {
+            btnAuth.onclick = openClientProfileModal;
+            btnAuth.classList.add('cursor-pointer', 'hover:bg-slate-200/80');
+            btnAuth.title = "Ver y editar mis datos de cliente";
+        } else {
+            btnAuth.onclick = null;
+            btnAuth.classList.remove('cursor-pointer', 'hover:bg-slate-200/80');
+            btnAuth.title = "Cuenta de Administrador";
+        }
         btnLogout.classList.remove('hidden');
         btnLogout.classList.add('flex');
         adminBar.classList.toggle('hidden', !isAdmin);
@@ -2553,7 +2560,7 @@ async function handleSubirVoucher(e) {
         enlaceTemporal.click();
         enlaceTemporal.remove();
 
-        setTimeout(() => {
+        setTimeout(() => {3
             if (!document.hidden) {
                 window.location.href = urlWhatsApp;
             }
@@ -5036,3 +5043,111 @@ async function cargarPuntosClientesAdmin() {
 document.addEventListener('DOMContentLoaded', () => {
     actualizarVistaPuntos();
 });
+
+// =====================================================================
+// PERFIL DEL CLIENTE: VER, EDITAR Y GUARDAR TODOS SUS DATOS
+// =====================================================================
+async function openClientProfileModal() {
+    const { user, isAdmin, token } = getSession();
+    if (!user) {
+        openAuthModal();
+        return;
+    }
+    if (isAdmin) {
+        showToast('Esta vista de perfil es exclusiva para clientes', 'warning');
+        return;
+    }
+
+    let datosCliente = { ...user };
+
+    // Intenta traer los datos más recientes desde la BD si existe el endpoint
+    try {
+        const res = await fetch(`${API_URL}/cliente/perfil/${user.id}`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.usuario) {
+                datosCliente = { ...datosCliente, ...data.usuario };
+                localStorage.setItem('rs_usuario', JSON.stringify(datosCliente));
+            }
+        }
+    } catch (_) {}
+
+    const nombre = datosCliente.nombre || '';
+    const avatar = document.getElementById('profileModalAvatar');
+    if (avatar) avatar.textContent = (nombre.trim().charAt(0) || 'C').toUpperCase();
+
+    document.getElementById('profileNombreInput').value = nombre;
+    document.getElementById('profileEmailInput').value = datosCliente.email || '';
+    document.getElementById('profileTelefonoInput').value = datosCliente.telefono || '';
+    document.getElementById('profileRolDisplay').textContent = datosCliente.rol || 'cliente';
+    document.getElementById('profilePuntosDisplay').textContent = `${Number(datosCliente.puntos) || 0} pts`;
+
+    const modal = document.getElementById('clientProfileModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeClientProfileModal() {
+    const modal = document.getElementById('clientProfileModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function handleSaveClientProfile(e) {
+    e.preventDefault();
+    const { user, isAdmin, token } = getSession();
+    if (!user || isAdmin) {
+        showToast('Solo disponible para cuentas de cliente', 'error');
+        return;
+    }
+
+    const nombre = document.getElementById('profileNombreInput').value.trim();
+    const email = document.getElementById('profileEmailInput').value.trim();
+    const telefono = document.getElementById('profileTelefonoInput').value.trim();
+
+    if (!nombre || !email) {
+        showToast('Completa tu nombre y correo electrónico', 'warning');
+        return;
+    }
+
+    const btnGuardar = document.getElementById('btnSaveClientProfile');
+    if (btnGuardar) btnGuardar.disabled = true;
+
+    try {
+        const res = await fetch(`${API_URL}/cliente/perfil/${user.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ nombre, email, telefono })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.error || 'No se pudieron guardar tus datos', 'error');
+            return;
+        }
+
+        const usuarioActualizado = {
+            ...user,
+            ...(data.usuario || { nombre, email, telefono })
+        };
+        localStorage.setItem('rs_usuario', JSON.stringify(usuarioActualizado));
+        window.currentUser = usuarioActualizado;
+
+        updateAuthUI();
+        closeClientProfileModal();
+        showToast('¡Tus datos de cliente se guardaron correctamente!', 'success');
+    } catch (err) {
+        showToast('Error de conexión al guardar tus datos', 'error');
+    } finally {
+        if (btnGuardar) btnGuardar.disabled = false;
+    }
+}

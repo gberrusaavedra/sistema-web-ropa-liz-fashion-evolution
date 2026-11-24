@@ -645,8 +645,48 @@ app.delete('/api/confeccion/pedidos', soloAdmin, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// Obtener datos actuales del cliente
+app.get('/api/cliente/perfil/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, nombre, email, telefono, rol, COALESCE(puntos, 0) AS puntos
+             FROM usuarios
+             WHERE id = $1 AND rol = 'cliente'`,
+            [req.params.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+        res.json({ usuario: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
+// Editar y guardar datos del cliente
+app.put('/api/cliente/perfil/:id', async (req, res) => {
+    const { nombre, email, telefono } = req.body;
+    try {
+        const result = await pool.query(
+            `UPDATE usuarios
+             SET nombre = $1, email = $2, telefono = $3
+             WHERE id = $4 AND rol = 'cliente'
+             RETURNING id, nombre, email, telefono, rol, COALESCE(puntos, 0) AS puntos`,
+            [String(nombre || '').trim(), String(email || '').trim(), String(telefono || '').trim(), req.params.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Solo los clientes pueden editar este perfil' });
+        }
+        res.json({ usuario: result.rows[0] });
+    } catch (err) {
+        if (err && err.code === '23505') {
+            return res.status(400).json({ error: 'Ese correo electrónico ya está en uso por otra cuenta' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
 
 // =====================================================================
