@@ -425,6 +425,7 @@ app.post('/api/pagos', async (req, res) => {
         client.release();
     }
 });
+
 app.put('/api/pagos/:id/estado', soloAdmin, async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
@@ -481,7 +482,7 @@ app.put('/api/pagos/:id/estado', soloAdmin, async (req, res) => {
             }
         }
 
-     const pagoActualizadoRes = await client.query(
+        const pagoActualizadoRes = await client.query(
             `SELECT p.*, COALESCE(NULLIF(TRIM(p.telefono), ''), u.telefono, '') AS telefono
              FROM pagos_yape_plin p
              LEFT JOIN usuarios u ON LOWER(TRIM(p.cliente)) = LOWER(TRIM(u.nombre))
@@ -501,6 +502,15 @@ app.put('/api/pagos/:id/estado', soloAdmin, async (req, res) => {
             total: pagoFinal.total,
             telefono: pagoFinal.telefono || ''
         });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al actualizar estado de pago:', err);
+        res.status(500).json({ error: 'Error al actualizar estado en el servidor.' });
+    } finally {
+        client.release();
+    }
+});
+
 // =====================================================================
 // MÓDULO DE CONFECCIÓN PERSONALIZADA (CONECTADO A NEON)
 // =====================================================================
@@ -783,7 +793,7 @@ app.post('/api/canjes/procesar', async (req, res) => {
         await client.query('UPDATE productos_canje SET stock = GREATEST(0, COALESCE(stock, 1) - 1), activo = FALSE WHERE id = $1', [producto_canje_id]);
         await client.query(
             'INSERT INTO historial_canjes (usuario_id, producto_canje_id, puntos_usados, monto_adicional_pagado, metodo_pago) VALUES ($1, $2, $3, $4, $5)',
-            [usuario_id, producto_canje_id, puntosADescontar, montoPagado, pagar_adicional ? (metodo_pago || 'Yape / Plin Adicional') : 'Solo Puntos']
+            [usuario_id, productoCanjeId, ptsADescontar, montoPagado, pagar_adicional ? (metodo_pago || 'Yape / Plin Adicional') : 'Solo Puntos']
         );
 
         await client.query('COMMIT');
@@ -799,13 +809,14 @@ app.post('/api/canjes/procesar', async (req, res) => {
         client.release();
     }
 });
+
 app.get('/api/canjes/clientes-puntos', async (req, res) => {
     try {
         const result = await pool.query(
             'SELECT id, nombre, email, telefono, COALESCE(puntos, 0) AS puntos FROM usuarios ORDER BY puntos DESC, id ASC'
         );
         res.json(result.rows);
-} catch (err) {
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
