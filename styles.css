@@ -417,13 +417,19 @@
 
  /* Control de puntos de clientes */
 .btn-canje-nav {
-    background-color: #FF8C00;
-    color: #fff;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-weight: bold;
+    background-color: #059669;
+    color: #ffffff;
+    border: 1px solid #34d399;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 700;
     cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-canje-nav:hover {
+    background-color: #047857;
+    transform: translateY(-1px);
 }
 
 .modal-canje-overlay {
