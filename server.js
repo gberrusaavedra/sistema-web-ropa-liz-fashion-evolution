@@ -481,16 +481,26 @@ app.put('/api/pagos/:id/estado', soloAdmin, async (req, res) => {
             }
         }
 
+     const pagoActualizadoRes = await client.query(
+            `SELECT p.*, COALESCE(NULLIF(TRIM(p.telefono), ''), u.telefono, '') AS telefono
+             FROM pagos_yape_plin p
+             LEFT JOIN usuarios u ON LOWER(TRIM(p.cliente)) = LOWER(TRIM(u.nombre))
+             WHERE p.id = $1`,
+            [id]
+        );
+        const pagoFinal = pagoActualizadoRes.rows[0] || pago;
+
         await client.query('COMMIT');
-        res.json({ success: true, estado: estadoNormalizado });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error al actualizar estado de pago:', err);
-        res.status(500).json({ error: 'Error al actualizar estado en el servidor.' });
-    } finally {
-        client.release();
-    }
-});
+        res.json({
+            success: true,
+            estado: estadoNormalizado,
+            pago: pagoFinal,
+            cliente: pagoFinal.cliente,
+            orden: pagoFinal.orden,
+            metodo: pagoFinal.metodo,
+            total: pagoFinal.total,
+            telefono: pagoFinal.telefono || ''
+        });
 // =====================================================================
 // MÓDULO DE CONFECCIÓN PERSONALIZADA (CONECTADO A NEON)
 // =====================================================================
@@ -792,7 +802,7 @@ app.post('/api/canjes/procesar', async (req, res) => {
 app.get('/api/canjes/clientes-puntos', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, nombre, email, COALESCE(puntos, 0) AS puntos FROM usuarios ORDER BY puntos DESC, id ASC'
+            'SELECT id, nombre, email, telefono, COALESCE(puntos, 0) AS puntos FROM usuarios ORDER BY puntos DESC, id ASC'
         );
         res.json(result.rows);
     } catch (err) {
