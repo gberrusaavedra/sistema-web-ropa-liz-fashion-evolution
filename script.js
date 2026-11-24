@@ -997,15 +997,15 @@ function jumpToColorImage(productId, imgIndex) {
 function addToCart(productId, explicitSize = null) {
     const product = PRODUCTS.find(p => p.id === productId);
     if (!product) return;
-    
+
     const rawImgIdx = sliderIndexes[productId] || 0;
     const currentImgIdx = rawImgIdx < (product.images?.length || 1) ? rawImgIdx : 0;
-    const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx]) 
-        ? product.variantDetails[currentImgIdx].stockBySize 
+    const currentStockMap = (product.variantDetails && product.variantDetails[currentImgIdx])
+        ? product.variantDetails[currentImgIdx].stockBySize
         : product.stockBySize;
 
     const size = explicitSize || state.selectedSizesPerCard[productId] || getFirstAvailableSize(product, currentImgIdx);
-    
+
     let color = 'Único';
     if (product.variantDetails && product.variantDetails[currentImgIdx] && product.variantDetails[currentImgIdx].color) {
         color = product.variantDetails[currentImgIdx].color;
@@ -1013,15 +1013,24 @@ function addToCart(productId, explicitSize = null) {
         color = product.colors[currentImgIdx];
     }
 
-    const availableStock = currentStockMap[size] || 0;
-    if (availableStock <= 0) return showToast('Talla agotada', 'error');
+    const availableStock = Number(currentStockMap[size] || 0);
+    if (availableStock <= 0) {
+        return showToast('Talla agotada', 'error');
+    }
 
-    const existing = state.cart.find(i => i.productId === productId && i.size === size && i.color === color);
+    const existing = state.cart.find(
+        i => String(i.productId) === String(productId) && i.size === size && i.color === color
+    );
+
     if (existing) {
+        if (existing.qty + 1 > availableStock) {
+            return showToast(`Solo quedan ${availableStock} und. en talla ${size}`, 'warning');
+        }
         existing.qty += 1;
     } else {
         state.cart.push({ productId, size, color, qty: 1 });
     }
+
     renderCart();
     openPostAddModal(product);
 }
