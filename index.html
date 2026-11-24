@@ -1228,14 +1228,22 @@
 
         <div id="resumen-pago-adicional-canje" style="background:#f5f2e9; padding:12px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; line-height:1.45;"></div>
 
-        <div style="margin-bottom:10px;">
-            <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Método de pago:</label>
-            <select id="canje-pago-metodo" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
-                <option value="Yape">Yape (927 026 548)</option>
-                <option value="Plin">Plin (927 026 548)</option>
-            </select>
-        </div>
-
+       <div style="margin-bottom:10px;">
+    <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Método de pago:</label>
+    <select id="canje-pago-metodo" onchange="actualizarNumeroPagoCanje()" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+        <option value="Yape">Yape (927 026 548)</option>
+        <option value="Plin">Plin (927 026 548)</option>
+    </select>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; background:#f8fafc; border:1px solid #cbd5e1; padding:8px 10px; border-radius:8px;">
+        <span style="font-size:0.85rem; color:#0f172a;">
+            Número <strong id="canje-metodo-nombre-label">Yape</strong>:
+            <strong id="canje-numero-destino-label" style="color:#002b5c; font-size:0.95rem;">927026548</strong>
+        </span>
+        <button type="button" id="btn-copiar-numero-canje" onclick="copiarNumeroPagoCanje()" style="background:#002b5c; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-size:0.8rem; font-weight:bold; cursor:pointer;">
+            📋 Copiar número
+        </button>
+    </div>
+</div>
         <div style="margin-bottom:10px;">
             <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Nro. de operación (opcional):</label>
             <input type="text" id="canje-pago-operacion" placeholder="Ej. 00481923" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
