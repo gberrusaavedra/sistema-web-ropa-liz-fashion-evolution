@@ -4330,7 +4330,42 @@ function abrirModalPagoAdicionalCanje(datos) {
     canjePendientePago = datos;
     voucherCanjeBase64 = '';
 
-    const modal = document.getElementById('modalPagoAdicionalCanje');
+    let modal = document.getElementById('modalPagoAdicionalCanje');
+    if (!modal) {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <div id="modalPagoAdicionalCanje" style="display:flex; position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:2147483647; align-items:center; justify-content:center; padding:16px;">
+                <div style="background:#ffffff; color:#0f172a; width:100%; max-width:440px; border-radius:14px; padding:20px; box-shadow:0 20px 40px rgba(0,0,0,0.4); border:2px solid #002b5c;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <h3 style="margin:0; color:#002b5c; font-size:1.1rem;">💳 Pagar Adicional de Canje</h3>
+                        <button type="button" onclick="cerrarModalPagoAdicionalCanje()" style="background:#e11d48; color:#fff; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold; cursor:pointer;">&times;</button>
+                    </div>
+                    <div id="resumen-pago-adicional-canje" style="background:#f5f2e9; padding:12px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; line-height:1.45;"></div>
+                    <div style="margin-bottom:10px;">
+                        <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Método de pago:</label>
+                        <select id="canje-pago-metodo" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                            <option value="Yape">Yape (931 598 799)</option>
+                            <option value="Plin">Plin (931 598 799)</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Nro. de operación (opcional):</label>
+                        <input type="text" id="canje-pago-operacion" placeholder="Ej. 00481923" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-weight:bold; margin-bottom:4px; color:#002b5c;">Subir comprobante / captura:</label>
+                        <input type="file" id="canje-pago-voucher-file" accept="image/*" onchange="previsualizarVoucherCanje(event)" style="width:100%; font-size:0.85rem;">
+                        <img id="canje-pago-voucher-preview" src="" alt="Comprobante" style="display:none; width:100%; max-height:170px; object-fit:contain; margin-top:8px; border-radius:8px; border:1px solid #e2e8f0;">
+                    </div>
+                    <button type="button" onclick="confirmarPagoAdicionalYEnviarWhatsApp()" style="width:100%; background:#d96b27; color:#fff; border:none; padding:11px; border-radius:8px; font-weight:bold; font-size:0.95rem; cursor:pointer;">
+                        ✅ Subir Comprobante y Enviar a WhatsApp
+                    </button>
+                </div>
+            </div>`;
+        document.body.appendChild(div.firstElementChild);
+        modal = document.getElementById('modalPagoAdicionalCanje');
+    }
+
     const resumen = document.getElementById('resumen-pago-adicional-canje');
     const fileInput = document.getElementById('canje-pago-voucher-file');
     const opInput = document.getElementById('canje-pago-operacion');
@@ -4353,7 +4388,8 @@ function abrirModalPagoAdicionalCanje(datos) {
         `;
     }
 
-    if (modal) modal.style.display = 'flex';
+    modal.style.zIndex = '2147483647';
+    modal.style.display = 'flex';
 }
 
 function confirmarPagoAdicionalYEnviarWhatsApp() {
@@ -4391,19 +4427,20 @@ function confirmarPagoAdicionalYEnviarWhatsApp() {
 
 async function canjearProducto(productoId, puntosReq, precioAdicional) {
     const { usuario } = obtenerUsuarioCanjeActual();
-    if (!usuario) {
-        alert('Inicia sesión para canjear tus puntos.');
-        return;
-    }
-
-    const puntosActuales = Number(usuario.puntos) || 0;
     const producto = cacheProductosCanje.find(item => Number(item.id) === Number(productoId)) || {};
+    const ptsRequeridos = Math.max(1, parseInt(puntosReq || producto.puntos_requeridos, 10) || 1);
+    const puntosActuales = usuario ? (Number(usuario.puntos) || 0) : 0;
+
     const chk = document.getElementById(`chk-adicional-${productoId}`);
     const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
-    const montoDiferencia = inputMonto ? (parseFloat(inputMonto.value) || 0) : (parseFloat(precioAdicional) || 0);
-    const quierePagarAdicional = chk ? chk.checked : (puntosActuales < puntosReq);
+    const montoCalculado = inputMonto
+        ? (parseFloat(inputMonto.value) || 0)
+        : (parseFloat(precioAdicional) || calcularMontoAdicionalCliente(producto, puntosActuales));
 
-    if (puntosActuales >= puntosReq && (!quierePagarAdicional || montoDiferencia <= 0)) {
+    const quierePagarAdicional = chk ? chk.checked : (puntosActuales < ptsRequeridos || montoCalculado > 0);
+
+    // 1. Si tiene puntos suficientes y no pidió adicional -> canje directo + WhatsApp
+    if (usuario && puntosActuales >= ptsRequeridos && (!quierePagarAdicional || montoCalculado <= 0)) {
         const res = await fetch(`${API_CANJES_URL}/procesar`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -4434,7 +4471,7 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
             `👤 *Cliente:* ${usuario.nombre || 'Cliente'}`,
             `📱 *Teléfono:* ${usuario.telefono || '-'}`,
             `👗 *Prenda Canjeada:* ${producto.nombre || 'Prenda'}`,
-            `⭐ *Puntos Canjeados:* ${puntosReq} pts`,
+            `⭐ *Puntos Canjeados:* ${ptsRequeridos} pts`,
             `✨ *Puntos Restantes:* ${puntosRestantes} pts`,
             `💳 *Pago Adicional:* S/ 0.00 (100% con Puntos)`
         ].join('\n');
@@ -4443,47 +4480,52 @@ async function canjearProducto(productoId, puntosReq, precioAdicional) {
         return;
     }
 
-    if (!quierePagarAdicional) {
-        alert(`Tienes ${puntosActuales} pts y esta prenda pide ${puntosReq} pts. Marca "Pagar adicional (S/ ${montoDiferencia.toFixed(2)})" para pagar la diferencia y subir tu comprobante.`);
+    // 2. Si no le alcanzan los puntos y no marcó adicional -> marca adicional y abre directo el pago
+    if (!quierePagarAdicional && puntosActuales < ptsRequeridos) {
         if (chk) chk.checked = true;
-        return;
     }
 
-    const res = await fetch(`${API_CANJES_URL}/procesar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            usuario_id: usuario.id,
-            producto_canje_id: productoId,
-            pagar_adicional: true,
-            monto_adicional: montoDiferencia,
-            metodo_pago: 'Yape / Plin Adicional'
-        })
-    });
+    const montoFinalPagar = montoCalculado > 0
+        ? montoCalculado
+        : Math.max(1, calcularMontoAdicionalCliente(producto, puntosActuales));
 
-    const data = await res.json();
-    if (!res.ok) {
-        alert(data.error || 'No se pudo procesar el canje con adicional.');
-        return;
+    let puntosUsados = usuario ? Math.min(puntosActuales, ptsRequeridos) : 0;
+    let puntosRestantes = usuario ? Math.max(0, puntosActuales - puntosUsados) : 0;
+
+    if (usuario && usuario.id) {
+        const res = await fetch(`${API_CANJES_URL}/procesar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_id: usuario.id,
+                producto_canje_id: productoId,
+                pagar_adicional: true,
+                monto_adicional: montoFinalPagar,
+                metodo_pago: 'Yape / Plin Adicional'
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            puntosUsados = Number(data.puntos_usados ?? puntosUsados) || 0;
+            puntosRestantes = Number(data.nuevos_puntos ?? puntosRestantes) || 0;
+            guardarPuntosEnSesion(puntosRestantes);
+            actualizarVistaPuntos();
+            await cargarProductosCanje();
+            cargarPuntosClientesAdmin();
+        }
     }
-
-    const puntosUsados = Number(data.puntos_usados) || 0;
-    const puntosRestantes = Number(data.nuevos_puntos) || 0;
-    guardarPuntosEnSesion(puntosRestantes);
-    actualizarVistaPuntos();
-    await cargarProductosCanje();
-    cargarPuntosClientesAdmin();
 
     cerrarModalCanjes();
     abrirModalPagoAdicionalCanje({
         productoId,
         nombrePrenda: producto.nombre || 'Prenda Canjeada',
-        puntosReq,
+        puntosReq: ptsRequeridos,
         puntosUsados,
         puntosRestantes,
-        montoAdicional: montoDiferencia,
-        clienteNombre: usuario.nombre || 'Cliente',
-        clienteTelefono: usuario.telefono || '-'
+        montoAdicional: montoFinalPagar,
+        clienteNombre: usuario?.nombre || 'Cliente',
+        clienteTelefono: usuario?.telefono || '-'
     });
 }
 
