@@ -674,34 +674,45 @@ app.post('/api/canjes/sumar-puntos', async (req, res) => {
 });
 
 app.post('/api/canjes/procesar', async (req, res) => {
-    const { usuario_id, producto_canje_id, pagar_adicional, metodo_pago } = req.body;
+    const { usuario_id, producto_canje_id, pagar_adicional, monto_adicional, metodo_pago } = req.body;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        const userRes = await client.query('SELECT puntos FROM usuarios WHERE id = $1', [usuario_id]);
-        const prodRes = await client.query('SELECT * FROM productos_canje WHERE id = $1', [producto_canje_id]);
+        const userRes = await client.query('SELECT puntos FROM usuarios WHERE id = $1 FOR UPDATE', [usuario_id]);
+        const prodRes = await client.query('SELECT * FROM productos_canje WHERE id = $1 FOR UPDATE', [producto_canje_id]);
 
-        const puntosUsuario = userRes.rows[0].puntos || 0;
+        if (userRes.rows.length === 0) throw new Error('Usuario no encontrado.');
+        if (prodRes.rows.length === 0) throw new Error('Prenda de canje no encontrada.');
+
+        const puntosUsuario = Number(userRes.rows[0].puntos) || 0;
         const producto = prodRes.rows[0];
+        const puntosReq = Number(producto.puntos_requeridos) || 0;
 
-        if (puntosUsuario < producto.puntos_requeridos) {
-            throw new Error('Puntos insuficientes para este producto.');
+        if (!pagar_adicional && puntosUsuario < puntosReq) {
+            throw new Error(`Te faltan puntos (${puntosUsuario}/${puntosReq} pts). Marca "Pagar adicional" para cubrir la diferencia.`);
         }
-        if (producto.stock <= 0) {
-            throw new Error('Producto sin stock disponible.');
+        if (producto.activo === false) {
+            throw new Error('Esta prenda ya fue canjeada.');
         }
 
-        const montoPagado = pagar_adicional ? parseFloat(producto.precio_adicional) : 0;
+        const puntosADescontar = pagar_adicional ? Math.min(puntosUsuario, puntosReq) : puntosReq;
+        const montoPagado = pagar_adicional ? (parseFloat(monto_adicional) || 0) : 0;
+        const nuevosPuntos = Math.max(0, puntosUsuario - puntosADescontar);
 
-        await client.query('UPDATE usuarios SET puntos = puntos - $1 WHERE id = $2', [producto.puntos_requeridos, usuario_id]);
-        await client.query('UPDATE productos_canje SET stock = stock - 1 WHERE id = $1', [producto_canje_id]);
+        await client.query('UPDATE usuarios SET puntos = $1 WHERE id = $2', [nuevosPuntos, usuario_id]);
+        // Descuenta/retira la prenda canjeada de la página
+        await client.query('UPDATE productos_canje SET stock = GREATEST(0, COALESCE(stock, 1) - 1), activo = FALSE WHERE id = $1', [producto_canje_id]);
         await client.query(
             'INSERT INTO historial_canjes (usuario_id, producto_canje_id, puntos_usados, monto_adicional_pagado, metodo_pago) VALUES ($1, $2, $3, $4, $5)',
-            [usuario_id, producto_canje_id, producto.puntos_requeridos, montoPagado, pagar_adicional ? metodo_pago : 'Solo Puntos']
+            [usuario_id, producto_canje_id, puntosADescontar, montoPagado, pagar_adicional ? (metodo_pago || 'Mi Pedido / Yape-Plin') : 'Solo Puntos']
         );
 
         await client.query('COMMIT');
-        res.json({ success: true, nuevos_puntos: puntosUsuario - producto.puntos_requeridos });
+        res.json({
+            success: true,
+            nuevos_puntos: nuevosPuntos,
+            puntos_usados: puntosADescontar
+        });
     } catch (err) {
         await client.query('ROLLBACK');
         res.status(400).json({ error: err.message });
@@ -709,7 +720,6 @@ app.post('/api/canjes/procesar', async (req, res) => {
         client.release();
     }
 });
-
 app.get('/api/canjes/clientes-puntos', async (req, res) => {
     try {
         const result = await pool.query(

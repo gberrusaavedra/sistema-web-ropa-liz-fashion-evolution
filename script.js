@@ -4063,27 +4063,203 @@ function obtenerTarifaPorPunto(producto) {
     return 1;
 }
 
-function calcularMontoAdicionalCliente(producto, puntosCliente, marcadoAdicional) {
+function calcularMontoAdicionalCliente(producto, puntosCliente) {
     const ptsReq = Math.max(1, parseInt(producto.puntos_requeridos, 10) || 1);
-    const adicionalGuardado = parseFloat(producto.precio_adicional) || 0;
     const tarifa = obtenerTarifaPorPunto(producto);
     const ptsValidos = Math.max(0, Number(puntosCliente) || 0);
+    const ptsFaltantes = Math.max(0, ptsReq - ptsValidos);
 
-    if (marcadoAdicional) {
-        const ptsFaltantes = Math.max(0, ptsReq - ptsValidos);
-        if (ptsFaltantes > 0) {
-            return Number((ptsFaltantes * tarifa).toFixed(2));
+    return Number((ptsFaltantes * tarifa).toFixed(2));
+}
+
+function refrescarMontoAdicionalTarjeta(productoId) {
+    const producto = cacheProductosCanje.find(item => Number(item.id) === Number(productoId));
+    if (!producto) return;
+
+    const { usuario } = obtenerUsuarioCanjeActual();
+    const ptsCliente = usuario ? (Number(usuario.puntos) || 0) : 0;
+    const spanMonto = document.getElementById(`texto-monto-adicional-${productoId}`);
+    const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
+
+    const montoCalculado = calcularMontoAdicionalCliente(producto, ptsCliente);
+
+    if (spanMonto) spanMonto.textContent = montoCalculado.toFixed(2);
+    if (inputMonto) inputMonto.value = montoCalculado.toFixed(2);
+}
+
+async function cargarProductosCanje() {
+    const contenedor = document.getElementById('lista-productos-canje');
+    if (!contenedor) return;
+    contenedor.style.display = 'grid';
+    contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px;">Cargando prendas disponibles para canje...</p>';
+
+    try {
+        const res = await fetch(`${API_CANJES_URL}/productos`);
+        const productos = await res.json();
+        const { usuario, esAdmin } = obtenerUsuarioCanjeActual();
+        const ptsCliente = usuario ? (Number(usuario.puntos) || 0) : 0;
+
+        if (!Array.isArray(productos) || productos.length === 0) {
+            cacheProductosCanje = [];
+            contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px; color:#475569;">Aún no hay prendas subidas para canjear.</p>';
+            return;
         }
-        if (adicionalGuardado === 1 || adicionalGuardado === 2) {
-            return Number((ptsReq * adicionalGuardado).toFixed(2));
-        }
-        if (adicionalGuardado > 0) {
-            return Number(adicionalGuardado.toFixed(2));
-        }
-        return Number((ptsReq * tarifa).toFixed(2));
+
+        cacheProductosCanje = productos;
+
+        contenedor.innerHTML = productos.map(p => {
+            const ptsReq = Math.max(1, parseInt(p.puntos_requeridos, 10) || 1);
+            const leAlcanza = ptsCliente >= ptsReq;
+            const montoDiferencia = calcularMontoAdicionalCliente(p, ptsCliente);
+
+            return `
+            <div class="canje-card">
+                <img src="${p.imagen_url || 'https://placehold.co/300x300?text=Prenda'}" alt="${p.nombre}">
+                <h4>${p.nombre}</h4>
+                <div class="canje-costo">⭐ ${ptsReq} Puntos</div>
+                <div class="canje-adicional-box">
+                    <label>
+                        <input type="checkbox" id="chk-adicional-${p.id}" ${!leAlcanza ? 'checked' : ''} onchange="refrescarMontoAdicionalTarjeta(${p.id})">
+                        Pagar adicional: <strong>S/ <span id="texto-monto-adicional-${p.id}">${montoDiferencia.toFixed(2)}</span></strong>
+                        <input type="hidden" id="monto-adicional-${p.id}" value="${montoDiferencia.toFixed(2)}">
+                    </label>
+                </div>
+                <button type="button" class="btn-ejecutar-canje" onclick="canjearProducto(${p.id}, ${ptsReq}, ${montoDiferencia})">
+                    Elegir y Canjear
+                </button>
+                ${esAdmin ? `
+                    <button type="button" class="btn-editar-canje-admin" onclick="editarProductoCanjePorId(${p.id})">
+                        ✏️ Editar Prenda / Puntos
+                    </button>
+                    <button type="button" class="btn-eliminar-canje-admin" onclick="eliminarProductoCanje(${p.id}, '${String(p.nombre || '').replace(/'/g, "\\'")}')">
+                        🗑️ Eliminar
+                    </button>
+                ` : ''}
+            </div>`;
+        }).join('');
+    } catch (err) {
+        contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px; color:#e11d48;">No se pudieron cargar las prendas de canje.</p>';
+    }
+}
+
+async function canjearProducto(productoId, puntosReq, precioAdicional) {
+    const { usuario } = obtenerUsuarioCanjeActual();
+    if (!usuario) {
+        alert('Inicia sesión para canjear tus puntos.');
+        return;
     }
 
-    return Number((ptsValidos * tarifa).toFixed(2));
+    const puntosActuales = Number(usuario.puntos) || 0;
+    const producto = cacheProductosCanje.find(item => Number(item.id) === Number(productoId)) || {};
+    const chk = document.getElementById(`chk-adicional-${productoId}`);
+    const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
+    const montoDiferencia = inputMonto ? (parseFloat(inputMonto.value) || 0) : (parseFloat(precioAdicional) || 0);
+    const quierePagarAdicional = chk ? chk.checked : (puntosActuales < puntosReq);
+
+    // CASO 1: Le alcanzan los puntos (ej. tiene 35 y pide 30) y no paga adicional -> canje directo + WhatsApp
+    if (puntosActuales >= puntosReq && (!quierePagarAdicional || montoDiferencia <= 0)) {
+        const res = await fetch(`${API_CANJES_URL}/procesar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario_id: usuario.id,
+                producto_canje_id: productoId,
+                pagar_adicional: false,
+                monto_adicional: 0,
+                metodo_pago: 'Solo Puntos'
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            alert(data.error || 'No se pudo completar el canje.');
+            return;
+        }
+
+        const puntosRestantes = Number(data.nuevos_puntos) || 0;
+        guardarPuntosEnSesion(puntosRestantes);
+        actualizarVistaPuntos();
+        await cargarProductosCanje();
+        cargarPuntosClientesAdmin();
+        cerrarModalCanjes();
+
+        const mensajeWhatsApp = [
+            `🎁 *CANJE POR PUNTOS REALIZADO - LIZ FASHION EVOLUTION*`,
+            `👤 *Cliente:* ${usuario.nombre || 'Cliente'}`,
+            `📱 *Teléfono:* ${usuario.telefono || '-'}`,
+            `👗 *Prenda Canjeada:* ${producto.nombre || 'Prenda'}`,
+            `⭐ *Puntos Canjeados:* ${puntosReq} pts`,
+            `✨ *Puntos Restantes:* ${puntosRestantes} pts`,
+            `💳 *Pago Adicional:* S/ 0.00 (100% con Puntos)`
+        ].join('\n');
+
+        alert(`✅ ¡Canje exitoso! Se descontaron ${puntosReq} pts (te quedan ${puntosRestantes} pts) y la prenda se retiró de la página. Ahora se abrirá WhatsApp.`);
+        window.open(`https://wa.me/51931598799?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+        return;
+    }
+
+    // CASO 2: No le alcanzan los puntos -> requiere marcar Pagar adicional y llevar a Mi Pedido
+    if (!quierePagarAdicional) {
+        alert(`Tienes ${puntosActuales} pts y esta prenda pide ${puntosReq} pts. Marca "Pagar adicional (S/ ${montoDiferencia.toFixed(2)})" para cubrir la diferencia en Mi Pedido.`);
+        if (chk) chk.checked = true;
+        return;
+    }
+
+    const res = await fetch(`${API_CANJES_URL}/procesar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            usuario_id: usuario.id,
+            producto_canje_id: productoId,
+            pagar_adicional: true,
+            monto_adicional: montoDiferencia,
+            metodo_pago: 'Mi Pedido / Yape-Plin'
+        })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+        alert(data.error || 'No se pudo procesar el canje con adicional.');
+        return;
+    }
+
+    const puntosUsados = Number(data.puntos_usados) || 0;
+    const puntosRestantes = Number(data.nuevos_puntos) || 0;
+    guardarPuntosEnSesion(puntosRestantes);
+    actualizarVistaPuntos();
+    await cargarProductosCanje();
+    cargarPuntosClientesAdmin();
+
+    const itemCanjeCarrito = {
+        codigo: `CANJE-${productoId}`,
+        titulo: `${producto.nombre || 'Prenda Canjeada'} [CANJE: -${puntosUsados} pts | Restan: ${puntosRestantes} pts]`,
+        precio_remate: Number(montoDiferencia.toFixed(2)),
+        precio_original: Number(montoDiferencia.toFixed(2)),
+        talla: 'Única',
+        color: 'Canje Puntos',
+        cantidad: 1,
+        imagen_url: producto.imagen_url || 'https://placehold.co/300x300?text=Canje',
+        es_canje: true,
+        puntos_usados: puntosUsados,
+        puntos_restantes: puntosRestantes
+    };
+
+    if (typeof cart !== 'undefined' && Array.isArray(cart)) {
+        cart.push(itemCanjeCarrito);
+        localStorage.setItem('rs_cart', JSON.stringify(cart));
+        if (typeof updateCartUI === 'function') updateCartUI();
+    } else {
+        const carritoGuardado = JSON.parse(localStorage.getItem('rs_cart') || '[]');
+        carritoGuardado.push(itemCanjeCarrito);
+        localStorage.setItem('rs_cart', JSON.stringify(carritoGuardado));
+    }
+
+    cerrarModalCanjes();
+    alert(`✅ ¡Prenda reservada! Se descontaron tus ${puntosUsados} pts y pasó a "Mi Pedido" con diferencia de S/ ${montoDiferencia.toFixed(2)} para que subas tu comprobante y envíes el mensaje detallado.`);
+
+    if (typeof openCart === 'function') {
+        openCart();
+    }
 }
 
 function refrescarMontoAdicionalTarjeta(productoId) {
