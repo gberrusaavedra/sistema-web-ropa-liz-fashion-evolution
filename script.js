@@ -3051,6 +3051,16 @@ async function renderTablaAdminVouchers() {
 
 async function cambiarEstadoPago(id, estado) {
     const { token } = getSession();
+
+    const filaActual = Array.from(document.querySelectorAll('#tablaAdminVouchersBody tr')).find(tr =>
+        tr.innerHTML.includes(`cambiarEstadoPago(${id},`)
+    );
+    const celdasFila = filaActual ? filaActual.querySelectorAll('td') : [];
+    const ordenFila = celdasFila[0]?.textContent?.trim() || `ORD-${id}`;
+    const clienteFila = celdasFila[1]?.textContent?.trim() || '';
+    const metodoFila = celdasFila[2]?.textContent?.trim() || 'Yape';
+    const totalTextoFila = celdasFila[3]?.textContent?.trim() || 'S/ 0.00';
+
     try {
         const res = await fetch(`${API_URL}/pagos/${id}/estado`, {
             method: 'PUT',
@@ -3061,65 +3071,88 @@ async function cambiarEstadoPago(id, estado) {
             body: JSON.stringify({ estado })
         });
 
-        if (res.ok) {
-            const pagoActualizado = await res.json();
-            showToast(`Pago marcado como ${estado}`, 'success');
-            await renderTablaAdminVouchers();
-
-            let iconoEstado = estado === 'Aprobado' ? '✅ ¡PAGO APROBADO!' : '❌ ¡PAGO RECHAZADO / OBSERVADO!';
-            let mensajeWhatsApp = `Hola *${pagoActualizado.cliente}*,\n\n` +
-                                  `Te saludamos de *LIZ FASHION EVOLUTION*.\n` +
-                                  `📌 *Estado de tu orden (${pagoActualizado.orden}):* ${iconoEstado}\n` +
-                                  `💳 *Método:* ${pagoActualizado.metodo} (S/ ${Number(pagoActualizado.total).toFixed(2)})\n\n`;
-
-            if (estado === 'Aprobado') {
-                mensajeWhatsApp += `¡Tu comprobante ha sido validado con éxito! Estamos procediendo con el despacho de tu pedido. ¡Gracias por tu compra! 🎉`;
-            } else {
-                mensajeWhatsApp += `Lamentablemente tu comprobante no pudo ser validado (imagen borrosa o monto incorrecto). Por favor, comunícate con nosotros para solucionarlo.`;
-            }
-
-            let telefonoCliente = pagoActualizado.telefono || '';
-
-            if (!telefonoCliente || telefonoCliente.trim() === '') {
-                telefonoCliente = prompt(
-                    `El pago de ${pagoActualizado.cliente} fue marcado como ${estado}.\nNo se encontró un número registrado. Ingresa su WhatsApp:`, 
-                    "9"
-                );
-            }
-
-            if (telefonoCliente && telefonoCliente.trim() !== '') {
-                let numeroLimpio = telefonoCliente.trim().replace(/\s+/g, '');
-                if (!numeroLimpio.startsWith('51') && numeroLimpio.length === 9) {
-                    numeroLimpio = '51' + numeroLimpio;
-                }
-
-                // Enlace universal de WhatsApp para ambos estados
-                const urlWhatsApp = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensajeWhatsApp)}`;
-
-                // Mostramos siempre el cuadro flotante con el botón directo funcional tanto para Aprobado como para Rechazado
-                const container = document.getElementById('toastContainer');
-                if (container) {
-                    const alertaDiv = document.createElement('div');
-                    alertaDiv.className = 'bg-slate-900 border-2 border-emerald-500 text-white p-4 rounded-3xl shadow-2xl flex flex-col gap-2.5 pointer-events-auto mt-2';
-                    alertaDiv.innerHTML = `
-                        <div class="flex items-center justify-between">
-                            <span class="font-black text-xs text-emerald-400">✅ ¡Pago ${estado} correctamente!</span>
-                            <button onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
-                        </div>
-                        <p class="text-[11px] text-slate-300 leading-tight">Haz clic en el botón para enviar el mensaje de estado al cliente (${pagoActualizado.cliente}):</p>
-                        <a href="${urlWhatsApp}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3 px-4 rounded-2xl text-center shadow-lg transition flex items-center justify-center gap-2">
-                            <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar Mensaje de ${estado} a WhatsApp 💬
-                        </a>
-                    `;
-                    container.appendChild(alertaDiv);
-                    lucide.createIcons();
-                }
-            } else {
-                showToast('Estado actualizado, pero no se generó WhatsApp por falta de número.', 'warning');
-            }
-
-        } else {
+        if (!res.ok) {
             showToast('Error al actualizar estado', 'error');
+            return;
+        }
+
+        const rawData = await res.json().catch(() => ({}));
+        const pagoActualizado = rawData.pago || rawData.data || rawData || {};
+
+        const nombreCliente = (
+            pagoActualizado.cliente ||
+            pagoActualizado.nombre_cliente ||
+            pagoActualizado.usuario_nombre ||
+            clienteFila ||
+            'Cliente'
+        ).trim();
+
+        const ordenPago = (pagoActualizado.orden || ordenFila).trim();
+        const metodoPago = (pagoActualizado.metodo || metodoFila).trim();
+        const totalNumero = Number(pagoActualizado.total);
+        const totalTexto = !isNaN(totalNumero) && pagoActualizado.total !== undefined
+            ? `S/ ${totalNumero.toFixed(2)}`
+            : totalTextoFila;
+
+        const sesionActual = JSON.parse(localStorage.getItem('rs_usuario') || 'null');
+        const telefonoGuardado = (
+            pagoActualizado.telefono ||
+            pagoActualizado.celular ||
+            pagoActualizado.whatsapp ||
+            pagoActualizado.cliente_telefono ||
+            (sesionActual && (sesionActual.telefono || sesionActual.celular)) ||
+            ''
+        ).toString().trim();
+
+        showToast(`Pago marcado como ${estado}`, 'success');
+        await renderTablaAdminVouchers();
+
+        const iconoEstado = estado === 'Aprobado' ? '✅ ¡PAGO APROBADO!' : '❌ ¡PAGO RECHAZADO / OBSERVADO!';
+        let mensajeWhatsApp = `Hola *${nombreCliente}*,\n\n` +
+                              `Te saludamos de *LIZ FASHION EVOLUTION*.\n` +
+                              `📌 *Estado de tu orden (${ordenPago}):* ${iconoEstado}\n` +
+                              `💳 *Método:* ${metodoPago} (${totalTexto})\n\n`;
+
+        if (estado === 'Aprobado') {
+            mensajeWhatsApp += `¡Tu comprobante ha sido validado con éxito! Estamos procediendo con el despacho de tu pedido. ¡Gracias por tu compra! 🎉`;
+        } else {
+            mensajeWhatsApp += `Lamentablemente tu comprobante no pudo ser validado (imagen borrosa, fecha no válida o monto incorrecto). Por favor, comunícate con nosotros para solucionarlo.`;
+        }
+
+        let telefonoCliente = telefonoGuardado;
+        if (!telefonoCliente) {
+            telefonoCliente = prompt(
+                `El pago de ${nombreCliente} (${ordenPago}) fue marcado como ${estado}.\nConfirma o ingresa el número de WhatsApp del cliente:`,
+                telefonoGuardado || '9'
+            );
+        }
+
+        if (telefonoCliente && telefonoCliente.trim() !== '') {
+            let numeroLimpio = telefonoCliente.trim().replace(/\D/g, '');
+            if (!numeroLimpio.startsWith('51') && numeroLimpio.length === 9) {
+                numeroLimpio = '51' + numeroLimpio;
+            }
+
+            const urlWhatsApp = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensajeWhatsApp)}`;
+            const container = document.getElementById('toastContainer');
+            if (container) {
+                const alertaDiv = document.createElement('div');
+                alertaDiv.className = 'bg-slate-900 border-2 border-emerald-500 text-white p-4 rounded-3xl shadow-2xl flex flex-col gap-2.5 pointer-events-auto mt-2';
+                alertaDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-black text-xs text-emerald-400">✅ ¡Pago ${estado} (${nombreCliente} · ${numeroLimpio})!</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+                    </div>
+                    <p class="text-[11px] text-slate-300 leading-tight">Envía el aviso al WhatsApp del cliente (${numeroLimpio}):</p>
+                    <a href="${urlWhatsApp}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3 px-4 rounded-2xl text-center shadow-lg transition flex items-center justify-center gap-2">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar a WhatsApp (${numeroLimpio}) 💬
+                    </a>
+                `;
+                container.appendChild(alertaDiv);
+                lucide.createIcons();
+            }
+        } else {
+            showToast('Estado actualizado, pero no se ingresó número de WhatsApp.', 'warning');
         }
     } catch (err) {
         showToast('Error de conexión al actualizar estado', 'error');
