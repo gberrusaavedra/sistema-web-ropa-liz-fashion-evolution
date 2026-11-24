@@ -3907,6 +3907,7 @@ async function descontarStockPorPedido(detallesPedido) {
 const API_CANJES_URL = 'https://sistema-web-ropa-liz-fashion-evolution.onrender.com/api/canjes';
 let archivoCanjeBase64Pendiente = '';
 let adicionalEditadoManualmente = false;
+let cacheProductosCanje = [];
 
 function cambiarModoImagenCanje() {
     const tipoEl = document.getElementById('canje-tipo-imagen');
@@ -4049,10 +4050,6 @@ function actualizarVistaPuntos() {
     if (modalPts) modalPts.textContent = pts;
 }
 
-function escaparJsonCanje(obj) {
-    return JSON.stringify(obj).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-}
-
 function obtenerTarifaPorPunto(producto) {
     const ptsReq = Math.max(1, parseInt(producto.puntos_requeridos, 10) || 1);
     const adicionalGuardado = parseFloat(producto.precio_adicional) || 0;
@@ -4085,8 +4082,10 @@ function calcularMontoAdicionalCliente(producto, puntosCliente, marcadoAdicional
     return Number((ptsValidos * tarifa).toFixed(2));
 }
 
-function refrescarMontoAdicionalTarjeta(productoId, productoJsonStr) {
-    const producto = JSON.parse(decodeURIComponent(productoJsonStr));
+function refrescarMontoAdicionalTarjeta(productoId) {
+    const producto = cacheProductosCanje.find(item => Number(item.id) === Number(productoId));
+    if (!producto) return;
+
     const { usuario } = obtenerUsuarioCanjeActual();
     const ptsCliente = usuario ? (Number(usuario.puntos) || 0) : 0;
     const chk = document.getElementById(`chk-adicional-${productoId}`);
@@ -4113,16 +4112,17 @@ async function cargarProductosCanje() {
         const ptsCliente = usuario ? (Number(usuario.puntos) || 0) : 0;
 
         if (!Array.isArray(productos) || productos.length === 0) {
+            cacheProductosCanje = [];
             contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px; color:#475569;">Aún no hay prendas subidas para canjear. Crea una arriba para que aparezca aquí.</p>';
             return;
         }
+
+        cacheProductosCanje = productos;
 
         contenedor.innerHTML = productos.map(p => {
             const montoAdicionalBase = parseFloat(p.precio_adicional) || 0;
             const tieneAdicional = montoAdicionalBase > 0;
             const montoInicial = calcularMontoAdicionalCliente(p, ptsCliente, false);
-            const productoSafe = escaparJsonCanje(p);
-            const productoEncoded = encodeURIComponent(JSON.stringify(p));
 
             return `
             <div class="canje-card">
@@ -4132,7 +4132,7 @@ async function cargarProductosCanje() {
                 ${tieneAdicional ? `
                     <div class="canje-adicional-box">
                         <label>
-                            <input type="checkbox" id="chk-adicional-${p.id}" onchange="refrescarMontoAdicionalTarjeta(${p.id}, '${productoEncoded}')">
+                            <input type="checkbox" id="chk-adicional-${p.id}" onchange="refrescarMontoAdicionalTarjeta(${p.id})">
                             Pagar adicional: <strong>S/ <span id="texto-monto-adicional-${p.id}">${montoInicial.toFixed(2)}</span></strong>
                             <input type="hidden" id="monto-adicional-${p.id}" value="${montoInicial.toFixed(2)}">
                         </label>
@@ -4142,7 +4142,7 @@ async function cargarProductosCanje() {
                     Elegir y Canjear
                 </button>
                 ${esAdmin ? `
-                    <button type="button" class="btn-editar-canje-admin" onclick='prepararEdicionCanje(JSON.parse(this.dataset.prod))' data-prod='${productoSafe}'>
+                    <button type="button" class="btn-editar-canje-admin" onclick="editarProductoCanjePorId(${p.id})">
                         ✏️ Editar Prenda / Puntos
                     </button>
                 ` : ''}
@@ -4151,6 +4151,15 @@ async function cargarProductosCanje() {
     } catch (err) {
         contenedor.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; padding:12px; color:#e11d48;">No se pudieron cargar las prendas de canje.</p>';
     }
+}
+
+function editarProductoCanjePorId(productoId) {
+    const producto = cacheProductosCanje.find(item => Number(item.id) === Number(productoId));
+    if (!producto) {
+        alert('No se encontró la prenda para editar.');
+        return;
+    }
+    prepararEdicionCanje(producto);
 }
 
 async function guardarProductoCanje() {
@@ -4163,7 +4172,7 @@ async function guardarProductoCanje() {
     const urlInput = document.getElementById('canje-imagen');
 
     let tipoElegido = tipoEl ? tipoEl.value : '';
-    if (!tipoElegido) {
+    if (!tipoElegido && !id) {
         const resp = prompt('¿Cómo deseas ingresar la imagen? Escribe URL o ARCHIVO:', (fileInput && fileInput.files && fileInput.files[0]) ? 'ARCHIVO' : 'URL');
         if (!resp) return;
         tipoElegido = resp.trim().toLowerCase().startsWith('a') ? 'archivo' : 'url';
@@ -4182,7 +4191,7 @@ async function guardarProductoCanje() {
             imagenUrl = archivoCanjeBase64Pendiente || (urlInput ? urlInput.value.trim() : '');
         }
     } else {
-        imagenUrl = urlInput ? urlInput.value.trim() : '';
+        imagenUrl = (urlInput ? urlInput.value.trim() : '') || archivoCanjeBase64Pendiente;
     }
 
     if (!nombre || !imagenUrl || !puntosReq || puntosReq < 1) {
@@ -4211,32 +4220,44 @@ async function guardarProductoCanje() {
 
     if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.error || 'No se pudo guardar la prenda de canje.');
+        alert(errData.error || 'No se pudo guardar los cambios de la prenda.');
         return;
     }
 
     limpiarFormCanje();
     await cargarProductosCanje();
-    alert('Prenda canjeable guardada.');
+    alert(id ? 'Cambios de la prenda guardados.' : 'Prenda canjeable guardada.');
 }
 
 function prepararEdicionCanje(producto) {
+    const panelAdmin = document.getElementById('admin-canje-panel');
+    if (panelAdmin) panelAdmin.style.display = 'block';
+
     archivoCanjeBase64Pendiente = producto.imagen_url || '';
     adicionalEditadoManualmente = true;
+
     document.getElementById('titulo-form-canje').textContent = `Editando: ${producto.nombre}`;
     document.getElementById('canje-edit-id').value = producto.id;
-    document.getElementById('canje-nombre').value = producto.nombre;
+    document.getElementById('canje-nombre').value = producto.nombre || '';
 
     const esBase64 = typeof producto.imagen_url === 'string' && producto.imagen_url.startsWith('data:image');
     const tipoEl = document.getElementById('canje-tipo-imagen');
+    const urlInput = document.getElementById('canje-imagen');
+    const fileInput = document.getElementById('canje-imagen-file');
+
     if (tipoEl) {
         tipoEl.value = esBase64 ? 'archivo' : 'url';
-        cambiarModoImagenCanje();
+    }
+    if (urlInput) {
+        urlInput.value = producto.imagen_url || '';
+        urlInput.style.display = esBase64 ? 'none' : 'block';
+    }
+    if (fileInput) {
+        fileInput.style.display = esBase64 ? 'block' : 'none';
     }
 
-    document.getElementById('canje-imagen').value = producto.imagen_url;
-    document.getElementById('canje-puntos').value = producto.puntos_requeridos;
-    document.getElementById('canje-adicional').value = producto.precio_adicional;
+    document.getElementById('canje-puntos').value = producto.puntos_requeridos || '';
+    document.getElementById('canje-adicional').value = producto.precio_adicional ?? '';
     document.getElementById('btn-cancelar-edit').style.display = 'inline-block';
 
     const previewBox = document.getElementById('canje-preview-box');
@@ -4245,6 +4266,8 @@ function prepararEdicionCanje(producto) {
         previewImg.src = producto.imagen_url;
         previewBox.style.display = 'block';
     }
+
+    panelAdmin?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function limpiarFormCanje() {
@@ -4269,93 +4292,3 @@ function limpiarFormCanje() {
     document.getElementById('canje-adicional').value = '';
     document.getElementById('btn-cancelar-edit').style.display = 'none';
 }
-
-async function canjearProducto(productoId, puntosReq, precioAdicional) {
-    const { usuario } = obtenerUsuarioCanjeActual();
-    if (!usuario) {
-        alert('Inicia sesión para canjear tus puntos.');
-        return;
-    }
-    if ((Number(usuario.puntos) || 0) < puntosReq) {
-        alert(`Te faltan puntos. Necesitas ${puntosReq} pts.`);
-        return;
-    }
-
-    const chk = document.getElementById(`chk-adicional-${productoId}`);
-    const inputMonto = document.getElementById(`monto-adicional-${productoId}`);
-    const pagarAdicional = chk ? chk.checked : false;
-    const montoCalculado = inputMonto ? (parseFloat(inputMonto.value) || 0) : (parseFloat(precioAdicional) || 0);
-    let metodoPago = 'Solo Puntos';
-
-    if (pagarAdicional && montoCalculado > 0) {
-        metodoPago = prompt(`Vas a pagar S/ ${montoCalculado.toFixed(2)} adicional. Escribe método (Yape / Plin / Mercado Pago):`, 'Yape');
-        if (!metodoPago) return;
-    }
-
-    const res = await fetch(`${API_CANJES_URL}/procesar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            usuario_id: usuario.id,
-            producto_canje_id: productoId,
-            pagar_adicional: pagarAdicional,
-            monto_adicional: pagarAdicional ? montoCalculado : 0,
-            metodo_pago: metodoPago
-        })
-    });
-
-    const data = await res.json();
-    if (res.ok) {
-        guardarPuntosEnSesion(data.nuevos_puntos);
-        actualizarVistaPuntos();
-        cargarProductosCanje();
-        cargarPuntosClientesAdmin();
-        alert('¡Canje realizado con éxito!');
-    } else {
-        alert(data.error || 'No se pudo completar el canje.');
-    }
-}
-
-async function acumularPuntosPorCompra(cantidadPrendas) {
-    const { usuario } = obtenerUsuarioCanjeActual();
-    if (!usuario || cantidadPrendas <= 0) return;
-
-    const res = await fetch(`${API_CANJES_URL}/sumar-puntos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            usuario_id: usuario.id,
-            cantidad_prendas: cantidadPrendas
-        })
-    });
-    const data = await res.json();
-    if (res.ok) {
-        guardarPuntosEnSesion(data.puntos_actuales);
-        actualizarVistaPuntos();
-    }
-}
-
-async function cargarPuntosClientesAdmin() {
-    const tbody = document.getElementById('tbody-clientes-puntos');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="3">Cargando clientes...</td></tr>';
-
-    try {
-        const res = await fetch(`${API_CANJES_URL}/clientes-puntos`);
-        const clientes = await res.json();
-
-        tbody.innerHTML = clientes.map(c => `
-            <tr>
-                <td>${c.nombre || 'Cliente'}</td>
-                <td>${c.email || '-'}</td>
-                <td><strong>⭐ ${c.puntos} pts</strong></td>
-            </tr>
-        `).join('');
-    } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="3">Error al cargar clientes.</td></tr>';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    actualizarVistaPuntos();
-});
