@@ -805,7 +805,7 @@ app.get('/api/canjes/clientes-puntos', async (req, res) => {
             'SELECT id, nombre, email, telefono, COALESCE(puntos, 0) AS puntos FROM usuarios ORDER BY puntos DESC, id ASC'
         );
         res.json(result.rows);
-    } catch (err) {
+} catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
