@@ -3049,6 +3049,38 @@ async function renderTablaAdminVouchers() {
     }
 }
 
+async function buscarTelefonoClientePorNombre(nombreCliente) {
+    const objetivo = String(nombreCliente || '').trim().toLowerCase();
+    if (!objetivo) return '';
+
+    try {
+        const res = await fetch(`${API_CANJES_URL}/clientes-puntos`);
+        if (res.ok) {
+            const lista = await res.json();
+            if (Array.isArray(lista)) {
+                const encontrado = lista.find(c =>
+                    String(c.nombre || '').trim().toLowerCase() === objetivo ||
+                    String(c.nombre || '').trim().toLowerCase().includes(objetivo)
+                );
+                const tel = encontrado && (encontrado.telefono || encontrado.celular || encontrado.whatsapp);
+                if (tel && String(tel).trim() !== '' && String(tel).trim() !== '-') {
+                    return String(tel).trim();
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('No se pudo consultar teléfono en clientes-puntos:', e);
+    }
+
+    const sesionActual = JSON.parse(localStorage.getItem('rs_usuario') || 'null');
+    if (sesionActual && String(sesionActual.nombre || '').trim().toLowerCase() === objetivo) {
+        const telSesion = sesionActual.telefono || sesionActual.celular || '';
+        if (telSesion && String(telSesion).trim() !== '-') return String(telSesion).trim();
+    }
+
+    return '';
+}
+
 async function cambiarEstadoPago(id, estado) {
     const { token } = getSession();
 
@@ -3094,15 +3126,17 @@ async function cambiarEstadoPago(id, estado) {
             ? `S/ ${totalNumero.toFixed(2)}`
             : totalTextoFila;
 
-        const sesionActual = JSON.parse(localStorage.getItem('rs_usuario') || 'null');
-        const telefonoGuardado = (
+        let telefonoGuardado = (
             pagoActualizado.telefono ||
             pagoActualizado.celular ||
             pagoActualizado.whatsapp ||
             pagoActualizado.cliente_telefono ||
-            (sesionActual && (sesionActual.telefono || sesionActual.celular)) ||
             ''
         ).toString().trim();
+
+        if (!telefonoGuardado || telefonoGuardado === '-') {
+            telefonoGuardado = await buscarTelefonoClientePorNombre(nombreCliente);
+        }
 
         showToast(`Pago marcado como ${estado}`, 'success');
         await renderTablaAdminVouchers();
@@ -3119,16 +3153,13 @@ async function cambiarEstadoPago(id, estado) {
             mensajeWhatsApp += `Lamentablemente tu comprobante no pudo ser validado (imagen borrosa, fecha no válida o monto incorrecto). Por favor, comunícate con nosotros para solucionarlo.`;
         }
 
-        let telefonoCliente = telefonoGuardado;
-        if (!telefonoCliente) {
-            telefonoCliente = prompt(
-                `El pago de ${nombreCliente} (${ordenPago}) fue marcado como ${estado}.\nConfirma o ingresa el número de WhatsApp del cliente:`,
-                telefonoGuardado || '9'
-            );
-        }
+        const telefonoConfirmado = prompt(
+            `El pago de ${nombreCliente} (${ordenPago}) fue marcado como ${estado}.\nNúmero de WhatsApp del cliente:`,
+            telefonoGuardado || '9'
+        );
 
-        if (telefonoCliente && telefonoCliente.trim() !== '') {
-            let numeroLimpio = telefonoCliente.trim().replace(/\D/g, '');
+        if (telefonoConfirmado && telefonoConfirmado.trim() !== '' && telefonoConfirmado.trim() !== '9') {
+            let numeroLimpio = telefonoConfirmado.trim().replace(/\D/g, '');
             if (!numeroLimpio.startsWith('51') && numeroLimpio.length === 9) {
                 numeroLimpio = '51' + numeroLimpio;
             }
@@ -3152,13 +3183,12 @@ async function cambiarEstadoPago(id, estado) {
                 lucide.createIcons();
             }
         } else {
-            showToast('Estado actualizado, pero no se ingresó número de WhatsApp.', 'warning');
+            showToast('Estado actualizado, pero no se ingresó un número válido de WhatsApp.', 'warning');
         }
     } catch (err) {
         showToast('Error de conexión al actualizar estado', 'error');
     }
 }
-
 
 // =====================================================================
 // HISTORIAL DE PAGOS Y ESTADO PARA EL CLIENTE
