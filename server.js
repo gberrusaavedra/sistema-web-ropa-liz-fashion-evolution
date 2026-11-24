@@ -99,7 +99,6 @@ async function initDB() {
         );
     `);
 
-   // Asegurar compatibilidad si las tablas ya existían sin las columnas nuevas
     await pool.query(`
         ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_mayor NUMERIC(10, 2) DEFAULT 0.00;
         ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono VARCHAR(20);
@@ -232,8 +231,8 @@ app.post('/api/productos', soloAdmin, async (req, res) => {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
             [
                 titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0,
-                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
-                JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
+                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url,
+                JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']),
                 JSON.stringify(imagenes || [imagen_url]),
                 JSON.stringify(variant_details || [])
             ]
@@ -252,8 +251,8 @@ app.put('/api/productos/:id', soloAdmin, async (req, res) => {
             `UPDATE productos SET titulo=$1, categoria=$2, etiqueta=$3, precio_remate=$4, precio_original=$5, precio_mayor=$6, stock_by_size=$7, porcentaje_vendido=$8, material=$9, descripcion=$10, imagen_url=$11, colores=$12, imagenes=$13, variant_details=$14 WHERE id=$15 RETURNING *`,
             [
                 titulo, categoria, etiqueta, precio_remate, precio_original, precio_mayor || 0,
-                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url, 
-                JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']), 
+                JSON.stringify(stock_by_size), porcentaje_vendido || 35, material, descripcion, imagen_url,
+                JSON.stringify(colores || ['Corinto', 'Negro', 'Rojo', 'Beige']),
                 JSON.stringify(imagenes || [imagen_url]),
                 JSON.stringify(variant_details || []), id
             ]
@@ -305,8 +304,8 @@ app.get('/api/pagos/cliente/:nombre', async (req, res) => {
     const { nombre } = req.params;
     try {
         const query = `
-            SELECT * FROM pagos_yape_plin 
-            WHERE cliente ILIKE $1 OR cliente ILIKE $2 
+            SELECT * FROM pagos_yape_plin
+            WHERE cliente ILIKE $1 OR cliente ILIKE $2
             ORDER BY id DESC
         `;
         const result = await pool.query(query, [nombre, `%${nombre}%`]);
@@ -319,7 +318,7 @@ app.get('/api/pagos/cliente/:nombre', async (req, res) => {
 app.get('/api/pagos', soloAdmin, async (req, res) => {
     try {
         const query = `
-            SELECT p.*, COALESCE(p.telefono, u.telefono) as telefono 
+            SELECT p.*, COALESCE(p.telefono, u.telefono) as telefono
             FROM pagos_yape_plin p
             LEFT JOIN usuarios u ON LOWER(TRIM(p.cliente)) = LOWER(TRIM(u.nombre))
             ORDER BY p.id DESC
@@ -342,8 +341,8 @@ app.post('/api/pagos', async (req, res) => {
         const huellaLimpia = huella_visual ? String(huella_visual).trim() : null;
 
         const check = await client.query(
-            `SELECT id FROM pagos_yape_plin 
-             WHERE hash_imagen = $1 
+            `SELECT id FROM pagos_yape_plin
+             WHERE hash_imagen = $1
                 OR ($2::text IS NOT NULL AND huella_visual = $2)
                 OR ($3::text IS NOT NULL AND nro_operacion = $3)`,
             [hash_imagen, huellaLimpia, opLimpia]
@@ -355,7 +354,6 @@ app.post('/api/pagos', async (req, res) => {
 
         const listaDetalles = Array.isArray(detalles_pedido) ? detalles_pedido : [];
 
-        // Descontar stock en la tabla productos de Neon por cada prenda elegida
         for (const item of listaDetalles) {
             const qtyToDeduct = Math.max(1, Number(item.cantidad) || 1);
             const sizeKey = item.talla;
@@ -390,7 +388,6 @@ app.post('/api/pagos', async (req, res) => {
                     const actual = Number(variants[vIdx].stockBySize[sizeKey] || 0);
                     variants[vIdx].stockBySize[sizeKey] = Math.max(0, actual - qtyToDeduct);
                 }
-                // Recalcular stock_by_size total desde las variantes
                 stockBySize = variants.reduce((acc, v) => {
                     acc.S = Number(acc.S || 0) + Number(v.stockBySize?.S || 0);
                     acc.M = Number(acc.M || 0) + Number(v.stockBySize?.M || 0);
@@ -566,12 +563,12 @@ app.delete('/api/confeccion/pedidos', soloAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
 // =====================================================================
 // MÓDULO DE MERCADO PAGO
 // =====================================================================
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 
-// Configura tus credenciales (puedes colocarlas en tus variables de entorno en Render)
 const clientMP = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-tu-access-token-de-prueba-o-produccion' });
 
 app.post('/api/crear-preferencia-mp', async (req, res) => {
@@ -579,8 +576,7 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
         const { items, cliente, telefono, orden } = req.body;
 
         const preference = new Preference(clientMP);
-        
-        // Mapeamos los ítems del carrito al formato que exige Mercado Pago
+
         const itemsMP = items.map(item => ({
             title: `${item.titulo} (Talla: ${item.talla} - Color: ${item.color})`,
             unit_price: Number(item.precio_remate),
@@ -605,17 +601,19 @@ app.post('/api/crear-preferencia-mp', async (req, res) => {
             }
         });
 
-        // Retornamos el link de pago (init_point para producción o sandbox_init_point para pruebas)
-        res.json({ 
+        res.json({
             init_point: result.init_point,
-            sandbox_init_point: result.sandbox_init_point 
+            sandbox_init_point: result.sandbox_init_point
         });
     } catch (err) {
         console.error("Error al crear preferencia de Mercado Pago:", err);
         res.status(500).json({ error: err.message });
     }
 });
-// contador de puntos de venta 
+
+// =====================================================================
+// MÓDULO DE PUNTOS Y CANJES
+// =====================================================================
 app.get('/api/canjes/productos', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM productos_canje WHERE activo = TRUE ORDER BY id DESC');
@@ -650,7 +648,9 @@ app.put('/api/canjes/productos/:id', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-    app.delete('/api/canjes/productos/:id', async (req, res) => {
+});
+
+app.delete('/api/canjes/productos/:id', async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('UPDATE productos_canje SET activo = FALSE WHERE id = $1', [id]);
@@ -658,7 +658,6 @@ app.put('/api/canjes/productos/:id', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-
 });
 
 app.post('/api/canjes/sumar-puntos', async (req, res) => {
