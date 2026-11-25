@@ -217,20 +217,20 @@
                     <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto lg:mx-0">
                         Prendas seleccionadas de fin de temporada, últimas tallas y saldos de exportación a precios de fábrica. ¡Cuando se agota una talla, no vuelve!
                     </p>
-                    <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
-                        <a href="#catalogo" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all inline-flex items-center gap-2 text-sm sm:text-base">
-                            Ver Remates Ahora <i data-lucide="arrow-down" class="w-4 h-4"></i>
-                        </a>
-                        <button onclick="quickFilterTag('Remate Final')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/15 text-white font-semibold px-5 py-3 rounded-xl transition-all text-sm sm:text-base cursor-pointer">
-                            Solo -70% Remate Final
-                        </button>
-                        <button onclick="abrirModuloConfeccion()" class="px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl shadow-lg transition duration-200 flex items-center gap-2 cursor-pointer">
-                            <i class="fas fa-cut"></i> Ingresar a Confección
-                        </button>
-                        <button type="button" class="btn-canje-nav px-5 py-3 rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 cursor-pointer" onclick="abrirModalCanjes()">
-                            🎁 Canjear Puntos (<span id="nav-user-puntos">0</span> pts)
-                        </button>
-                    </div>
+                   <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                    <a href="#catalogo" class="btn-hero-remates bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all text-sm sm:text-base flex items-center gap-2">
+                        Ver Remates Ahora <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                    </a>
+                    <button onclick="quickFilterTag('Remate Final')" class="btn-hero-oferta bg-white/10 hover:bg-white/20 backdrop-blur-xs text-white border border-white/15 font-semibold px-5 py-3 rounded-xl transition-all text-sm sm:text-base cursor-pointer">
+                        Solo -70% Remate Final
+                    </button>
+                    <button onclick="abrirModuloConfeccion()" class="btn-hero-confeccion px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 transition cursor-pointer">
+                        <i class="fas fa-cut"></i> Ingresar a Confección
+                    </button>
+                    <button type="button" onclick="abrirModalCanjes()" class="btn-hero-canje btn-canje-nav px-5 py-3 rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 cursor-pointer">
+                        🎁 Canjear Puntos ( <span id="nav-user-puntos">0</span> pts)
+                    </button>
+                </div>
                 </div>
 
                 <!-- Right Countdown Card -->

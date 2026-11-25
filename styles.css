@@ -693,3 +693,115 @@
 .btn-pedidos-dinamico:active {
     transform: translateY(-1px) scale(0.96);
 }
+/* ==========================================================================
+   ANIMACIÓN ATRACTIVA AL PASAR EL CURSOR EN BOTONES DEL HERO BANNER
+   ========================================================================== */
+.btn-hero-remates,
+.btn-hero-oferta,
+.btn-hero-confeccion,
+.btn-hero-canje {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.28s ease,
+                filter 0.25s ease,
+                border-color 0.25s ease;
+    will-change: transform, box-shadow;
+}
+
+/* Destello luminoso que cruza cada botón */
+.btn-hero-remates::after,
+.btn-hero-oferta::after,
+.btn-hero-confeccion::after,
+.btn-hero-canje::after {
+    content: "";
+    position: absolute;
+    top: -25%;
+    left: -135%;
+    width: 55%;
+    height: 150%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.48),
+        transparent
+    );
+    transform: skewX(-22deg);
+    transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+}
+
+.btn-hero-remates:hover::after,
+.btn-hero-oferta:hover::after,
+.btn-hero-confeccion:hover::after,
+.btn-hero-canje:hover::after {
+    left: 155%;
+}
+
+/* 1. Ver Remates Ahora ↓ (Rojo / Carmesí) */
+.btn-hero-remates:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow:
+        0 12px 24px -6px rgba(225, 29, 72, 0.55),
+        0 0 0 3px rgba(251, 113, 133, 0.28);
+}
+
+/* 2. Solo -70% Remate Final (Oscuro / Pizarra) */
+.btn-hero-oferta:hover {
+    transform: translateY(-3px) scale(1.04);
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow:
+        0 12px 24px -6px rgba(15, 23, 42, 0.75),
+        0 0 0 3px rgba(148, 163, 184, 0.25);
+}
+
+/* 3. Ingresar a Confección (Naranja) */
+.btn-hero-confeccion:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow:
+        0 12px 24px -6px rgba(255, 140, 0, 0.6),
+        0 0 0 3px rgba(255, 140, 0, 0.28);
+}
+
+/* 4. Canjear Puntos (Esmeralda) */
+.btn-hero-canje:hover {
+    transform: translateY(-3px) scale(1.04);
+    border-color: #6ee7b7;
+    box-shadow:
+        0 12px 24px -6px rgba(5, 150, 105, 0.6),
+        0 0 0 3px rgba(52, 211, 153, 0.28);
+}
+
+/* Animación sutil del ícono o flecha dentro del botón */
+.btn-hero-remates i,
+.btn-hero-remates svg,
+.btn-hero-confeccion i,
+.btn-hero-confeccion svg,
+.btn-hero-canje i,
+.btn-hero-canje svg {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-hero-remates:hover i,
+.btn-hero-remates:hover svg {
+    transform: translateY(3px) scale(1.15);
+}
+
+.btn-hero-confeccion:hover i,
+.btn-hero-confeccion:hover svg {
+    transform: translateX(3px) scale(1.15);
+}
+
+.btn-hero-canje:hover i,
+.btn-hero-canje:hover svg {
+    transform: rotate(-10deg) scale(1.2);
+}
+
+/* Clic elástico */
+.btn-hero-remates:active,
+.btn-hero-oferta:active,
+.btn-hero-confeccion:active,
+.btn-hero-canje:active {
+    transform: translateY(-1px) scale(0.97);
+}
