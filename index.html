@@ -457,10 +457,13 @@
                             <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
                             <input type="text" id="loginUser" placeholder="Usuario o Correo" required>
                         </div>
-                        <div class="input-group">
-                            <i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>
-                            <input type="password" id="loginPassword" placeholder="Contraseña" required>
-                        </div>
+                        <div class="input-group" style="position: relative; display: flex; align-items: center;">
+                    <i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>
+                    <input type="password" id="loginPassword" placeholder="Contraseña" required style="flex: 1; padding-right: 36px;">
+                    <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Mostrar u ocultar contraseña" style="position: absolute; right: 10px; background: transparent; border: none; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                </div>
 
                         <button type="submit" class="auth-btn">Entrar Ahora</button>
                         <p class="switch-text">¿Cliente nuevo? <span id="showSignup">Regístrate aquí</span></p>

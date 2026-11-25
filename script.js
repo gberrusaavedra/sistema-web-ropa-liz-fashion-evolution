@@ -3459,7 +3459,22 @@ async function recuperarPasswordNeon(email, palabra_secreta, nueva_password) {
         showToast('Error de conexión con el servidor', 'error');
     }
 }
+function togglePasswordVisibility(inputId, btnElement) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
 
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    if (btnElement) {
+        btnElement.innerHTML = isPassword
+            ? `<i data-lucide="eye-off" class="w-4 h-4"></i>`
+            : `<i data-lucide="eye" class="w-4 h-4"></i>`;
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+}
 
 // =====================================================================
 // BOLSA DE CONFECCIÓN CONSOLIDADA (AÑADIR MÚLTIPLES PRENDAS SIN SALIR)
