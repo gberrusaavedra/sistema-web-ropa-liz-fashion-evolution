@@ -329,9 +329,11 @@
         </div>
     </main>
 
-    <!-- FOOTER -->
+<!-- FOOTER -->
     <footer class="bg-slate-900 text-slate-300 py-12 mt-16 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pr-16 sm:pr-20">
+            
+            <!-- Fila Superior: Marca a la izquierda y Contacto WhatsApp a la derecha -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                 
                 <!-- Columna Izquierda: Logo + Descripción + Insignias -->
@@ -363,36 +365,38 @@
                         </span>
                     </div>
                 </div>
-                <!-- Barra Legal: Política de Privacidad y Términos -->
-        <div class="mt-8 pt-6 border-t border-slate-800 pr-14 sm:pr-16 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-            <p>© 2026 <strong class="text-white">LIZ FASHION EVOLUTION</strong> · Jaén & Stock Perú. Todos los derechos reservados.</p>
-            <div class="flex flex-wrap items-center gap-4">
-                <button type="button" onclick="openLegalModal('privacidad')" class="hover:text-rose-400 transition-colors underline underline-offset-4 cursor-pointer">
-                    Política de Privacidad
-                </button>
-                <span class="text-slate-700">|</span>
-                <button type="button" onclick="openLegalModal('terminos')" class="hover:text-amber-400 transition-colors underline underline-offset-4 cursor-pointer">
-                    Términos y Condiciones
-                </button>
-                <span class="text-slate-700">|</span>
-                <button type="button" onclick="openLegalModal('cambios')" class="hover:text-emerald-400 transition-colors underline underline-offset-4 cursor-pointer">
-                    Política de Cambios y Devoluciones
-                </button>
-            </div>
-        </div>
 
                 <!-- Columna Derecha: Contacto WhatsApp -->
-                <div class="md:text-right space-y-2 shrink-0">
-                    <p class="text-sm font-semibold text-white">¿Dudas sobre alguna talla?</p>
-                    <p class="text-sm text-slate-400">
-                        Atención directa por WhatsApp: 
-                        <a href="https://wa.me/51931598799" target="_blank" class="text-white font-bold hover:text-brand-red transition">
-                            +51 931598799
-                        </a>
+                <div class="md:text-right space-y-2.5 shrink-0 bg-slate-800/40 border border-slate-800 px-5 py-4 rounded-2xl">
+                    <p class="text-sm font-bold text-white">¿Dudas sobre alguna talla?</p>
+                    <p class="text-xs sm:text-sm text-slate-400">
+                        Atención directa por WhatsApp:
                     </p>
+                    <a href="https://wa.me/51931598799" target="_blank" class="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-extrabold text-sm sm:text-base transition">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i> +51 931 598 799
+                    </a>
                 </div>
 
             </div>
+
+            <!-- Barra Inferior Limpia: Derechos de Autor y Políticas Legales -->
+            <div class="w-full mt-8 pt-6 border-t border-slate-800 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+                <p class="text-center lg:text-left">
+                    © 2026 <strong class="text-white tracking-wide">LIZ FASHION EVOLUTION</strong> · Jaén &amp; Stock Perú. Todos los derechos reservados.
+                </p>
+                <nav aria-label="Políticas legales" class="flex flex-wrap items-center justify-center gap-2.5">
+                    <button type="button" onclick="openLegalModal('privacidad')" class="legal-pill-btn legal-pill-privacidad">
+                        🔒 Política de Privacidad
+                    </button>
+                    <button type="button" onclick="openLegalModal('terminos')" class="legal-pill-btn legal-pill-terminos">
+                        📜 Términos y Condiciones
+                    </button>
+                    <button type="button" onclick="openLegalModal('cambios')" class="legal-pill-btn legal-pill-cambios">
+                        🔄 Cambios y Devoluciones
+                    </button>
+                </nav>
+            </div>
+
         </div>
     </footer>
 
