@@ -1361,6 +1361,64 @@
         </div>
     </div>
 </div>
+<script>
+(function () {
+    const textosLegales = {
+        privacidad: {
+            titulo: '🔒 Política de Privacidad - LIZ FASHION EVOLUTION',
+            html: `
+                <p><strong>Última actualización:</strong> Noviembre 2026</p>
+                <p>En <strong>LIZ FASHION EVOLUTION</strong> (Jaén &amp; Stock Perú) protegemos tus datos personales conforme a la <strong>Ley N.° 29733 (Ley de Protección de Datos Personales del Perú)</strong>.</p>
+                <p><strong>1. Datos recopilados:</strong> Nombre completo, correo electrónico, teléfono/WhatsApp, datos de pedido/confección y comprobantes de pago (Yape/Plin) para validar compras y canjes.</p>
+                <p><strong>2. Uso de datos:</strong> Gestionar pedidos al por mayor y menor, confección personalizada, puntos de fidelidad y coordinación de envíos. No compartimos tus datos con terceros ajenos al servicio.</p>
+                <p><strong>3. Contacto y derechos:</strong> Puedes editar tu perfil o solicitar cambios/eliminación de datos escribiendo a WhatsApp <strong>+51 931 598 799</strong>.</p>
+            `
+        },
+        terminos: {
+            titulo: '📜 Términos y Condiciones de Uso y Compra',
+            html: `
+                <p><strong>Última actualización:</strong> Noviembre 2026</p>
+                <p>Al comprar o registrarte en <strong>LIZ FASHION EVOLUTION</strong> aceptas estas condiciones:</p>
+                <p><strong>1. Precios y stock:</strong> Los remates aplican hasta agotar stock por talla y color. Los precios por mayor se aplican al alcanzar la cantidad mínima indicada del modelo.</p>
+                <p><strong>2. Confección personalizada:</strong> Se elabora según modelo, color y talla confirmados dentro del plazo vigente de campaña.</p>
+                <p><strong>3. Pagos y canjes:</strong> Los pagos por Yape o Plin requieren comprobante válido del día, monto y número de operación sin duplicados. Los puntos son personales y canjeables en la Zona de Canje.</p>
+            `
+        },
+        cambios: {
+            titulo: '🔄 Política de Cambios y Devoluciones',
+            html: `
+                <p>En <strong>LIZ FASHION EVOLUTION</strong> atendemos cambios bajo las siguientes reglas:</p>
+                <p><strong>1. Plazo:</strong> Hasta <strong>48 horas</strong> después de recibido el pedido por falla de fábrica o cambio de talla según stock disponible.</p>
+                <p><strong>2. Estado de la prenda:</strong> Sin uso, sin lavar, en buen estado y con etiquetas originales.</p>
+                <p><strong>3. Remate y confección:</strong> Las prendas en remate final (-70%), canjes o confección a pedido tienen cambio solo por defecto de fabricación.</p>
+            `
+        }
+    };
+
+    window.openLegalModal = function (tipo) {
+        const modal = document.getElementById('legalModal');
+        const title = document.getElementById('legalModalTitle');
+        const body = document.getElementById('legalModalBody');
+        const elegido = textosLegales[tipo] || textosLegales.privacidad;
+
+        if (modal && title && body) {
+            title.textContent = elegido.titulo;
+            body.innerHTML = elegido.html;
+            modal.style.zIndex = '99999';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    };
+
+    window.closeLegalModal = function () {
+        const modal = document.getElementById('legalModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    };
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- Lógica unificada -->
 <script src="script.js"></script>
