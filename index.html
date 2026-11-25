@@ -1362,62 +1362,78 @@
     </div>
 </div>
 <script>
-(function () {
-    const textosLegales = {
-        privacidad: {
-            titulo: '🔒 Política de Privacidad - LIZ FASHION EVOLUTION',
-            html: `
-                <p><strong>Última actualización:</strong> Noviembre 2026</p>
-                <p>En <strong>LIZ FASHION EVOLUTION</strong> (Jaén &amp; Stock Perú) protegemos tus datos personales conforme a la <strong>Ley N.° 29733 (Ley de Protección de Datos Personales del Perú)</strong>.</p>
-                <p><strong>1. Datos recopilados:</strong> Nombre completo, correo electrónico, teléfono/WhatsApp, datos de pedido/confección y comprobantes de pago (Yape/Plin) para validar compras y canjes.</p>
-                <p><strong>2. Uso de datos:</strong> Gestionar pedidos al por mayor y menor, confección personalizada, puntos de fidelidad y coordinación de envíos. No compartimos tus datos con terceros ajenos al servicio.</p>
-                <p><strong>3. Contacto y derechos:</strong> Puedes editar tu perfil o solicitar cambios/eliminación de datos escribiendo a WhatsApp <strong>+51 931 598 799</strong>.</p>
-            `
-        },
-        terminos: {
-            titulo: '📜 Términos y Condiciones de Uso y Compra',
-            html: `
-                <p><strong>Última actualización:</strong> Noviembre 2026</p>
-                <p>Al comprar o registrarte en <strong>LIZ FASHION EVOLUTION</strong> aceptas estas condiciones:</p>
-                <p><strong>1. Precios y stock:</strong> Los remates aplican hasta agotar stock por talla y color. Los precios por mayor se aplican al alcanzar la cantidad mínima indicada del modelo.</p>
-                <p><strong>2. Confección personalizada:</strong> Se elabora según modelo, color y talla confirmados dentro del plazo vigente de campaña.</p>
-                <p><strong>3. Pagos y canjes:</strong> Los pagos por Yape o Plin requieren comprobante válido del día, monto y número de operación sin duplicados. Los puntos son personales y canjeables en la Zona de Canje.</p>
-            `
-        },
-        cambios: {
-            titulo: '🔄 Política de Cambios y Devoluciones',
-            html: `
-                <p>En <strong>LIZ FASHION EVOLUTION</strong> atendemos cambios bajo las siguientes reglas:</p>
-                <p><strong>1. Plazo:</strong> Hasta <strong>48 horas</strong> después de recibido el pedido por falla de fábrica o cambio de talla según stock disponible.</p>
-                <p><strong>2. Estado de la prenda:</strong> Sin uso, sin lavar, en buen estado y con etiquetas originales.</p>
-                <p><strong>3. Remate y confección:</strong> Las prendas en remate final (-70%), canjes o confección a pedido tienen cambio solo por defecto de fabricación.</p>
-            `
-        }
-    };
+const TEXTOS_LEGALES_LIZ = {
+    privacidad: {
+        titulo: '🔒 Política de Privacidad - LIZ FASHION EVOLUTION',
+        html: `
+            <p><strong>Última actualización:</strong> Noviembre 2026</p>
+            <p>En <strong>LIZ FASHION EVOLUTION</strong> (Jaén &amp; Stock Perú) protegemos tus datos personales conforme a la <strong>Ley N.° 29733 (Ley de Protección de Datos Personales del Perú)</strong>.</p>
+            <p><strong>1. Datos que recopilamos:</strong> Nombre completo, correo electrónico, teléfono/WhatsApp, detalles de pedido o confección y comprobantes de pago (Yape/Plin) enviados para validar compras y canjes.</p>
+            <p><strong>2. Uso de la información:</strong> Gestionar pedidos al por mayor y menor, confección personalizada, puntos de fidelidad y coordinación de envíos. No vendemos ni compartimos tus datos con terceros ajenos al despacho.</p>
+            <p><strong>3. Derechos y contacto:</strong> Puedes editar tu perfil desde tu cuenta o solicitar la actualización o eliminación de tus datos escribiendo a nuestro WhatsApp oficial <strong>+51 931 598 799</strong>.</p>
+        `
+    },
+    terminos: {
+        titulo: '📜 Términos y Condiciones de Uso y Compra',
+        html: `
+            <p><strong>Última actualización:</strong> Noviembre 2026</p>
+            <p>Al registrarte o comprar en <strong>LIZ FASHION EVOLUTION</strong> aceptas las siguientes condiciones:</p>
+            <p><strong>1. Precios y stock:</strong> Los precios de remate aplican hasta agotar stock por talla y color. Los precios al por mayor se activan al alcanzar la cantidad mínima de unidades indicada en cada modelo.</p>
+            <p><strong>2. Confección personalizada:</strong> Se produce según modelo, color y talla confirmados dentro del plazo vigente de campaña.</p>
+            <p><strong>3. Pagos y canjes:</strong> Los pagos por Yape o Plin requieren comprobante válido del día, monto exacto y número de operación sin duplicados. Los puntos son personales y canjeables únicamente en la Zona de Canje.</p>
+        `
+    },
+    cambios: {
+        titulo: '🔄 Política de Cambios y Devoluciones',
+        html: `
+            <p>En <strong>LIZ FASHION EVOLUTION</strong> atendemos cambios bajo estas condiciones:</p>
+            <p><strong>1. Plazo:</strong> Hasta <strong>48 horas</strong> después de recibido el pedido por falla de fábrica o cambio de talla sujeto a disponibilidad de stock.</p>
+            <p><strong>2. Estado de la prenda:</strong> Sin uso, sin lavar, en perfecto estado y con sus etiquetas originales.</p>
+            <p><strong>3. Remate y confección:</strong> Las prendas en liquidación final (-70%), canjes con puntos o confección a pedido tienen cambio únicamente por defecto de fabricación.</p>
+        `
+    }
+};
 
-    window.openLegalModal = function (tipo) {
-        const modal = document.getElementById('legalModal');
-        const title = document.getElementById('legalModalTitle');
-        const body = document.getElementById('legalModalBody');
-        const elegido = textosLegales[tipo] || textosLegales.privacidad;
+function openLegalModal(tipo) {
+    let modal = document.getElementById('legalModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'legalModal';
+        modal.onclick = closeLegalModal;
+        modal.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(2,6,23,0.8);display:flex;align-items:center;justify-content:center;padding:16px;';
+        modal.innerHTML = `
+            <div onclick="event.stopPropagation()" style="background:#fff;width:100%;max-width:560px;border-radius:24px;overflow:hidden;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+                <div style="background:#0f172a;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;">
+                    <h3 id="legalModalTitle" style="font-weight:800;font-size:16px;margin:0;"></h3>
+                    <button type="button" onclick="closeLegalModal()" style="width:32px;height:32px;border-radius:9999px;background:rgba(255,255,255,0.12);color:#fff;border:none;cursor:pointer;font-weight:bold;">✕</button>
+                </div>
+                <div id="legalModalBody" style="padding:24px;max-height:70vh;overflow-y:auto;color:#334155;font-size:13px;line-height:1.6;"></div>
+                <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;">
+                    <button type="button" onclick="closeLegalModal()" style="padding:8px 20px;background:#0f172a;color:#fff;font-weight:700;font-size:12px;border:none;border-radius:12px;cursor:pointer;">Entendido</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
 
-        if (modal && title && body) {
-            title.textContent = elegido.titulo;
-            body.innerHTML = elegido.html;
-            modal.style.zIndex = '99999';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-    };
+    const elegido = TEXTOS_LEGALES_LIZ[tipo] || TEXTOS_LEGALES_LIZ.privacidad;
+    const titleEl = document.getElementById('legalModalTitle');
+    const bodyEl = document.getElementById('legalModalBody');
+    if (titleEl) titleEl.textContent = elegido.titulo;
+    if (bodyEl) bodyEl.innerHTML = elegido.html;
 
-    window.closeLegalModal = function () {
-        const modal = document.getElementById('legalModal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-    };
-})();
+    modal.classList.remove('hidden');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', '999999', 'important');
+}
+
+function closeLegalModal() {
+    const modal = document.getElementById('legalModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.setProperty('display', 'none', 'important');
+    }
+}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- Lógica unificada -->
