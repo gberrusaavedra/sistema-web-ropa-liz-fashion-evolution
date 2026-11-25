@@ -363,6 +363,23 @@
                         </span>
                     </div>
                 </div>
+                <!-- Barra Legal: Política de Privacidad y Términos -->
+        <div class="mt-8 pt-6 border-t border-slate-800 pr-14 sm:pr-16 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+            <p>© 2026 <strong class="text-white">LIZ FASHION EVOLUTION</strong> · Jaén & Stock Perú. Todos los derechos reservados.</p>
+            <div class="flex flex-wrap items-center gap-4">
+                <button type="button" onclick="openLegalModal('privacidad')" class="hover:text-rose-400 transition-colors underline underline-offset-4 cursor-pointer">
+                    Política de Privacidad
+                </button>
+                <span class="text-slate-700">|</span>
+                <button type="button" onclick="openLegalModal('terminos')" class="hover:text-amber-400 transition-colors underline underline-offset-4 cursor-pointer">
+                    Términos y Condiciones
+                </button>
+                <span class="text-slate-700">|</span>
+                <button type="button" onclick="openLegalModal('cambios')" class="hover:text-emerald-400 transition-colors underline underline-offset-4 cursor-pointer">
+                    Política de Cambios y Devoluciones
+                </button>
+            </div>
+        </div>
 
                 <!-- Columna Derecha: Contacto WhatsApp -->
                 <div class="md:text-right space-y-2 shrink-0">
@@ -1324,6 +1341,22 @@
     });
   }
 </script>
+<!-- Modal de Políticas Legales (Privacidad, Términos y Cambios) -->
+<div id="legalModal" onclick="closeLegalModal()" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/75 backdrop-blur-xs p-4">
+    <div onclick="event.stopPropagation()" class="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden modal-animate">
+        <div class="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
+            <h3 id="legalModalTitle" class="font-extrabold text-base sm:text-lg">Política de Privacidad</h3>
+            <button type="button" onclick="closeLegalModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center cursor-pointer transition">✕</button>
+        </div>
+        <div id="legalModalBody" class="p-6 max-h-[70vh] overflow-y-auto text-xs sm:text-sm text-slate-600 space-y-3 leading-relaxed">
+        </div>
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <button type="button" onclick="closeLegalModal()" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl cursor-pointer transition">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <!-- Lógica unificada -->
 <script src="script.js"></script>

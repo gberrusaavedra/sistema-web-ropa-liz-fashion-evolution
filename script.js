@@ -5202,3 +5202,54 @@ async function handleSaveClientProfile(e) {
         if (btnGuardar) btnGuardar.disabled = false;
     }
 }
+function openLegalModal(tipo) {
+    const modal = document.getElementById('legalModal');
+    const title = document.getElementById('legalModalTitle');
+    const body = document.getElementById('legalModalBody');
+    if (!modal || !title || !body) return;
+
+    const contenidos = {
+        privacidad: {
+            titulo: '🔒 Política de Privacidad - LIZ FASHION EVOLUTION',
+            html: `
+                <p>En <strong>LIZ FASHION EVOLUTION</strong> respetamos y protegemos la privacidad de los datos personales de nuestros clientes conforme a la Ley N.° 29733 (Ley de Protección de Datos Personales del Perú).</p>
+                <p><strong>1. Datos que recopilamos:</strong> Nombre completo, correo electrónico, número de teléfono/WhatsApp y comprobantes de pago enviados voluntariamente para gestionar pedidos, confecciones personalizadas y sistema de puntos.</p>
+                <p><strong>2. Uso de la información:</strong> Tus datos se utilizan exclusivamente para procesar tus compras, coordinar envíos, validar pagos (Yape/Plin) y administrar tus puntos de fidelidad. No vendemos ni compartimos tu información con terceros ajenos al despacho.</p>
+                <p><strong>3. Seguridad y derechos:</strong> Puedes actualizar tus datos desde tu perfil de cliente o solicitar su eliminación escribiendo a nuestro WhatsApp oficial <strong>+51 931 598 799</strong>.</p>
+            `
+        },
+        terminos: {
+            titulo: '📜 Términos y Condiciones de Compra',
+            html: `
+                <p>Al realizar un pedido en <strong>LIZ FASHION EVOLUTION</strong> (modalidad remate, por mayor o confección personalizada), aceptas las siguientes condiciones:</p>
+                <p><strong>1. Precios y descuentos por mayor:</strong> Los precios mayoristas se activan automáticamente al acumular la cantidad mínima de unidades indicada en cada modelo dentro de la bolsa de compra.</p>
+                <p><strong>2. Validación de pagos:</strong> Los pagos realizados por Yape o Plin pasan por verificación de número de operación, fecha y monto antes del despacho. No se aceptan comprobantes duplicados ni adulterados.</p>
+                <p><strong>3. Confección personalizada:</strong> Los pedidos de confección se producen según color y talla confirmados dentro del plazo activo publicado en la campaña.</p>
+            `
+        },
+        cambios: {
+            titulo: '🔄 Política de Cambios y Devoluciones',
+            html: `
+                <p>Queremos que estés conforme con cada prenda que recibes de <strong>LIZ FASHION EVOLUTION</strong>:</p>
+                <p><strong>1. Plazo de solicitud:</strong> Puedes solicitar un cambio de talla o reportar cualquier falla de fábrica dentro de las primeras <strong>48 horas</strong> de recibido tu pedido.</p>
+                <p><strong>2. Condiciones de la prenda:</strong> La prenda debe encontrarse sin uso, sin lavar, con sus etiquetas originales y en perfecto estado.</p>
+                <p><strong>3. Excepciones:</strong> Las prendas en liquidación final (-70%) y las confeccionadas a pedido exclusivo tienen cambio únicamente por falla de fabricación.</p>
+            `
+        }
+    };
+
+    const elegido = contenidos[tipo] || contenidos.privacidad;
+    title.textContent = elegido.titulo;
+    body.innerHTML = elegido.html;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeLegalModal() {
+    const modal = document.getElementById('legalModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
