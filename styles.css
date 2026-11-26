@@ -1454,15 +1454,18 @@ select:focus {
 }
 
 /* ==========================================================================
-   MODELO AL FONDO EN ESCRITORIO Y VISIBLE EN CELULAR
+   MODELO AL CENTRO-DERECHA GRANDE, LETRAS ADELANTE Y FONDO CLARO/CREMA
    ========================================================================== */
 .hero-model {
     position: absolute;
-    left: 44%;
-    bottom: -5px;
-    width: 470px;
-    height: 540px;
-    z-index: 1;
+    left: 53%;
+    transform: translateX(-50%);
+    bottom: -12px;
+    width: 560px;
+    max-width: 52vw;
+    height: 620px;
+    max-height: 96%;
+    z-index: 2;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -1474,68 +1477,37 @@ select:focus {
     height: 100%;
     object-fit: contain;
     object-position: bottom center;
-    filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.35));
-    animation: modelFloat 4s ease-in-out infinite;
+    filter: drop-shadow(0 14px 26px rgba(15, 23, 42, 0.22));
+    animation: modelFloatSubtle 4.5s ease-in-out infinite;
 }
 
-/* Asegura que textos, botones y tarjeta estén siempre adelante de la modelo */
-section.bg-slate-900 .z-10 {
+/* Textos, botones y tarjeta siempre adelante de la modelo */
+section.hero-crema-banner .z-10 {
     position: relative;
     z-index: 10;
 }
 
-@keyframes modelFloat {
+@keyframes modelFloatSubtle {
     0%, 100% {
         transform: translateY(0);
     }
     50% {
-        transform: translateY(-8px);
+        transform: translateY(-6px);
     }
 }
 
-/* RESPONSIVE PARA CELULARES Y TABLETS */
+/* CELULAR Y TABLET: CHICA GRANDE Y VISIBLE DEBAJO DE LA TARJETA */
 @media (max-width: 1023px) {
     .hero-model {
         position: relative;
         left: auto;
-        right: auto;
+        transform: none;
         bottom: auto;
         width: 100%;
-        max-width: 310px;
-        height: 330px;
-        margin: -10px auto 0 auto;
+        max-width: 390px;
+        height: 410px;
+        max-height: none;
+        margin: 6px auto -32px auto;
         z-index: 5;
     }
 }
-.hero-model img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: bottom center;
-
-    filter: drop-shadow(0 10px 25px rgba(0,0,0,.30));
-
-    animation: modelFloat 4s ease-in-out infinite;
-}
-
-@keyframes modelFloat {
-    0%, 100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-8px);
-    }
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    .hero-model {
-        left: auto;
-        right: 0;
-        width: 230px;
-        height: 320px;
-        bottom: 0;
-    }
-}
-
