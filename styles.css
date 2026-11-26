@@ -1041,109 +1041,149 @@
     text-shadow: 0 0 14px rgba(251, 146, 60, 0.35);
 }
 /* ==========================================================================
-   EFECTO LLAMATIVO EN ETIQUETAS SOBRE LAS IMÁGENES DEL CATÁLOGO
+   EFECTO LLAMATIVO CON DESPLAZAMIENTO HACIA ARRIBA (ETIQUETAS E IMÁGENES)
    ========================================================================== */
-@keyframes badgeShineGlide {
-    0% {
-        left: -120%;
-        opacity: 0;
+@keyframes floatUpPulse {
+    0%, 100% {
+        transform: translateY(0px);
     }
-    30% {
-        opacity: 1;
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes riseAndShine {
+    0% {
+        opacity: 0.75;
+        transform: translateY(4px) scale(0.98);
     }
     100% {
-        left: 150%;
+        opacity: 1;
+        transform: translateY(-5px) scale(1.04);
+    }
+}
+
+@keyframes upwardShimmer {
+    0% {
+        transform: translateY(120%) skewY(-12deg);
+        opacity: 0;
+    }
+    35% {
+        opacity: 0.85;
+    }
+    100% {
+        transform: translateY(-140%) skewY(-12deg);
         opacity: 0;
     }
 }
 
-@keyframes flashTagBounce {
-    0%, 100% {
-        transform: translateY(0) scale(1);
-    }
-    50% {
-        transform: translateY(-2px) scale(1.04);
-    }
-}
-
-@keyframes stockDotPulse {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.35);
-        opacity: 0.75;
-    }
-}
-
-/* Etiquetas superiores apiladas (descuento, OFERTA FLASH, etc.) */
-#productGrid article .relative > .absolute.top-2,
-#productGrid article .relative > .absolute.top-3,
+/* 1. Etiquetas flotantes sobre las imágenes (-XX% OFF, OFERTA FLASH, etc.) */
 #productGrid article .relative > .absolute[class*="top-"] > span,
 #productGrid article .relative > .absolute[class*="top-"] > div {
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.25s ease,
-                filter 0.25s ease;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.32s ease;
+    will-change: transform;
 }
 
-/* Destello luminoso en etiquetas superiores */
+/* Destello de luz que sube hacia arriba */
 #productGrid article .relative > .absolute[class*="top-"] span::after,
-#productGrid article .relative > .absolute[class*="top-"] div::after {
+#productGrid article .relative > .absolute[class*="top-"] div::after,
+#productGrid article .flex.flex-wrap.gap-1.5 button::after,
+#productGrid article .grid.grid-cols-5 button:not(:disabled)::after {
     content: "";
     position: absolute;
-    top: -25%;
-    left: -120%;
-    width: 55%;
-    height: 150%;
+    left: -10%;
+    bottom: 0;
+    width: 120%;
+    height: 65%;
     background: linear-gradient(
-        90deg,
+        0deg,
         transparent,
-        rgba(255, 255, 255, 0.65),
+        rgba(255, 255, 255, 0.7),
         transparent
     );
-    transform: skewX(-22deg);
+    transform: translateY(120%) skewY(-12deg);
     pointer-events: none;
+    z-index: 2;
 }
 
-/* Movimiento llamativo suave en etiquetas de OFERTA FLASH */
+/* Flotación continua hacia arriba en etiquetas de OFERTA FLASH */
 #productGrid article .relative [class*="amber"],
 #productGrid article .relative [class*="yellow"] {
-    animation: flashTagBounce 2.2s ease-in-out infinite;
-    box-shadow: 0 6px 14px -3px rgba(245, 158, 11, 0.45);
+    animation: floatUpPulse 2s ease-in-out infinite;
+    box-shadow: 0 8px 16px -4px rgba(245, 158, 11, 0.45);
 }
 
-/* Al pasar el cursor sobre la tarjeta, las etiquetas superiores brillan y destacan */
+/* Al pasar el cursor sobre la tarjeta, las etiquetas superiores suben y brillan */
 #productGrid article:hover .relative > .absolute[class*="top-"] span,
 #productGrid article:hover .relative > .absolute[class*="top-"] div {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 8px 18px -4px rgba(0, 0, 0, 0.35);
+    transform: translateY(-6px) scale(1.05);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.35);
 }
 
 #productGrid article:hover .relative > .absolute[class*="top-"] span::after,
 #productGrid article:hover .relative > .absolute[class*="top-"] div::after {
-    animation: badgeShineGlide 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: upwardShimmer 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Barra inferior "¡ÚLTIMAS X UNIDADES!" con brillo y pulso en el indicador */
+/* Barra inferior "¡ÚLTIMAS X UNIDADES!" sube suavemente al pasar el cursor */
 #productGrid article .relative > .absolute[class*="bottom-"] {
-    box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.55);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.32s ease;
 }
 
 #productGrid article:hover .relative > .absolute[class*="bottom-"] {
+    transform: translateY(-5px);
     box-shadow:
-        0 10px 24px -4px rgba(225, 29, 72, 0.4),
-        0 0 0 1px rgba(251, 113, 133, 0.35);
+        0 12px 24px -4px rgba(225, 29, 72, 0.45),
+        0 0 0 1px rgba(251, 113, 133, 0.4);
 }
 
-#productGrid article .relative > .absolute[class*="bottom-"] span[class*="rounded-full"],
-#productGrid article .relative > .absolute[class*="bottom-"] .w-2,
-#productGrid article .relative > .absolute[class*="bottom-"] .h-2 {
-    animation: stockDotPulse 1.5s ease-in-out infinite;
+/* 2. Etiquetas de Colores y Tallas: desplazamiento hacia arriba al interactuar */
+#productGrid article .flex.flex-wrap.gap-1.5 button,
+#productGrid article .grid.grid-cols-5 button:not(:disabled) {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.3s ease,
+                border-color 0.25s ease,
+                background 0.25s ease;
+    will-change: transform, box-shadow;
+}
+
+#productGrid article .flex.flex-wrap.gap-1.5 button:hover,
+#productGrid article .grid.grid-cols-5 button:not(:disabled):hover {
+    transform: translateY(-6px) scale(1.06);
+    border-color: rgba(244, 63, 94, 0.6);
+    box-shadow:
+        0 12px 20px -5px rgba(225, 29, 72, 0.38),
+        0 0 0 2px rgba(251, 113, 133, 0.32);
+}
+
+#productGrid article .flex.flex-wrap.gap-1.5 button:hover::after,
+#productGrid article .grid.grid-cols-5 button:not(:disabled):hover::after {
+    animation: upwardShimmer 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Etiqueta de color ACTIVA elevada hacia arriba con pulso suave */
+#productGrid article .flex.flex-wrap.gap-1.5 button.bg-rose-600 {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #be123c 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.65) !important;
+    animation: floatUpPulse 2.2s ease-in-out infinite;
+    box-shadow:
+        0 10px 20px -4px rgba(225, 29, 72, 0.6),
+        0 0 0 2px rgba(251, 113, 133, 0.45);
+}
+
+/* Clic firme */
+#productGrid article .flex.flex-wrap.gap-1.5 button:active,
+#productGrid article .grid.grid-cols-5 button:not(:disabled):active {
+    transform: translateY(-1px) scale(0.95) !important;
 }
 
 
