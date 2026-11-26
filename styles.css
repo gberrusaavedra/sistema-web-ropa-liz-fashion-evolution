@@ -1453,3 +1453,47 @@ select:focus {
     transform: translateY(0) scale(0.96) !important;
 }
 
+/* =========================================
+   MODELO DE MODA - PORTADA PRINCIPAL
+========================================= */
+
+.hero-model {
+    position: absolute;
+    right: 15px;
+    bottom: -5px;
+    width: 280px;
+    height: 390px;
+    z-index: 5;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.hero-model img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+    animation: modelFloat 4s ease-in-out infinite;
+}
+
+@keyframes modelFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-9px);
+    }
+}
+
+/* Adaptación para celulares */
+@media (max-width: 768px) {
+    .hero-model {
+        width: 150px;
+        height: 220px;
+        right: 5px;
+        bottom: 0;
+    }
+}

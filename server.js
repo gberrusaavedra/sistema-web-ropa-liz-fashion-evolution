@@ -903,3 +903,4 @@ app.get('/api/canjes/clientes-puntos', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
