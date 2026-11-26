@@ -1453,15 +1453,14 @@ select:focus {
     transform: translateY(0) scale(0.96) !important;
 }
 
-/* MODELO CENTRADA EN LA PORTADA */
+/* MODELO GRANDE AL FONDO DE LA PORTADA */
 .hero-model {
     position: absolute;
     left: 310px;
-    right: auto;
     bottom: -5px;
-    width: 370px;
-    height: 490px;
-    z-index: 10;
+    width: 480px;
+    height: 560px;
+    z-index: 1;
 
     display: flex;
     align-items: flex-end;
@@ -1476,11 +1475,12 @@ select:focus {
     object-fit: contain;
     object-position: bottom center;
 
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
+    filter: drop-shadow(0 10px 25px rgba(0,0,0,.30));
 
     animation: modelFloat 4s ease-in-out infinite;
 }
 
+/* EFECTO FLOTANTE */
 @keyframes modelFloat {
     0%, 100% {
         transform: translateY(0);
@@ -1491,13 +1491,13 @@ select:focus {
     }
 }
 
-/* RESPONSIVE */
+/* TABLETS Y CELULARES */
 @media (max-width: 768px) {
     .hero-model {
         left: auto;
-        right: 5px;
+        right: 0;
+        width: 230px;
+        height: 320px;
         bottom: 0;
-        width: 180px;
-        height: 260px;
     }
 }
