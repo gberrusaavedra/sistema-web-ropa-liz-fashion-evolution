@@ -1456,7 +1456,7 @@ select:focus {
 /* MODELO COMO FONDO DECORATIVO */
 .hero-model {
     position: absolute;
-    left: 310px;
+    left: 425px; /* <-- Cambiado de 310px a 425px (+115px ≈ 3 cm a la derecha) */
     bottom: -5px;
     width: 480px;
     height: 560px;
