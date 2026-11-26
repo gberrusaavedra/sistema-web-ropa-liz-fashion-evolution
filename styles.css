@@ -1453,27 +1453,31 @@ select:focus {
     transform: translateY(0) scale(0.96) !important;
 }
 
-/* MODELO MÁS GRANDE Y CENTRADO */
+/* MODELO CENTRADA EN LA PORTADA */
 .hero-model {
     position: absolute;
-    right: 90px;
+    left: 310px;
+    right: auto;
     bottom: -5px;
-    width: 390px;
+    width: 370px;
     height: 490px;
     z-index: 10;
+
     display: flex;
     align-items: flex-end;
     justify-content: center;
+
     pointer-events: none;
 }
 
 .hero-model img {
-    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
     object-position: bottom center;
+
     filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
+
     animation: modelFloat 4s ease-in-out infinite;
 }
 
@@ -1481,17 +1485,19 @@ select:focus {
     0%, 100% {
         transform: translateY(0);
     }
+
     50% {
         transform: translateY(-8px);
     }
 }
 
-/* TABLETS Y CELULARES */
+/* RESPONSIVE */
 @media (max-width: 768px) {
     .hero-model {
-        width: 220px;
-        height: 300px;
+        left: auto;
         right: 5px;
         bottom: 0;
+        width: 180px;
+        height: 260px;
     }
 }
