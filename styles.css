@@ -1453,14 +1453,15 @@ select:focus {
     transform: translateY(0) scale(0.96) !important;
 }
 
-/* MODELO GRANDE AL FONDO DE LA PORTADA */
+/* MODELO COMO FONDO DECORATIVO */
 .hero-model {
     position: absolute;
     left: 310px;
     bottom: -5px;
     width: 480px;
     height: 560px;
-    z-index: 1;
+
+    z-index: 0 !important;
 
     display: flex;
     align-items: flex-end;
@@ -1480,7 +1481,6 @@ select:focus {
     animation: modelFloat 4s ease-in-out infinite;
 }
 
-/* EFECTO FLOTANTE */
 @keyframes modelFloat {
     0%, 100% {
         transform: translateY(0);
@@ -1491,7 +1491,7 @@ select:focus {
     }
 }
 
-/* TABLETS Y CELULARES */
+/* RESPONSIVE */
 @media (max-width: 768px) {
     .hero-model {
         left: auto;
