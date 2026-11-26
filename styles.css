@@ -1453,23 +1453,60 @@ select:focus {
     transform: translateY(0) scale(0.96) !important;
 }
 
-/* MODELO COMO FONDO DECORATIVO */
+/* ==========================================================================
+   MODELO AL FONDO EN ESCRITORIO Y VISIBLE EN CELULAR
+   ========================================================================== */
 .hero-model {
     position: absolute;
-    left: 425px; /* <-- Cambiado de 310px a 425px (+115px ≈ 3 cm a la derecha) */
+    left: 44%;
     bottom: -5px;
-    width: 480px;
-    height: 560px;
-
-    z-index: 0 !important;
-
+    width: 470px;
+    height: 540px;
+    z-index: 1;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-
     pointer-events: none;
 }
 
+.hero-model img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+    filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.35));
+    animation: modelFloat 4s ease-in-out infinite;
+}
+
+/* Asegura que textos, botones y tarjeta estén siempre adelante de la modelo */
+section.bg-slate-900 .z-10 {
+    position: relative;
+    z-index: 10;
+}
+
+@keyframes modelFloat {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+/* RESPONSIVE PARA CELULARES Y TABLETS */
+@media (max-width: 1023px) {
+    .hero-model {
+        position: relative;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        width: 100%;
+        max-width: 310px;
+        height: 330px;
+        margin: -10px auto 0 auto;
+        z-index: 5;
+    }
+}
 .hero-model img {
     width: 100%;
     height: 100%;
@@ -1502,9 +1539,3 @@ select:focus {
     }
 }
 
-/* Pone el bloque de textos y botones por encima de la modelo */
-.hero-model ~ div,
-section:has(> .hero-model) > div:not(.hero-model) {
-    position: relative;
-    z-index: 10 !important;
-}
