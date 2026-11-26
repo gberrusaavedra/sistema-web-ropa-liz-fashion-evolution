@@ -1592,59 +1592,67 @@ section.relative .z-10 {
 
 
 /* logo/
-/* Contenedor principal */
 .brand-logo {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 18px;
+  padding: 12px 24px;
+  overflow: hidden; /* Recorta la luz dentro del contenedor */
   text-decoration: none;
-  padding: 12px 20px;
-  border-radius: 16px;
   font-family: 'Montserrat', sans-serif;
-  cursor: pointer;
   user-select: none;
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.brand-logo:hover {
-  transform: translateY(-2px);
+/* Haz de luz elegante de derecha a izquierda */
+.brand-logo::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  right: -45%; /* Inicia a la derecha */
+  width: 38%;
+  height: 140%;
+  background: linear-gradient(
+    to left,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 25%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0.08) 75%,
+    transparent 100%
+  );
+  transform: translateX(0) skewX(-22deg);
+  filter: blur(2px);
+  pointer-events: none;
+  animation: luzDerechaIzquierda 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Cuadro rojo redondeado */
+/* Acelera un poco y da más presencia al pasar el cursor */
+.brand-logo:hover::after {
+  animation-duration: 1.8s;
+  background: linear-gradient(
+    to left,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 25%,
+    rgba(255, 255, 255, 0.72) 50%,
+    rgba(255, 255, 255, 0.12) 75%,
+    transparent 100%
+  );
+}
+
+/* Cuadro rojo del logo */
 .logo-icon {
-  position: relative;
   width: 64px;
   height: 64px;
   background: linear-gradient(135deg, #eb2148 0%, #d4143a 100%);
   border-radius: 18px;
   box-shadow: 0 10px 22px -6px rgba(227, 25, 65, 0.45);
-  overflow: hidden;
   flex-shrink: 0;
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Destello de luz continuo */
-.logo-icon::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -120%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.35),
-    transparent
-  );
-  transform: skewX(-25deg);
-  animation: shine 4.5s infinite ease-in-out;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
 }
 
 .brand-logo:hover .logo-icon {
-  transform: scale(1.06) rotate(-4deg);
-  box-shadow: 0 14px 28px -5px rgba(227, 25, 65, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px -6px rgba(227, 25, 65, 0.58);
 }
 
 /* Textos */
@@ -1655,12 +1663,12 @@ section.relative .z-10 {
 }
 
 .logo-title {
+  margin: 0;
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.5px;
   line-height: 1.05;
   color: #0b132b;
-  margin: 0;
   display: flex;
   gap: 8px;
 }
@@ -1668,36 +1676,43 @@ section.relative .z-10 {
 .logo-title .highlight {
   color: #e31941;
   font-weight: 900;
-  transition: color 0.3s ease, text-shadow 0.3s ease;
-}
-
-.brand-logo:hover .logo-title .highlight {
-  color: #f51d48;
-  text-shadow: 0 4px 15px rgba(227, 25, 65, 0.25);
 }
 
 .logo-subtitle {
+  margin-top: 6px;
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 3.2px;
   color: #8c98a9;
-  margin-top: 6px;
   text-transform: uppercase;
-  transition: color 0.3s ease, letter-spacing 0.4s ease;
 }
 
-.brand-logo:hover .logo-subtitle {
-  color: #5c687a;
-  letter-spacing: 3.6px;
-}
-
-@keyframes shine {
-  0% { left: -120%; }
-  20% { left: 150%; }
-  100% { left: 150%; }
+@keyframes luzDerechaIzquierda {
+  0% {
+    transform: translateX(0) skewX(-22deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(-360%) skewX(-22deg);
+    opacity: 1;
+  }
+  65% {
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-360%) skewX(-22deg);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 480px) {
+  .brand-logo {
+    gap: 12px;
+    padding: 10px 14px;
+  }
   .logo-icon {
     width: 50px;
     height: 50px;
@@ -1710,8 +1725,5 @@ section.relative .z-10 {
   .logo-subtitle {
     font-size: 10px;
     letter-spacing: 2.2px;
-  }
-  .brand-logo:hover .logo-subtitle {
-    letter-spacing: 2.5px;
   }
 }
