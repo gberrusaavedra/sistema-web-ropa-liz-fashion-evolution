@@ -1453,17 +1453,14 @@ select:focus {
     transform: translateY(0) scale(0.96) !important;
 }
 
-/* =========================================
-   MODELO DE MODA - PORTADA PRINCIPAL
-========================================= */
-
+/* MODELO DE MODA EN PORTADA */
 .hero-model {
     position: absolute;
-    right: 15px;
-    bottom: -5px;
+    right: 10px;
+    bottom: 0;
     width: 280px;
     height: 390px;
-    z-index: 5;
+    z-index: 10;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -1471,11 +1468,12 @@ select:focus {
 }
 
 .hero-model img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
     object-position: bottom center;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
     animation: modelFloat 4s ease-in-out infinite;
 }
 
@@ -1484,16 +1482,14 @@ select:focus {
         transform: translateY(0);
     }
     50% {
-        transform: translateY(-9px);
+        transform: translateY(-8px);
     }
 }
 
-/* Adaptación para celulares */
 @media (max-width: 768px) {
     .hero-model {
-        width: 150px;
+        width: 145px;
         height: 220px;
-        right: 5px;
-        bottom: 0;
+        right: 0;
     }
 }
