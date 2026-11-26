@@ -110,6 +110,7 @@
         padding: 0.25rem 0.5rem;
     }
 }
+
 /* ==========================================================================
    ESTILOS DE LOGIN Y REGISTRO DUAL (GLASSMORPHISM OSCURO / ROJO)
    ========================================================================== */
@@ -352,6 +353,7 @@
 .auth-container.right-panel-active .overlay-right {
     transform: translateX(20%);
 }
+
 /* ==========================================================================
    ADAPTABILIDAD MÓVIL Y TABLET PARA EL MODAL DE AUTENTICACIÓN
    ========================================================================== */
@@ -414,8 +416,7 @@
     }
 }
 
-
- /* Control de puntos de clientes */
+/* Control de puntos de clientes */
 .btn-canje-nav {
     background-color: #059669;
     color: #ffffff;
@@ -693,6 +694,7 @@
 .btn-pedidos-dinamico:active {
     transform: translateY(-1px) scale(0.96);
 }
+
 /* ==========================================================================
    ANIMACIÓN ATRACTIVA AL PASAR EL CURSOR EN BOTONES DEL HERO BANNER
    ========================================================================== */
@@ -886,6 +888,7 @@
     color: #a7f3d0;
     box-shadow: 0 8px 18px -6px rgba(16, 185, 129, 0.5);
 }
+
 /* ==========================================================================
    TARJETA OFERTA FLASH PREMIUM (GLASSMORPHISM METÁLICO + NEÓN + CHISPAS)
    ========================================================================== */
@@ -1040,6 +1043,7 @@
     color: transparent;
     text-shadow: 0 0 14px rgba(251, 146, 60, 0.35);
 }
+
 /* ==========================================================================
    EFECTO LLAMATIVO CON DESPLAZAMIENTO HACIA ARRIBA Y MOVIMIENTO DE IMÁGENES
    ========================================================================== */
@@ -1209,135 +1213,12 @@
 }
 
 /* ==========================================================================
-   EFECTO PREMIUM LLAMATIVO EN ETIQUETAS DE COLORES Y TALLAS
-   ========================================================================== */
-@keyframes pillShineSweep {
-    0% {
-        left: -130%;
-        opacity: 0;
-    }
-    25% {
-        opacity: 1;
-    }
-    100% {
-        left: 150%;
-        opacity: 0;
-    }
-}
-
-@keyframes activeColorAura {
-    0%, 100% {
-        transform: translateY(-1px) scale(1.03);
-        box-shadow:
-            0 8px 20px -4px rgba(225, 29, 72, 0.6),
-            0 0 0 2px rgba(251, 113, 133, 0.55),
-            inset 0 1px 1px rgba(255, 255, 255, 0.45);
-    }
-    50% {
-        transform: translateY(-2.5px) scale(1.05);
-        box-shadow:
-            0 12px 26px -4px rgba(244, 63, 94, 0.8),
-            0 0 0 3px rgba(253, 164, 175, 0.7),
-            inset 0 1px 2px rgba(255, 255, 255, 0.65);
-    }
-}
-
-/* Base para botones de colores y tallas habilitadas */
-#productGrid article .flex.flex-wrap.gap-1.5 button,
-#productGrid article .grid.grid-cols-5 button:not(:disabled) {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
-                box-shadow 0.28s ease,
-                border-color 0.25s ease,
-                background 0.25s ease,
-                color 0.2s ease;
-    will-change: transform, box-shadow;
-}
-
-/* Destello luminoso diagonal */
-#productGrid article .flex.flex-wrap.gap-1.5 button::before,
-#productGrid article .grid.grid-cols-5 button:not(:disabled)::before {
-    content: "";
-    position: absolute;
-    top: -30%;
-    left: -130%;
-    width: 55%;
-    height: 160%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.72),
-        transparent
-    );
-    transform: skewX(-24deg);
-    pointer-events: none;
-    z-index: 2;
-}
-
-#productGrid article .flex.flex-wrap.gap-1.5 button:hover::before,
-#productGrid article .grid.grid-cols-5 button:not(:disabled):hover::before {
-    animation: pillShineSweep 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-/* Hover llamativo con leve giro y elevación */
-#productGrid article .flex.flex-wrap.gap-1.5 button:hover {
-    transform: translateY(-3px) scale(1.07) rotate(-1deg);
-    border-color: rgba(244, 63, 94, 0.55);
-    box-shadow:
-        0 10px 20px -5px rgba(225, 29, 72, 0.38),
-        0 0 0 2px rgba(251, 113, 133, 0.32);
-}
-
-#productGrid article .flex.flex-wrap.gap-1.5 button:nth-child(even):hover {
-    transform: translateY(-3px) scale(1.07) rotate(1deg);
-}
-
-#productGrid article .grid.grid-cols-5 button:not(:disabled):hover {
-    transform: translateY(-2.5px) scale(1.06);
-    border-color: rgba(244, 63, 94, 0.5);
-    box-shadow:
-        0 9px 18px -5px rgba(15, 23, 42, 0.3),
-        0 0 0 2px rgba(244, 63, 94, 0.25);
-}
-
-/* Botón de color ACTIVO (seleccionado) */
-#productGrid article .flex.flex-wrap.gap-1.5 button.bg-rose-600 {
-    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 55%, #be123c 100%) !important;
-    color: #ffffff !important;
-    border-color: rgba(255, 255, 255, 0.65) !important;
-    animation: activeColorAura 2.1s ease-in-out infinite;
-}
-
-/* Talla ACTIVA seleccionada si usa bg-slate-900 o bg-rose-600 */
-#productGrid article .grid.grid-cols-5 button:not(:disabled).bg-slate-900,
-#productGrid article .grid.grid-cols-5 button:not(:disabled).bg-rose-600 {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow:
-        0 8px 18px -4px rgba(225, 29, 72, 0.45),
-        0 0 0 2px rgba(251, 113, 133, 0.45);
-}
-
-/* Toque cromático sutil en etiquetas inactivas según el color del texto */
-#productGrid article .flex.flex-wrap.gap-1.5 button:not(.bg-rose-600):hover {
-    background: linear-gradient(180deg, #ffffff 0%, #fff1f2 100%);
-}
-
-/* Clic firme */
-#productGrid article .flex.flex-wrap.gap-1.5 button:active,
-#productGrid article .grid.grid-cols-5 button:not(:disabled):active {
-    transform: translateY(0) scale(0.94) !important;
-}
-
-
-/* ==========================================================================
    MEJORA DE PRESENTACIÓN EN BARRA SUPERIOR (HEADER / NAVBAR)
    ========================================================================== */
-header,
-header > div,
-nav.navbar,
-.site-header {
+header {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 241, 242, 0.94) 100%) !important;
+    border-bottom: 1px solid rgba(244, 63, 94, 0.18) !important;
+    box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.12) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 }
@@ -1363,9 +1244,9 @@ header input[placeholder*="Buscar"]:focus {
         0 0 0 3px rgba(251, 113, 133, 0.2) !important;
 }
 
-/* Botones e íconos de acción a la derecha del buscador */
+/* Botones e íconos de acción del header */
 header button,
-header a[href]:not(:first-child) {
+header a[href] {
     transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
                 box-shadow 0.22s ease,
                 background-color 0.22s ease,
@@ -1373,34 +1254,21 @@ header a[href]:not(:first-child) {
 }
 
 header button:hover,
-header a[href]:not(:first-child):hover {
+header a[href]:hover {
     transform: translateY(-1.5px);
 }
 
 header button:active,
-header a[href]:not(:first-child):active {
+header a[href]:active {
     transform: translateY(0) scale(0.96);
 }
 
-/* Selector de moneda (S/ | $) con aspecto de interruptor elegante */
-header [class*="rounded-full"]:has(button),
-header .currency-toggle {
-    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
-}
-
-/* Badge del cliente (CLIENTE BERRU) con sombra limpia */
+/* Badge del cliente y botones oscuros en header */
 header [class*="bg-emerald"],
 header [class*="bg-green"] {
     box-shadow: 0 4px 12px -3px rgba(16, 185, 129, 0.35);
 }
 
-/* Botón Salir con borde delicado */
-header button:has(svg),
-header a:has(svg) {
-    border-radius: 12px;
-}
-
-/* Botón principal "Mi Pedido" destacado con profundidad */
 header button[class*="bg-slate-900"],
 header button[class*="bg-gray-900"],
 header a[class*="bg-slate-900"],
@@ -1416,3 +1284,5 @@ header a[class*="bg-slate-900"]:hover,
 header a[class*="bg-gray-900"]:hover {
     box-shadow: 0 10px 22px -4px rgba(225, 29, 72, 0.32);
 }
+
+
