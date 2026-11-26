@@ -1453,13 +1453,13 @@ select:focus {
     transform: translateY(0) scale(0.96) !important;
 }
 
-/* MODELO DE MODA EN PORTADA */
+/* MODELO MÁS GRANDE Y CENTRADO */
 .hero-model {
     position: absolute;
-    right: 10px;
-    bottom: 0;
-    width: 280px;
-    height: 390px;
+    right: 90px;
+    bottom: -5px;
+    width: 390px;
+    height: 490px;
     z-index: 10;
     display: flex;
     align-items: flex-end;
@@ -1486,10 +1486,12 @@ select:focus {
     }
 }
 
+/* TABLETS Y CELULARES */
 @media (max-width: 768px) {
     .hero-model {
-        width: 145px;
-        height: 220px;
-        right: 0;
+        width: 220px;
+        height: 300px;
+        right: 5px;
+        bottom: 0;
     }
 }
