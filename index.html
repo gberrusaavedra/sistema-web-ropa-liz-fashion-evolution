@@ -235,43 +235,53 @@
 
                 <!-- Right Countdown Card -->
                 <div class="lg:col-span-5">
-                    <div class="bg-slate-800/80 backdrop-blur-md border border-slate-700/80 rounded-2xl p-5 sm:p-6 shadow-2xl max-w-md mx-auto">
-                        <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                            <span class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                                <i data-lucide="zap" class="w-4 h-4 fill-amber-400"></i> Oferta Flash Termina En:
+                    <div class="flash-offer-card relative max-w-md mx-auto rounded-3xl p-5 sm:p-6 overflow-hidden">
+                        <!-- Partículas / chispas decorativas -->
+                        <div class="flash-sparks" aria-hidden="true"></div>
+
+                        <!-- Cabecera con rayo iluminado y badge EN VIVO -->
+                        <div class="relative z-10 flex items-center justify-between pb-3.5 mb-4 border-b border-white/15">
+                            <span class="flash-title text-xs sm:text-sm font-black uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                                <span class="flash-bolt-wrap">
+                                    <i data-lucide="zap" class="w-5 h-5 text-amber-300 fill-amber-300"></i>
+                                </span>
+                                Oferta Flash Termina En:
                             </span>
-                            <span class="text-[11px] bg-rose-600 text-white px-2 py-0.5 rounded font-bold">EN VIVO</span>
+                            <span class="flash-live-badge text-[11px] text-white px-2.5 py-1 rounded-lg font-black tracking-wider uppercase">
+                                EN VIVO
+                            </span>
                         </div>
                         
-                        <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center" id="countdownContainer">
-                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
-                                <div id="cd-days" class="text-2xl sm:text-3xl font-black text-white">01</div>
-                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Días</div>
+                        <!-- Cajas del contador con bordes cristal y neón individual -->
+                        <div class="relative z-10 grid grid-cols-4 gap-2.5 sm:gap-3 text-center" id="countdownContainer">
+                            <div class="flash-box flash-box-days rounded-2xl p-2.5 sm:p-3">
+                                <div id="cd-days" class="flash-num flash-num-white text-2xl sm:text-3xl font-black">01</div>
+                                <div class="text-[10px] sm:text-xs text-slate-200 uppercase font-bold tracking-wider mt-1">Días</div>
                             </div>
-                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
-                                <div id="cd-hours" class="text-2xl sm:text-3xl font-black text-rose-500">14</div>
-                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Horas</div>
+                            <div class="flash-box flash-box-hours rounded-2xl p-2.5 sm:p-3">
+                                <div id="cd-hours" class="flash-num flash-num-red text-2xl sm:text-3xl font-black">14</div>
+                                <div class="text-[10px] sm:text-xs text-slate-200 uppercase font-bold tracking-wider mt-1">Horas</div>
                             </div>
-                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
-                                <div id="cd-minutes" class="text-2xl sm:text-3xl font-black text-white">45</div>
-                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Min</div>
+                            <div class="flash-box flash-box-min rounded-2xl p-2.5 sm:p-3">
+                                <div id="cd-minutes" class="flash-num flash-num-orange text-2xl sm:text-3xl font-black">45</div>
+                                <div class="text-[10px] sm:text-xs text-slate-200 uppercase font-bold tracking-wider mt-1">Min</div>
                             </div>
-                            <div class="bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 sm:p-3">
-                                <div id="cd-seconds" class="text-2xl sm:text-3xl font-black text-amber-400">30</div>
-                                <div class="text-[10px] sm:text-xs text-slate-400 uppercase font-semibold mt-1">Seg</div>
+                            <div class="flash-box flash-box-sec rounded-2xl p-2.5 sm:p-3">
+                                <div id="cd-seconds" class="flash-num flash-num-gold text-2xl sm:text-3xl font-black">30</div>
+                                <div class="text-[10px] sm:text-xs text-slate-200 uppercase font-bold tracking-wider mt-1">Seg</div>
                             </div>
                         </div>
 
-                        <div class="mt-4 pt-3 border-t border-slate-700/80 flex items-center justify-between text-xs text-slate-300">
+                        <!-- Pie con stock y alerta animada -->
+                        <div class="relative z-10 mt-4 pt-3.5 border-t border-white/15 flex items-center justify-between text-xs text-slate-200">
                             <span class="flex items-center gap-1.5">
-                                <i data-lucide="package-check" class="w-4 h-4 text-emerald-400"></i>
-                                <strong id="totalStockCounter" class="text-white">0</strong> prendas disponibles hoy
+                                <i data-lucide="package-check" class="w-4 h-4 text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.8)]"></i>
+                                <strong id="totalStockCounter" class="text-white font-black">0</strong> prendas disponibles hoy
                             </span>
-                            <span class="text-rose-400 font-semibold">¡Se agotan rápido!</span>
+                            <span class="flash-urgency-text font-extrabold">¡Se agotan rápido!</span>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </section>

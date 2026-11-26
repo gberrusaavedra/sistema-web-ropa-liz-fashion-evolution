@@ -886,3 +886,157 @@
     color: #a7f3d0;
     box-shadow: 0 8px 18px -6px rgba(16, 185, 129, 0.5);
 }
+/* ==========================================================================
+   TARJETA OFERTA FLASH PREMIUM (GLASSMORPHISM METÁLICO + NEÓN + CHISPAS)
+   ========================================================================== */
+.flash-offer-card {
+    background:
+        radial-gradient(circle at 12% 15%, rgba(251, 191, 36, 0.22) 0%, transparent 42%),
+        radial-gradient(circle at 88% 12%, rgba(244, 63, 94, 0.32) 0%, transparent 48%),
+        radial-gradient(circle at 50% 100%, rgba(234, 88, 12, 0.22) 0%, transparent 55%),
+        linear-gradient(145deg, rgba(15, 23, 42, 0.94) 0%, rgba(10, 14, 28, 0.97) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.28);
+    box-shadow:
+        0 20px 45px -12px rgba(0, 0, 0, 0.85),
+        0 0 28px rgba(244, 63, 94, 0.25),
+        inset 0 1px 1px rgba(255, 255, 255, 0.45),
+        inset 0 -1px 2px rgba(56, 189, 248, 0.25);
+    backdrop-filter: blur(14px);
+}
+
+/* Marco interior sutil tipo cristal biselado */
+.flash-offer-card::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Chispas de fuego flotantes */
+.flash-sparks {
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(circle, rgba(253, 224, 71, 0.9) 1.2px, transparent 1.8px),
+        radial-gradient(circle, rgba(251, 146, 60, 0.85) 1.5px, transparent 2.2px),
+        radial-gradient(circle, rgba(244, 63, 94, 0.8) 1px, transparent 1.8px);
+    background-size: 95px 95px, 130px 130px, 75px 75px;
+    background-position: 0 0, 35px 50px, 60px 20px;
+    opacity: 0.55;
+    animation: flashSparksFloat 7s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes flashSparksFloat {
+    0% { transform: translateY(0) scale(1); opacity: 0.45; }
+    50% { opacity: 0.75; }
+    100% { transform: translateY(-28px) scale(1.03); opacity: 0.45; }
+}
+
+/* Rayo con halo eléctrico */
+.flash-bolt-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.95)) drop-shadow(0 0 16px rgba(245, 158, 11, 0.75));
+    animation: flashBoltPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes flashBoltPulse {
+    0%, 100% { transform: scale(1) rotate(-4deg); }
+    50% { transform: scale(1.16) rotate(4deg); }
+}
+
+.flash-title {
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.55);
+}
+
+/* Badge EN VIVO estilo cristal rojo luminoso */
+.flash-live-badge {
+    background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow:
+        0 0 14px rgba(244, 63, 94, 0.8),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    animation: flashLiveGlow 2s ease-in-out infinite;
+}
+
+@keyframes flashLiveGlow {
+    0%, 100% { box-shadow: 0 0 12px rgba(244, 63, 94, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
+    50% { box-shadow: 0 0 22px rgba(251, 113, 133, 0.95), inset 0 1px 1px rgba(255, 255, 255, 0.7); }
+}
+
+/* Cajas individuales estilo HUD metálico */
+.flash-box {
+    position: relative;
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.78) 0%, rgba(15, 23, 42, 0.92) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.35),
+        0 8px 18px rgba(0, 0, 0, 0.55);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.flash-box:hover {
+    transform: translateY(-2px);
+}
+
+/* Barras de luz neón en cada caja */
+.flash-box-days {
+    border-color: rgba(244, 63, 94, 0.65);
+    box-shadow: 0 0 16px rgba(244, 63, 94, 0.28), inset 0 0 10px rgba(244, 63, 94, 0.16);
+}
+
+.flash-box-hours {
+    border-color: rgba(251, 113, 133, 0.7);
+    box-shadow: 0 0 16px rgba(225, 29, 72, 0.32), inset 0 0 10px rgba(225, 29, 72, 0.18);
+}
+
+.flash-box-min {
+    border-color: rgba(249, 115, 22, 0.75);
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.32), inset 0 0 10px rgba(249, 115, 22, 0.18);
+}
+
+.flash-box-sec {
+    border-color: rgba(250, 204, 21, 0.8);
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.35), inset 0 0 10px rgba(250, 204, 21, 0.2);
+}
+
+/* Números con brillo 3D */
+.flash-num {
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.flash-num-white {
+    color: #ffffff;
+    text-shadow: 0 2px 10px rgba(255, 255, 255, 0.45);
+}
+
+.flash-num-red {
+    color: #fb7185;
+    text-shadow: 0 0 14px rgba(244, 63, 94, 0.85);
+}
+
+.flash-num-orange {
+    color: #fb923c;
+    text-shadow: 0 0 14px rgba(249, 115, 22, 0.85);
+}
+
+.flash-num-gold {
+    color: #facc15;
+    text-shadow: 0 0 14px rgba(250, 204, 21, 0.9);
+}
+
+/* Texto de urgencia inferior */
+.flash-urgency-text {
+    background: linear-gradient(90deg, #fb7185, #fbbf24);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 14px rgba(251, 146, 60, 0.35);
+}
