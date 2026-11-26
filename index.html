@@ -196,41 +196,49 @@
         </div>
     </div>
 
-  <!-- Hero Banner con Fondo Crema Limpio -->
-    <section class="hero-crema-banner relative bg-gradient-to-br from-[#FDFBF7] via-[#F7EFE6] to-[#EFE2D3] text-slate-900 overflow-hidden border-b border-amber-200/80">
-        <div class="hero-pattern absolute inset-0 opacity-10"></div>
+    <!-- Hero Banner con Countdown -->
+    <section class="relative bg-slate-900 text-white overflow-hidden">
+        <div class="hero-pattern absolute inset-0 opacity-20"></div>
+        <div class="absolute -right-24 -top-24 w-96 h-96 bg-rose-600/30 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-24 -bottom-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-14 relative z-10">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 
                 <!-- Left Copy -->
                 <div class="lg:col-span-7 space-y-4 text-center lg:text-left">
-                    <div class="inline-flex items-center gap-2 bg-rose-600 text-white px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider shadow-xs">
-                        <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                    <div class="inline-flex items-center gap-2 bg-rose-600/20 border border-rose-500/40 text-rose-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
                         Cierre de Almacén • Temporada 2026
                     </div>
-                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] text-slate-900">
-                        GRAN REMATE DE STOCK <span class="text-rose-600">HASTA -70% OFF</span>
+                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
+                        GRAN REMATE DE STOCK <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-rose-500 to-amber-400">HASTA -70% OFF</span>
                     </h1>
-                    <p class="text-slate-700 font-medium text-sm sm:text-base max-w-xl mx-auto lg:mx-0">
+                    <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto lg:mx-0">
                         Prendas seleccionadas de fin de temporada, últimas tallas y saldos de exportación a precios de fábrica. ¡Cuando se agota una talla, no vuelve!
                     </p>
-                    <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
-                        <a href="#catalogo" class="btn-hero-remates bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/25 transition-all text-sm sm:text-base flex items-center gap-2">
-                            Ver Remates Ahora <i data-lucide="arrow-down" class="w-4 h-4"></i>
-                        </a>
-                        <button onclick="quickFilterTag('Remate Final')" class="btn-hero-oferta bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-900 font-bold px-5 py-3 rounded-xl transition-all text-sm sm:text-base cursor-pointer">
-                            Solo -70% Remate Final
-                        </button>
-                        <button onclick="abrirModuloConfeccion()" class="btn-hero-confeccion px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 transition cursor-pointer">
-                            <i class="fas fa-cut"></i> Ingresar a Confección
-                        </button>
-                        <button type="button" onclick="abrirModalCanjes()" class="btn-hero-canje btn-canje-nav px-5 py-3 rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 cursor-pointer">
-                            🎁 Canjear Puntos ( <span id="nav-user-puntos">0</span> pts)
-                        </button>
-                    </div>
+                   <div class="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                    <a href="#catalogo" class="btn-hero-remates bg-rose-600 hover:bg-rose-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all text-sm sm:text-base flex items-center gap-2">
+                        Ver Remates Ahora <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                    </a>
+                    <button onclick="quickFilterTag('Remate Final')" class="btn-hero-oferta bg-white/10 hover:bg-white/20 backdrop-blur-xs text-white border border-white/15 font-semibold px-5 py-3 rounded-xl transition-all text-sm sm:text-base cursor-pointer">
+                        Solo -70% Remate Final
+                    </button>
+                    <button onclick="abrirModuloConfeccion()" class="btn-hero-confeccion px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 transition cursor-pointer">
+                        <i class="fas fa-cut"></i> Ingresar a Confección
+                    </button>
+                    <button type="button" onclick="abrirModalCanjes()" class="btn-hero-canje btn-canje-nav px-5 py-3 rounded-xl shadow-lg text-sm sm:text-base flex items-center gap-2 cursor-pointer">
+                        🎁 Canjear Puntos ( <span id="nav-user-puntos">0</span> pts)
+                    </button>
                 </div>
-
+                </div>
+      <!-- MODELO CON BOLSAS DE ROPA -->
+<div class="hero-model">
+    <img
+        src="img/modelo%20liz.jpg"
+        alt="Modelo de moda con bolsas de ropa"
+    >
+</div>
 
                 <!-- Right Countdown Card -->
                 <div class="lg:col-span-5">
@@ -250,14 +258,7 @@
                                 EN VIVO
                             </span>
                         </div>
-                        <!-- MODELO AL FONDO EN ESCRITORIO Y VISIBLE EN CELULAR -->
-        <div class="hero-model">
-            <img
-                src="img/modelo%20liz.jpg"
-                alt="Modelo de moda con bolsas de ropa"
-            >
-        </div>
-    </section>
+                        
                         <!-- Cajas del contador con bordes cristal y neón individual -->
                         <div class="relative z-10 grid grid-cols-4 gap-2.5 sm:gap-3 text-center" id="countdownContainer">
                             <div class="flash-box flash-box-days rounded-2xl p-2.5 sm:p-3">
@@ -290,7 +291,7 @@
                 </div>
             </div>
         </div>
-        
+    </section>
 
     <!-- Main Catalog Section -->
     <main id="catalogo" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
