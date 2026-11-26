@@ -1501,3 +1501,10 @@ select:focus {
         bottom: 0;
     }
 }
+
+/* Pone el bloque de textos y botones por encima de la modelo */
+.hero-model ~ div,
+section:has(> .hero-model) > div:not(.hero-model) {
+    position: relative;
+    z-index: 10 !important;
+}
