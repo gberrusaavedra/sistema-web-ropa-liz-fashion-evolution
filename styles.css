@@ -1496,26 +1496,18 @@ section.relative .z-10 {
     }
 }
 
-/* CELULAR Y TABLET: CHICA MÁS GRANDE Y EN MEDIO DE LAS LETRAS (AL FONDO) */
+/* CELULAR Y TABLET */
 @media (max-width: 1023px) {
     .hero-model {
-        position: absolute;
-        left: 50%;
-        top: 28%;
-        transform: translate(-50%, -50%);
+        position: relative;
+        left: auto;
+        transform: none;
         bottom: auto;
-        width: 96%;
-        max-width: 440px;
-        height: 440px;
+        width: 100%;
+        max-width: 400px;
+        height: 420px;
         max-height: none;
-        z-index: 1;
-        opacity: 0.78;
-        pointer-events: none;
-    }
-
-    /* Sombra suave en el texto móvil para que se lea clarito sobre la imagen */
-    section.relative .z-10 h1,
-    section.relative .z-10 p {
-        text-shadow: 0 2px 12px rgba(15, 23, 42, 0.92);
+        margin: 8px auto -32px auto;
+        z-index: 5;
     }
 }
