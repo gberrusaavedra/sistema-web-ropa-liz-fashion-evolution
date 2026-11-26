@@ -1140,7 +1140,7 @@
 #productGrid article .relative [class*="amber"],
 #productGrid article .relative [class*="yellow"] {
     animation: floatUpPulse 2s ease-in-out infinite;
-    box-shadow: 0 8px 16px -4px rgba(245, 158, 11, 0.45);
+    box-shadow: 0 8px 16px -4px rgba(252, 222, 170, 0.45);
 }
 
 /* Al pasar el cursor sobre la tarjeta, las etiquetas superiores suben y brillan */
@@ -1164,8 +1164,8 @@
 #productGrid article:hover .relative > .absolute[class*="bottom-"] {
     transform: translateY(-5px);
     box-shadow:
-        0 12px 24px -4px rgba(225, 29, 72, 0.45),
-        0 0 0 1px rgba(251, 113, 133, 0.4);
+        0 12px 24px -4px rgba(230, 169, 182, 0.45),
+        0 0 0 1px rgba(247, 166, 178, 0.4);
 }
 
 /* 3. Etiquetas de Colores y Tallas: desplazamiento hacia arriba al interactuar */
