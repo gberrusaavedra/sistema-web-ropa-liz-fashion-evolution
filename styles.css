@@ -1496,8 +1496,55 @@ section.relative .z-10 {
         transform: translateX(-36px);
     }
 }
+/* ==========================================================================
+   MODELO AL FONDO CON DESPLAZAMIENTO CLARO DE DERECHA A IZQUIERDA
+   ========================================================================== */
+.hero-model {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -8px;
+    width: 560px;
+    max-width: 52vw;
+    height: 600px;
+    max-height: 98%;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+}
 
-/* CELULAR Y TABLET: CHICA CON MAYOR ALTURA DETRÁS DE LAS LETRAS */
+.hero-model img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.35));
+    animation: modelSlideRightLeft 7s ease-in-out infinite;
+    will-change: transform;
+}
+
+/* Garantiza que las letras, botones y el cuadro Oferta Flash queden por delante */
+section.relative .z-10 {
+    position: relative;
+    z-index: 10;
+}
+
+/* Recorrido de derecha a izquierda en escritorio */
+@keyframes modelSlideRightLeft {
+    0% {
+        transform: translateX(85px);
+    }
+    50% {
+        transform: translateX(-85px);
+    }
+    100% {
+        transform: translateX(85px);
+    }
+}
+
+/* CELULAR Y TABLET */
 @media (max-width: 1023px) {
     .hero-model {
         position: absolute;
@@ -1519,7 +1566,7 @@ section.relative .z-10 {
         height: 100%;
         object-fit: contain;
         object-position: center center;
-        animation: slideRightToLeftMobile 5.5s ease-in-out infinite;
+        animation: modelSlideRightLeftMobile 6s ease-in-out infinite;
     }
 
     /* Sombra en el texto para lectura clara sobre la modelo */
@@ -1530,11 +1577,15 @@ section.relative .z-10 {
     }
 }
 
-@keyframes slideRightToLeftMobile {
-    0%, 100% {
-        transform: translateX(22px);
+/* Recorrido de derecha a izquierda en celular */
+@keyframes modelSlideRightLeftMobile {
+    0% {
+        transform: translateX(48px);
     }
     50% {
-        transform: translateX(-22px);
+        transform: translateX(-48px);
+    }
+    100% {
+        transform: translateX(48px);
     }
 }
