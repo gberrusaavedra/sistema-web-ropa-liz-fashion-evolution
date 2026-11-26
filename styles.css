@@ -1041,7 +1041,7 @@
     text-shadow: 0 0 14px rgba(251, 146, 60, 0.35);
 }
 /* ==========================================================================
-   EFECTO LLAMATIVO CON DESPLAZAMIENTO HACIA ARRIBA (ETIQUETAS E IMÁGENES)
+   EFECTO LLAMATIVO CON DESPLAZAMIENTO HACIA ARRIBA Y MOVIMIENTO DE IMÁGENES
    ========================================================================== */
 @keyframes floatUpPulse {
     0%, 100% {
@@ -1049,17 +1049,6 @@
     }
     50% {
         transform: translateY(-6px);
-    }
-}
-
-@keyframes riseAndShine {
-    0% {
-        opacity: 0.75;
-        transform: translateY(4px) scale(0.98);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(-5px) scale(1.04);
     }
 }
 
@@ -1077,7 +1066,40 @@
     }
 }
 
-/* 1. Etiquetas flotantes sobre las imágenes (-XX% OFF, OFERTA FLASH, etc.) */
+@keyframes catalogImageBob {
+    0%, 100% {
+        transform: translateY(0px) scale(1);
+    }
+    50% {
+        transform: translateY(-7px) scale(1.02);
+    }
+}
+
+/* 1. Imágenes del catálogo en movimiento continuo (arriba y abajo) */
+#productGrid article .relative img {
+    animation: catalogImageBob 2.8s ease-in-out infinite;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    will-change: transform;
+}
+
+#productGrid article:nth-child(2) .relative img {
+    animation-delay: -0.7s;
+}
+
+#productGrid article:nth-child(3) .relative img {
+    animation-delay: -1.4s;
+}
+
+#productGrid article:nth-child(4) .relative img {
+    animation-delay: -2.1s;
+}
+
+#productGrid article:hover .relative img {
+    animation-duration: 1.9s;
+    filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.14));
+}
+
+/* 2. Etiquetas flotantes sobre las imágenes (-XX% OFF, OFERTA FLASH, etc.) */
 #productGrid article .relative > .absolute[class*="top-"] > span,
 #productGrid article .relative > .absolute[class*="top-"] > div {
     position: relative;
@@ -1142,7 +1164,7 @@
         0 0 0 1px rgba(251, 113, 133, 0.4);
 }
 
-/* 2. Etiquetas de Colores y Tallas: desplazamiento hacia arriba al interactuar */
+/* 3. Etiquetas de Colores y Tallas: desplazamiento hacia arriba al interactuar */
 #productGrid article .flex.flex-wrap.gap-1.5 button,
 #productGrid article .grid.grid-cols-5 button:not(:disabled) {
     position: relative;
@@ -1185,7 +1207,6 @@
 #productGrid article .grid.grid-cols-5 button:not(:disabled):active {
     transform: translateY(-1px) scale(0.95) !important;
 }
-
 
 /* ==========================================================================
    EFECTO PREMIUM LLAMATIVO EN ETIQUETAS DE COLORES Y TALLAS
