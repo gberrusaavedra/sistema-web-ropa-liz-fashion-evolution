@@ -1040,3 +1040,30 @@
     color: transparent;
     text-shadow: 0 0 14px rgba(251, 146, 60, 0.35);
 }
+/* ==========================================================================
+   EFECTO SUAVE HACIA ARRIBA Y ABAJO EN IMÁGENES DEL CATÁLOGO
+   ========================================================================== */
+@keyframes floatUpDownImg {
+    0%, 100% {
+        transform: translateY(0px) scale(1.02);
+    }
+    50% {
+        transform: translateY(-8px) scale(1.03);
+    }
+}
+
+#productGrid img {
+    transition: transform 0.35s ease, filter 0.35s ease;
+    will-change: transform;
+}
+
+/* Movimiento hacia arriba y abajo al pasar el mouse o dedo sobre la tarjeta */
+#productGrid article:hover img {
+    animation: floatUpDownImg 2.2s ease-in-out infinite;
+}
+
+/* Pausa limpia al salir para no cortar bruscamente */
+#productGrid article:not(:hover) img {
+    animation: none;
+    transform: translateY(0px) scale(1);
+}
