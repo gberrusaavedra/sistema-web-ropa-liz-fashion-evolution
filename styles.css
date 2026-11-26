@@ -1496,18 +1496,33 @@ section.relative .z-10 {
     }
 }
 
-/* CELULAR Y TABLET */
+/* CELULAR Y TABLET: CHICA CON MAYOR ALTURA DETRÁS DE LAS LETRAS */
 @media (max-width: 1023px) {
     .hero-model {
-        position: relative;
-        left: auto;
-        transform: none;
+        position: absolute;
+        left: 50%;
+        top: 34%;
+        transform: translate(-50%, -50%);
         bottom: auto;
-        width: 100%;
-        max-width: 400px;
-        height: 420px;
+        width: 115%;
+        max-width: 540px;
+        height: 580px;
         max-height: none;
-        margin: 8px auto -32px auto;
-        z-index: 5;
+        z-index: 1;
+        opacity: 0.78;
+        pointer-events: none;
+    }
+
+    .hero-model img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center center;
+    }
+
+    /* Sombra en el texto para lectura clara sobre la modelo */
+    section.relative .z-10 h1,
+    section.relative .z-10 p {
+        text-shadow: 0 2px 12px rgba(15, 23, 42, 0.95);
     }
 }
